@@ -18,10 +18,15 @@ that comparison, from real tokenizers, reproducibly. Nothing is fabricated: a
 tokenizer that cannot be loaded is reported as unavailable, not estimated.
 
 Held-out set: Bengali Wikipedia articles AFTER the training range, so the
-Bornomala numbers are on unseen text, an honest comparison.
+Bornomala numbers are on unseen text, an honest comparison. The current
+official artifact (artifacts/bn-bpe-64k) trains on the first 15,000 Wikipedia
+articles (bntok.corpus.WIKIPEDIA_TRAIN_ARTICLES), so --skip must be >= 15000
+for it; --register selects a non-Wikipedia held-out slice instead (see
+bntok.corpus.build_register_held_out).
 
 Usage:
-  python scripts/compare.py --tokenizer out/bn-bpe-32k --skip 12000 --limit 800
+  python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --skip 15000 --limit 800
+  python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register literary_formal --limit 1000
 """
 
 from __future__ import annotations
@@ -39,7 +44,7 @@ from bntok.graphemes import grapheme_clusters
 # HF tokenizers to compare against (all load without auth).
 HF_MODELS = [
     ("Sarvam-1 (Sarvam AI)", "sarvamai/sarvam-1"),
-    ("IndicBERT (AI4Bharat)", "ai4bharat/indic-bert"),
+    ("IndicBERTv2 (AI4Bharat)", "ai4bharat/IndicBERTv2-MLM-only"),
     ("mBERT (Google)", "google-bert/bert-base-multilingual-cased"),
     ("XLM-RoBERTa (Meta)", "FacebookAI/xlm-roberta-base"),
     ("DeepSeek-V3", "deepseek-ai/DeepSeek-V3"),
@@ -60,6 +65,20 @@ def held_out(skip: int, limit: int) -> list[str]:
             if p.strip():
                 out.append(p.strip())
     return out
+
+
+REGISTER_HELD_OUT_SOURCES = {"literary_formal", "general_web", "news"}
+
+
+def register_held_out(register: str, limit_docs: int) -> list[str]:
+    """Held-out text for a non-Wikipedia register, disjoint from training.
+
+    Uses bntok.corpus.build_register_held_out, which reads Sangraha/XL-Sum
+    starting exactly where build_configured_corpus's training budget ends.
+    """
+    from bntok.corpus import build_register_held_out
+    slices = build_register_held_out(limit_docs=limit_docs, log=lambda m: print(m, file=sys.stderr))
+    return slices[register]
 
 
 def _frag_from_offsets(nfc: str, offsets: list[tuple[int, int]]) -> tuple[int, int]:
@@ -134,8 +153,51 @@ def measure_tiktoken(name: str, enc_name: str, texts: list[str]) -> dict | None:
 
 
 def measure_ours(directory: str, texts: list[str]) -> dict:
+    """Measure our tokenizer the same way the HF path is measured: a token
+    boundary counts as fragmentation only if it falls strictly inside a
+    grapheme cluster's own codepoint span (via _frag_from_offsets), not
+    whenever two individually-whole-cluster atoms simply go unmerged. An
+    earlier version of this function used a pairwise cluster-count heuristic
+    (compare len(clusters(a)) + len(clusters(b)) to len(clusters(a+b))) that
+    produced false positives for exactly that "unmerged but intact" case, for
+    example a lone consonant token followed by a lone vowel-sign token: both
+    are complete, correctly-decoding atoms, so nothing was actually split, but
+    the heuristic could not tell "adjacent complete clusters" from "one
+    cluster's codepoints torn across a boundary." Offsets, derived from
+    cumulative surface-token lengths (the surfaces reconstruct the normalised
+    text exactly, per the round-trip guarantee), do not have that ambiguity.
+
+    Two subtleties cost real debugging time and are worth recording:
+
+    1. The Metaspace pre-tokenizer prefixes the FIRST token's surface with its
+       word-boundary marker (a leading space) that is not present in `nfc`
+       itself (this is what `BengaliTokenizer.decode` strips via
+       `.strip(" ")`). Naively joining raw surfaces and using cumulative
+       lengths as offsets is therefore off by one space for every position
+       after the first token, which manufactures thousands of false
+       "fragmentation" hits. Corrected by trimming the same leading space here
+       before computing offsets.
+
+    2. `encode_tokens()` is a human-readable DEBUG view, not a guaranteed exact
+       reconstruction: for a codepoint genuinely outside this tokenizer's
+       coverage (foreign scripts quoted inside Bengali text -- Greek, Arabic,
+       Japanese all occur in this corpus's Wikipedia/news held-out sets), the
+       underlying BPE model emits the literal `<unk>` special token, and
+       `encode_tokens()`'s fallback (`readable if readable else t`) returns
+       that literal 5-character string in place of the missing text rather
+       than an empty placeholder. This means surface concatenation can silently
+       diverge from `nfc` on such lines. Foreign-script coverage is already an
+       out-of-scope, documented limitation (`docs/known-issues.md` point 4),
+       not a fragmentation question, so lines that do not cleanly round-trip
+       are skipped for fragmentation purposes specifically (fertility/STRR/
+       bytes still count them: those metrics don't depend on surface
+       reconstruction). An assertion on the lines that remain still holds, so
+       a genuine offset bug on in-scope text cannot silently corrupt the count
+       again.
+    """
     tok = BengaliTokenizer.load(directory)
     n_tok = n_words = n_bytes = single = frag = clusters = 0
+    skipped_for_frag = 0
     for raw in texts:
         nfc = normalize(raw)
         words = nfc.split()
@@ -145,13 +207,28 @@ def measure_ours(directory: str, texts: list[str]) -> dict:
         for w in words:
             if len(tok.encode(w)) == 1:
                 single += 1
-        # surface method (ours guarantees whole-cluster tokens)
+        if not tok.roundtrip_ok(raw):
+            skipped_for_frag += 1
+            continue
         surfaces = tok.encode_tokens(raw)
-        for i in range(len(surfaces) - 1):
-            a, b = surfaces[i], surfaces[i + 1]
-            if a and b and len(grapheme_clusters(a)) + len(grapheme_clusters(b)) != len(grapheme_clusters(a + b)):
-                frag += 1
-        clusters += sum(1 for g in grapheme_clusters(nfc) if not g.isspace())
+        joined = "".join(surfaces)
+        trimmed = joined.lstrip(" ")
+        lead = len(joined) - len(trimmed)
+        assert trimmed == nfc, (
+            f"surface reconstruction mismatch on a round-trippable line: "
+            f"{trimmed!r} != {nfc!r} (this would silently corrupt the fragmentation count)"
+        )
+        offsets = []
+        pos = -lead
+        for s in surfaces:
+            offsets.append((pos, pos + len(s)))
+            pos += len(s)
+        f, c = _frag_from_offsets(nfc, offsets)
+        frag += f
+        clusters += c
+    if skipped_for_frag:
+        print(f"  ({skipped_for_frag}/{len(texts)} lines skipped for fragmentation: "
+              f"out-of-coverage codepoints, see docs/known-issues.md point 4)", file=sys.stderr)
     name = f"Bornomala Track A ({tok.config['algo']} {tok.config['actual_vocab_size']})"
     return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
 
@@ -173,13 +250,19 @@ def _row(name, n_tok, n_words, n_bytes, single, frag, clusters):
 def main(argv=None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--tokenizer", required=True, help="our tokenizer directory")
-    p.add_argument("--skip", type=int, default=12000, help="held-out starts after this many articles")
+    p.add_argument("--skip", type=int, default=15000, help="held-out starts after this many articles (wikipedia source only)")
     p.add_argument("--limit", type=int, default=800)
+    p.add_argument("--register", choices=sorted(REGISTER_HELD_OUT_SOURCES),
+                    help="use a non-Wikipedia held-out register instead (see bntok.corpus.build_register_held_out)")
     p.add_argument("--out", default="out/comparison.json")
     args = p.parse_args(argv)
 
-    print(f"loading held-out Bengali (skip {args.skip}, {args.limit} articles) ...", file=sys.stderr)
-    texts = held_out(args.skip, args.limit)
+    if args.register:
+        print(f"loading held-out register '{args.register}' ({args.limit} docs) ...", file=sys.stderr)
+        texts = register_held_out(args.register, args.limit)
+    else:
+        print(f"loading held-out Bengali (skip {args.skip}, {args.limit} articles) ...", file=sys.stderr)
+        texts = held_out(args.skip, args.limit)
     print(f"held-out lines: {len(texts)}", file=sys.stderr)
 
     rows = [measure_ours(args.tokenizer, texts)]

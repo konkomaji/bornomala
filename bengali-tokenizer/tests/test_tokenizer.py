@@ -50,11 +50,11 @@ def test_nfc_normalisation():
 
 def test_roundtrip_bengali(tok):
     for s in ["আমি বাংলায় ক্ষুদ্র গান গাই", "রবীন্দ্রনাথের কবিতা", "পরীক্ষা"]:
-        assert tok.decode(tok.encode(s)) == s
+        assert tok.decode(tok.encode(s)) == normalize(s)
 
 def test_roundtrip_code_mixed(tok):
     s = "কি খবর? Hello World 123 ঠিক আছে"
-    assert tok.decode(tok.encode(s)) == s
+    assert tok.decode(tok.encode(s)) == normalize(s)
 
 def test_zero_conjunct_fragmentation(tok):
     rep = evaluate(tok, CORPUS[:6])

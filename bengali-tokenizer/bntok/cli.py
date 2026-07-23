@@ -2,8 +2,9 @@ r"""
 Command line for the Track A Bengali tokenizer.
 
   python -m bntok gate-g1                       run shaping validation (Gate G1)
-  python -m bntok train --input data/*.txt --algo bpe --vocab-size 32000 --out out/tok
-  python -m bntok train --wikipedia bn --limit 5000 --vocab-size 32000 --out out/tok
+  python -m bntok train --input data/*.txt --algo bpe --vocab-size 64000 --out out/tok
+  python -m bntok train --wikipedia bn --limit 5000 --vocab-size 64000 --out out/tok
+  python -m bntok train --corpus-config configs/bpe-64k.json --vocab-size 64000 --out out/tok
   python -m bntok evaluate --tokenizer out/tok --input held_out.txt
   python -m bntok encode --tokenizer out/tok --text "আমি বাংলায় গান গাই"
 
@@ -34,12 +35,16 @@ _DEFAULT_SAMPLES = [
 
 
 def _load_input(args) -> list[str]:
-    from .corpus import load_paths, stream_wikipedia
+    from .corpus import load_paths, stream_wikipedia, build_configured_corpus
+    if args.corpus_config:
+        with open(args.corpus_config, encoding="utf-8") as f:
+            config = json.load(f)
+        return build_configured_corpus(config, log=lambda msg: print(msg, file=sys.stderr))
     if args.wikipedia:
         return stream_wikipedia(args.wikipedia, limit=args.limit)
     if args.input:
         return load_paths(args.input)
-    raise BnTokError("provide --input FILES or --wikipedia LANG")
+    raise BnTokError("provide --input FILES, --wikipedia LANG, or --corpus-config FILE")
 
 
 def cmd_gate_g1(args) -> int:
@@ -114,8 +119,10 @@ def main(argv=None) -> int:
     t.add_argument("--input", nargs="*", help="text files or glob patterns")
     t.add_argument("--wikipedia", help="stream Wikipedia for this language code (e.g. bn)")
     t.add_argument("--limit", type=int, default=5000, help="max Wikipedia articles")
+    t.add_argument("--corpus-config", dest="corpus_config",
+                    help="JSON config with weighted corpus_sources (see configs/bpe-64k.json)")
     t.add_argument("--algo", choices=["bpe", "unigram"], default="bpe")
-    t.add_argument("--vocab-size", type=int, default=32000, dest="vocab_size")
+    t.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
     t.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
     t.add_argument("--zwnj", choices=["preserve", "strip"], default="preserve")
     t.add_argument("--out", required=True, help="output directory for the tokenizer")

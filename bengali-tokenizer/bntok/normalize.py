@@ -7,14 +7,28 @@ several codepoint sequences, and any metric or merge computed without prior
 normalisation is measuring encoding noise rather than language (spec section 3.1,
 requirement B-1).
 
-Two steps:
+Three steps:
 
   1. NFC (Unicode Normalization Form C, UAX #15). Canonical composition. This
-     composes the nukta letters (for example ya + nukta -> U+09DF) and fixes
-     canonically-equivalent sequences so that one visible form has one codepoint
-     sequence.
+     unifies most canonically-equivalent spellings of the same visible text into
+     one codepoint sequence, INCLUDING, perhaps surprisingly, Bengali's three
+     "composition exclusions" (see step 2): NFC always fully decomposes first
+     and then recomposes everything except exclusions, so both spellings of
+     those three letters already converge under plain NFC. They just converge
+     onto the two-codepoint decomposed form, not the single dedicated
+     codepoint Unicode also provides for them. Verified empirically against
+     Python's own `unicodedata` (see docs/bengali-script-reference.md); there
+     was no actual cross-source encoding-inconsistency bug here.
 
-  2. An explicit, documented ZWJ / ZWNJ policy. Zero-width joiner (U+200D) and
+  2. Explicit re-composition of RRA, RHA, YYA (ড়/ঢ়/য়, U+09DC/U+09DD/U+09DF)
+     back to their single dedicated codepoint. This is a minor efficiency
+     choice, not a correctness fix: it spends one atom instead of two on three
+     letters that are common in everyday Bengali (e.g. বড়, পড়া, গড়ে), and
+     matches the form the Bengali Unicode block itself was designed around.
+     Skipping this step would still be correct, just very slightly less
+     efficient.
+
+  3. An explicit, documented ZWJ / ZWNJ policy. Zero-width joiner (U+200D) and
      non-joiner (U+200C) are used inconsistently in real Bengali text to force or
      suppress ligature formation. The whitepaper is explicit: do not silently
      strip them, they carry intent (spec section 9.2, step 2). So the default
@@ -22,7 +36,16 @@ Two steps:
      is documented as lossy.
 
 Nothing here is Bengali-only in a way that would corrupt other scripts: NFC is
-universal, and the ZWJ / ZWNJ handling is a no-op unless those characters appear.
+universal, the exclusion re-composition is a no-op unless those three specific
+sequences appear, and the ZWJ / ZWNJ handling is a no-op unless those characters
+appear.
+
+A cautionary note for anyone editing this file: typing the Bengali literals for
+these three letters directly into source can silently round-trip through an
+editor/tool pipeline that re-decomposes them, turning a fix into an accidental
+no-op (this happened once during development). `_NFC_EXCLUSIONS` below is built
+from explicit `chr()` codepoints for exactly that reason; keep it that way
+rather than reverting to literal characters.
 """
 
 from __future__ import annotations
@@ -42,6 +65,16 @@ _TA = "ত"       # ত
 _VIRAMA = "্"   # ্ (hasanta)
 _KHANDA_TA = "ৎ"  # ৎ
 _LEGACY_KHANDA_TA = _TA + _VIRAMA + ZWJ
+
+# Bengali's NFC composition exclusions (decomposed spelling -> precomposed
+# singleton). Built from explicit chr() codepoints, not literal Bengali text,
+# to guarantee correctness regardless of source-file/editor normalisation; see
+# the docstring above.
+_NFC_EXCLUSIONS = {
+    chr(0x09A1) + chr(0x09BC): chr(0x09DC),  # DDA + NUKTA -> RRA (ড় as one codepoint)
+    chr(0x09A2) + chr(0x09BC): chr(0x09DD),  # DDHA + NUKTA -> RHA (ঢ় as one codepoint)
+    chr(0x09AF) + chr(0x09BC): chr(0x09DF),  # YA + NUKTA -> YYA (য় as one codepoint)
+}
 
 
 def normalize(text: str, zwnj_policy: str = "preserve", canonical_khanda_ta: bool = True) -> str:
@@ -74,6 +107,9 @@ def normalize(text: str, zwnj_policy: str = "preserve", canonical_khanda_ta: boo
             text = text.replace(_LEGACY_KHANDA_TA, _KHANDA_TA)
 
         text = unicodedata.normalize("NFC", text)
+        for decomposed, singleton in _NFC_EXCLUSIONS.items():
+            if decomposed in text:
+                text = text.replace(decomposed, singleton)
 
         if zwnj_policy == "strip":
             text = text.replace(ZWJ, "").replace(ZWNJ, "")
