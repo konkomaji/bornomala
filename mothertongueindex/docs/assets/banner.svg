@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="MotherTongueIndex — how efficient is your language on today's AI, versus English">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FBFBFF"/>
+      <stop offset="1" stop-color="#EEF0FF"/>
+    </linearGradient>
+    <linearGradient id="arc" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#00A9A5"/>
+      <stop offset="0.55" stop-color="#4A46E0"/>
+      <stop offset="1" stop-color="#FF6F5B"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4A46E0"/>
+      <stop offset="1" stop-color="#7A2BE2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="320" fill="url(#bg)"/>
+
+  <!-- faint multilingual watermark strip -->
+  <g fill="#4A46E0" opacity="0.06" font-size="64" font-family="'Noto Sans','Segoe UI',sans-serif">
+    <text x="70" y="285">অ আ ক 中 あ 한 ع Ω Ա க ‌अ ᮃ</text>
+  </g>
+
+  <!-- logo tile -->
+  <g transform="translate(70,64)">
+    <rect x="0" y="0" width="184" height="184" rx="42" fill="#FFFFFF" stroke="#E2E5FF" stroke-width="2"/>
+    <path d="M28 132 A 58 58 0 0 1 144 132" fill="none" stroke="#E5E7F5" stroke-width="14" stroke-linecap="round"/>
+    <path d="M28 132 A 58 58 0 0 1 116 82" fill="none" stroke="url(#arc)" stroke-width="14" stroke-linecap="round"/>
+    <line x1="92" y1="132" x2="124" y2="90" stroke="#FF6F5B" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="92" cy="132" r="9" fill="#4A46E0"/><circle cx="92" cy="132" r="4" fill="#fff"/>
+    <text x="66" y="70" font-family="serif" font-size="54" fill="#4A46E0" text-anchor="middle">অ</text>
+    <text x="118" y="70" font-family="'Segoe UI',sans-serif" font-weight="800" font-size="46" fill="#00A9A5" text-anchor="middle">A</text>
+  </g>
+
+  <!-- wordmark -->
+  <g transform="translate(300,0)">
+    <text x="0" y="150" font-family="'Segoe UI',system-ui,sans-serif" font-weight="800" font-size="72" fill="url(#ink)">MotherTongueIndex</text>
+    <text x="2" y="196" font-family="'Segoe UI',system-ui,sans-serif" font-size="30" fill="#3A3D66">How efficient is your language on today's AI — versus English?</text>
+    <g font-family="'Segoe UI',system-ui,sans-serif" font-size="20" fill="#5B5E86">
+      <rect x="0" y="222" width="196" height="38" rx="19" fill="#FFFFFF" stroke="#D9DCFF"/>
+      <text x="20" y="247">28 model tokenizers</text>
+      <rect x="212" y="222" width="150" height="38" rx="19" fill="#FFFFFF" stroke="#D9DCFF"/>
+      <text x="232" y="247">any language</text>
+      <rect x="378" y="222" width="240" height="38" rx="19" fill="#FFFFFF" stroke="#D9DCFF"/>
+      <text x="398" y="247">a Project Bornomala tool</text>
+    </g>
+  </g>
+</svg>

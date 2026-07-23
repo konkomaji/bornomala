@@ -28,18 +28,18 @@ Track A requires (spec §4.1, §9.4).
 pip install -r mothertongueindex/requirements.txt
 
 # Your language vs English across a no-auth model set:
-python -m mothertongueindex.cli "আমি বাংলায় গান গাই, আমি বাংলার গান গাই"
+python -m mti "আমি বাংলায় গান গাই, আমি বাংলার গান গাই"
 
 # Choose models, explain the cost, show the capability impact:
-python -m mothertongueindex.cli --models gpt-4o,gpt-4,sarvam1,claude \
+python -m mti --models gpt-4o,gpt-4,sarvam1,claude \
     --why --capability "आपकी भाषा यहाँ लिखें"
 
 # See the actual token split:
-python -m mothertongueindex.cli --show --models gpt-4o,sarvam1 "কি খবর"
+python -m mti --show --models gpt-4o,sarvam1 "কি খবর"
 
 # List known models / emit JSON:
-python -m mothertongueindex.cli --list
-python -m mothertongueindex.cli --json --file sample.txt
+python -m mti --list
+python -m mti --json --file sample.txt
 ```
 
 ## What the columns mean

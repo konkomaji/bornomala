@@ -2,11 +2,11 @@
 MotherTongueIndex command-line interface.
 
 Examples:
-  python -m mothertongueindex.cli "আমি বাংলায় গান গাই"
-  python -m mothertongueindex.cli --models gpt-4o,sarvam1,claude "the quick brown fox"
-  python -m mothertongueindex.cli --file sample.txt --json
-  python -m mothertongueindex.cli --list
-  python -m mothertongueindex.cli --show "কি খবর" --models gpt-4o,sarvam1   # show token split
+  python -m mti "আমি বাংলায় গান গাই"
+  python -m mti --models gpt-4o,sarvam1,claude "the quick brown fox"
+  python -m mti --file sample.txt --json
+  python -m mti --list
+  python -m mti --show "কি খবর" --models gpt-4o,sarvam1   # show token split
 """
 
 from __future__ import annotations
