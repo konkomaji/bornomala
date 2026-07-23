@@ -1,0 +1,43 @@
+# Project Bornomala
+
+> A first-of-its-kind, non-commercial research effort, based in West Bengal, to
+> build a Bengali-first, dialect-aware language model and to preserve the Bengali
+> language, its dialects, and its culture. It sits at the intersection of modern
+> AI and a rich living language. Everything is open, measured, and transparent.
+
+## The problem it addresses
+
+- Mainstream AI (ChatGPT, Claude, Gemini) is optimised for English and treats
+  Bengali as a second-class language: far more tokens per word, and it routinely
+  breaks Bengali conjuncts (the written unit a reader recognises).
+- Even Indic models (Sarvam, AI4Bharat) optimise across many languages and cover
+  Standard Bengali, not the literary register or the West Bengal dialects.
+- Bangladesh leads Bengali NLP but centres on Standard and Dhaka-region Bangla.
+  The western half of the language is still missing. Bornomala is complementary.
+- The deep Bengali literary corpus (1850 to 1950) exists mostly as scanned page
+  images. This is a data problem, not a compute problem.
+
+## What has been achieved (measured, reproducible)
+
+- A Bengali tokenizer that leads a measured comparison on held-out Bengali:
+  fertility 1.39 tokens per word, ahead of AI4Bharat IndicBERTv2 (1.52),
+  Sarvam-1 (2.01), GPT-4o (2.61), mBERT (3.01), and DeepSeek-V3 (3.02).
+- It keeps 77 percent of words whole and almost never splits a Bengali conjunct
+  (0.06 percent), while general tokenizers split between about 4 and 30 percent.
+- Method: trained on the first 12,000 Bengali Wikipedia articles; evaluated on
+  878 held-out lines from later articles; every other tokenizer is its real
+  public tokenizer on the same text. Nothing is estimated or fabricated.
+- MotherTongueIndex: an open tool measuring the token cost of any language versus
+  English across 28 model tokenizers.
+
+## Values
+
+Open (Apache 2.0 code, Creative Commons data), transparent (every number states
+its data), non-commercial research, cultural preservation, and consent-based
+dialect and speech collection.
+
+## Links
+
+- Repository: https://github.com/konkomaji/bornomala
+- Founder: Konko Maji (work.konkomaji@gmail.com)
+- License: Apache-2.0 (code), CC BY / CC BY-SA (data)

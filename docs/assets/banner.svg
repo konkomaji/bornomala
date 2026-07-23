@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="Project Bornomala: building a Bengali-first, dialect-aware large language model">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FCFBFF"/>
+      <stop offset="1" stop-color="#F1ECFF"/>
+    </linearGradient>
+    <linearGradient id="matra" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F4A400"/><stop offset="1" stop-color="#E4572E"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A2E8C"/><stop offset="1" stop-color="#5B45C7"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3A2E8C"/><stop offset="1" stop-color="#7A2BE2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="320" fill="url(#bg)"/>
+
+  <!-- faint Bengali literary watermark -->
+  <text x="70" y="290" font-family="'Noto Serif Bengali',serif" font-size="60" fill="#3A2E8C" opacity="0.06">অ আ ই ঈ উ ক খ গ ঘ ঙ চ ছ জ বর্ণমালা</text>
+
+  <!-- logo tile -->
+  <g>
+    <rect x="70" y="60" width="200" height="200" rx="46" fill="#FFFFFF" stroke="#E4DEFA" stroke-width="2"/>
+    <rect x="118" y="112" width="104" height="10" rx="5" fill="url(#matra)"/>
+    <text x="170" y="200" font-family="'Noto Serif Bengali','Kalpurush',serif" font-size="122" fill="url(#ink)" text-anchor="middle">ব</text>
+    <g>
+      <circle cx="134" cy="230" r="5.5" fill="#3A2E8C"/>
+      <circle cx="152" cy="230" r="5.5" fill="#00A9A5"/>
+      <circle cx="170" cy="230" r="5.5" fill="#F4A400"/>
+      <circle cx="188" cy="230" r="5.5" fill="#E4572E"/>
+      <circle cx="206" cy="230" r="5.5" fill="#5B45C7"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <g transform="translate(320,0)">
+    <text x="0" y="140" font-family="'Segoe UI',system-ui,sans-serif" font-weight="800" font-size="66" fill="url(#word)">Project Bornomala</text>
+    <text x="2" y="182" font-family="'Noto Serif Bengali',serif" font-size="40" fill="#3A2E8C">বর্ণমালা</text>
+    <text x="2" y="224" font-family="'Segoe UI',system-ui,sans-serif" font-size="27" fill="#463F6E">Building a Bengali-first, dialect-aware large language model.</text>
+    <g font-family="'Segoe UI',system-ui,sans-serif" font-size="19" fill="#5B5980">
+      <rect x="0" y="244" width="176" height="36" rx="18" fill="#FFFFFF" stroke="#E0D9FA"/>
+      <text x="18" y="268">data, not compute</text>
+      <rect x="190" y="244" width="196" height="36" rx="18" fill="#FFFFFF" stroke="#E0D9FA"/>
+      <text x="208" y="268">5 West Bengal dialects</text>
+    </g>
+  </g>
+</svg>

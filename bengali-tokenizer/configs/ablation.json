@@ -1,0 +1,9 @@
+{
+  "_about": "The Track A ablation grid (spec section 9.2 step 3). Run every combination and report fertility, STRR, bytes/token, and conjunct fragmentation rate per register on a held-out set (spec section 9.2 step 4).",
+  "algorithms": ["bpe", "unigram"],
+  "vocab_sizes": [16000, 32000, 48000, 64000],
+  "induction_corpus": ["web_natural", "literary_weighted"],
+  "zwnj_policy": ["preserve"],
+  "min_atom_freq": [2],
+  "report_registers": ["modern_news", "literary_prose", "formal_administrative", "code_mixed", "dialect"]
+}

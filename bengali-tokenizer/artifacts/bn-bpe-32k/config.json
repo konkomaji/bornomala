@@ -1,0 +1,10 @@
+{
+  "algo": "bpe",
+  "vocab_size": 32000,
+  "actual_vocab_size": 32000,
+  "min_atom_freq": 2,
+  "zwnj_policy": "preserve",
+  "num_atoms": 5575,
+  "num_cluster_atoms": 3600,
+  "format": "bornomala-track-a/1"
+}

@@ -1,0 +1,16 @@
+# Project Bornomala. Public research. All crawlers welcome, including AI engines.
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://konkomaji.github.io/bornomala/sitemap.xml

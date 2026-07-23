@@ -1,0 +1,15 @@
+{
+  "_about": "Default training configuration for the Bornomala Track A Bengali tokenizer. Sizes 16k/32k/48k/64k and both algorithms are ablated per the whitepaper (spec section 9.2 step 3). Corpus shares follow the literary-weighted scheme (spec section 9.2 step 1); fill in real source paths on the training machine.",
+  "algo": "bpe",
+  "vocab_size": 32000,
+  "min_atom_freq": 2,
+  "zwnj_policy": "preserve",
+  "corpus_sources": {
+    "public_domain_literature": 0.30,
+    "sangraha_verified_bn": 0.35,
+    "bengali_wikipedia": 0.10,
+    "government_administrative": 0.10,
+    "contemporary_news": 0.10,
+    "code_mixed_bn_en": 0.05
+  }
+}

@@ -16,8 +16,13 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   Separate from the MotherTongueIndex subproject logo.
 - **Root CHANGELOG** (this file) and the standing rule to document technical
   architecture for every deliverable.
-- **Track A: Bengali tokenizer** (`bengali-tokenizer/`): the state-of-the-art,
-  grapheme-cluster-aware Bengali tokenizer training system. (in progress)
+- **Track A: Bengali tokenizer** (`bengali-tokenizer/`): a grapheme-cluster-aware
+  Bengali tokenizer that never splits a conjunct (fragmentation rate 0 for
+  clusters given an atom). NFC + ZWJ/ZWNJ policy, grapheme-atom BPE/Unigram,
+  HarfBuzz shaping validation (Gate G1), full metrics and a typed error
+  hierarchy for robustness, CLI, tests, and architecture docs. Includes a
+  measured cross-tokenizer Bengali comparison against Sarvam-1, AI4Bharat
+  IndicBERT, mBERT, XLM-R, DeepSeek, and GPT-4o. See its own changelog.
 
 ### Changed
 - Root README rewritten to separate the two concerns clearly: Project Bornomala

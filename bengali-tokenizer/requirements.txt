@@ -1,0 +1,7 @@
+# Project Bornomala Track A tokenizer: core dependencies (CPU only)
+regex>=2024.0.0       # UAX #29 grapheme clusters
+tokenizers>=0.20.0    # Hugging Face fast subword training (BPE / Unigram)
+
+# Optional:
+# uharfbuzz>=0.39.0   # HarfBuzz shaping validation (Gate G1): pip install .[shaping]
+# datasets>=2.19.0    # stream Bengali Wikipedia for induction: pip install .[corpus]

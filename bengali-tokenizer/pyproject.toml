@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bntok"
+version = "0.1.0"
+description = "Project Bornomala Track A: a Bengali-first, grapheme-cluster-aware tokenizer that never splits a conjunct."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Konko Maji", email = "work.konkomaji@gmail.com" }]
+keywords = ["bengali", "bangla", "tokenizer", "grapheme", "indic", "nlp", "unicode", "bornomala"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Text Processing :: Linguistic",
+  "Natural Language :: Bengali",
+]
+dependencies = [
+  "regex>=2024.0.0",
+  "tokenizers>=0.20.0",
+]
+
+[project.optional-dependencies]
+shaping = ["uharfbuzz>=0.39.0"]
+corpus = ["datasets>=2.19.0"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+all = ["uharfbuzz>=0.39.0", "datasets>=2.19.0", "pytest>=8.0", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/konkomaji/bornomala/tree/main/bengali-tokenizer"
+Repository = "https://github.com/konkomaji/bornomala"
+
+[project.scripts]
+bntok = "bntok.cli:main"
+
+[tool.setuptools]
+packages = ["bntok"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
