@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# HF / model caches (never commit downloaded tokenizers or weights)
+.cache/
+*.safetensors
+*.bin
+*.model
+
+# Data & artifacts (large; produced by the pipeline, not source)
+data/
+corpora/
+out/
+*.parquet
+*.arrow
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local secrets
+.env
+
+# Local Claude Code config
+.claude/
