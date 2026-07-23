@@ -15,10 +15,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .registry import get_model, DEFAULT_MODELS
 from .backends import BackendError, Encoding
 from .metrics import Metrics, compute, relative_fertility
-from .segment import script_histogram, dominant_script
+from .registry import DEFAULT_MODELS, get_model
+from .segment import dominant_script, script_histogram
 
 
 @dataclass
@@ -53,7 +53,7 @@ def analyze_one(text: str, model_id: str, want_tokens: bool = True, anchor_engli
         enc: Encoding = backend.encode(text)
     except BackendError as e:
         return Result(model_id, model.display, available=False, error=str(e))
-    except Exception as e:  # pragma: no cover - defensive
+    except Exception as e:  # noqa: BLE001 - pragma: no cover - report ANY backend failure as unavailable
         return Result(model_id, model.display, available=False, error=f"{type(e).__name__}: {e}")
 
     m = compute(
@@ -73,7 +73,7 @@ def analyze_one(text: str, model_id: str, want_tokens: bool = True, anchor_engli
     )
     if anchor_english:
         # Lazy import avoids a circular dependency (baseline imports analyze).
-        from .baseline import english_reference_fertility, ENGLISH_REFERENCE
+        from .baseline import ENGLISH_REFERENCE, english_reference_fertility
 
         # Do not anchor the anchor to itself.
         if text.strip() != ENGLISH_REFERENCE.strip():

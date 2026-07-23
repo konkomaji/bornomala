@@ -25,8 +25,8 @@ import sys
 # Make the sibling `mti` package importable when run as `python web/server.py`.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from mti.analyze import analyze          # noqa: E402
-from mti.registry import list_models, GROUPS  # noqa: E402
+from mti.analyze import analyze
+from mti.registry import GROUPS, list_models
 
 WEB_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,11 +40,10 @@ try:
     from fastapi.responses import JSONResponse
     from fastapi.staticfiles import StaticFiles
     from pydantic import BaseModel
-    from typing import Optional, List
 
     class AnalyzeReq(BaseModel):
         text: str
-        models: Optional[List[str]] = None
+        models: list[str] | None = None
         show: bool = False
 
     _FASTAPI_OK = True

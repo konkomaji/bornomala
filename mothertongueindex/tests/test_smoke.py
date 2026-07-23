@@ -5,11 +5,10 @@ depends on, not specific token counts (which can shift with library versions).
 """
 
 
-from mti.segment import grapheme_clusters, words, script_of, dominant_script
+from mti.analyze import analyze, analyze_one
 from mti.metrics import compute
-from mti.analyze import analyze_one, analyze
-from mti.registry import MODELS, DEFAULT_MODELS, GROUPS
-
+from mti.registry import DEFAULT_MODELS, GROUPS, MODELS
+from mti.segment import dominant_script, grapheme_clusters, script_of, words
 
 # --- segmentation ---------------------------------------------------------
 

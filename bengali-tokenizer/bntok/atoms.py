@@ -31,10 +31,10 @@ from __future__ import annotations
 import json
 import os
 from collections import Counter
-from typing import Iterable
+from collections.abc import Iterable
 
+from .errors import ConfigError, EmptyCorpusError, LoadError
 from .graphemes import grapheme_clusters
-from .errors import EmptyCorpusError, LoadError, ConfigError
 
 # Private Use Area planes 15 and 16: about 131,000 usable codepoints. Far more
 # than the few thousand grapheme clusters Bengali needs, with room for code-mixed
@@ -65,7 +65,7 @@ class AtomMap:
         corpus: Iterable[str],
         min_freq: int = 2,
         guarantee: Iterable[str] | None = None,
-    ) -> "AtomMap":
+    ) -> AtomMap:
         """Build an atom map from a corpus of NFC-normalised strings.
 
         Every codepoint in `guarantee` is given an atom even if absent from the
@@ -163,7 +163,7 @@ class AtomMap:
             )
 
     @classmethod
-    def load(cls, path: str) -> "AtomMap":
+    def load(cls, path: str) -> AtomMap:
         if not os.path.exists(path):
             raise LoadError(f"atom map not found: {path}")
         try:

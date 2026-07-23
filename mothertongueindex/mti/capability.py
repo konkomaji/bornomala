@@ -36,8 +36,7 @@ What this module does NOT do:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
-
+from dataclasses import asdict, dataclass
 
 # Risk bands by fertility ratio vs English. Thresholds are interpretive, chosen
 # to match the qualitative breaks seen in the fertility literature.

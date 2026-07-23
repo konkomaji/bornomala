@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .backends import TiktokenBackend, HFBackend, EstimateBackend
+from .backends import EstimateBackend, HFBackend, TiktokenBackend
 
 
 @dataclass

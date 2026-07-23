@@ -1,0 +1,89 @@
+{
+  "held_out_lines": 22907,
+  "rows": [
+    {
+      "model": "Bornomala Track A (bpe 64000)",
+      "available": true,
+      "tokens": 1230322,
+      "words": 932211,
+      "fertility": 1.32,
+      "strr": 0.789,
+      "bytes_per_token": 12.25,
+      "conjunct_fragmentation": 0.000104,
+      "n_fragmented": 297,
+      "n_clusters": 2867769
+    },
+    {
+      "model": "Sarvam-1 (Sarvam AI)",
+      "available": true,
+      "tokens": 2435555,
+      "words": 932211,
+      "fertility": 2.613,
+      "strr": 0.379,
+      "bytes_per_token": 6.19,
+      "conjunct_fragmentation": 0.144589,
+      "n_fragmented": 414761,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "IndicBERTv2 (AI4Bharat)",
+      "available": true,
+      "tokens": 1502501,
+      "words": 932211,
+      "fertility": 1.612,
+      "strr": 0.607,
+      "bytes_per_token": 10.03,
+      "conjunct_fragmentation": 0.056231,
+      "n_fragmented": 161302,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "mBERT (Google)",
+      "available": true,
+      "tokens": 2653074,
+      "words": 932211,
+      "fertility": 2.846,
+      "strr": 0.313,
+      "bytes_per_token": 5.68,
+      "conjunct_fragmentation": 0.219845,
+      "n_fragmented": 630638,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "XLM-RoBERTa (Meta)",
+      "available": true,
+      "tokens": 2235997,
+      "words": 932211,
+      "fertility": 2.399,
+      "strr": 0.364,
+      "bytes_per_token": 6.74,
+      "conjunct_fragmentation": 0.114515,
+      "n_fragmented": 328492,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "DeepSeek-V3",
+      "available": true,
+      "tokens": 2627968,
+      "words": 932211,
+      "fertility": 2.819,
+      "strr": 0.082,
+      "bytes_per_token": 5.73,
+      "conjunct_fragmentation": 0.31062,
+      "n_fragmented": 891032,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "GPT-4o (OpenAI o200k)",
+      "available": true,
+      "tokens": 2289347,
+      "words": 932211,
+      "fertility": 2.456,
+      "strr": 0.119,
+      "bytes_per_token": 6.58,
+      "conjunct_fragmentation": null,
+      "n_fragmented": null,
+      "n_clusters": null
+    }
+  ]
+}

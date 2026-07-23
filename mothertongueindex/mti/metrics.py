@@ -29,9 +29,10 @@ surface.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
-from .segment import words as _words, grapheme_clusters as _gcs
+from .segment import grapheme_clusters as _gcs
+from .segment import words as _words
 
 
 @dataclass

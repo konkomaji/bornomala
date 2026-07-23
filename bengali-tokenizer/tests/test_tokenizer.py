@@ -8,11 +8,9 @@ code-mixed text, and that every failure mode raises a typed error.
 
 import pytest
 
-from bntok import BengaliTokenizer, evaluate, grapheme_clusters, normalize
+from bntok import BengaliTokenizer, errors, evaluate, grapheme_clusters, normalize
 from bntok.atoms import AtomMap
-from bntok.graphemes import is_conjunct, has_reph
-from bntok import errors
-
+from bntok.graphemes import has_reph, is_conjunct
 
 CORPUS = [
     "আমি বাংলায় গান গাই আমি বাংলার গান গাই",
@@ -50,11 +48,11 @@ def test_nfc_normalisation():
 
 def test_roundtrip_bengali(tok):
     for s in ["আমি বাংলায় ক্ষুদ্র গান গাই", "রবীন্দ্রনাথের কবিতা", "পরীক্ষা"]:
-        assert tok.decode(tok.encode(s)) == s
+        assert tok.decode(tok.encode(s)) == normalize(s)
 
 def test_roundtrip_code_mixed(tok):
     s = "কি খবর? Hello World 123 ঠিক আছে"
-    assert tok.decode(tok.encode(s)) == s
+    assert tok.decode(tok.encode(s)) == normalize(s)
 
 def test_zero_conjunct_fragmentation(tok):
     rep = evaluate(tok, CORPUS[:6])

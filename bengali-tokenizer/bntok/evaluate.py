@@ -23,10 +23,10 @@ two separately: if so, a cluster was split across that boundary.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
-from .normalize import normalize
 from .graphemes import grapheme_clusters
+from .normalize import normalize
 from .tokenizer import BengaliTokenizer
 
 

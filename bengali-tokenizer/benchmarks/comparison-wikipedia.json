@@ -1,0 +1,89 @@
+{
+  "held_out_lines": 828,
+  "rows": [
+    {
+      "model": "Bornomala Track A (bpe 64000)",
+      "available": true,
+      "tokens": 17245,
+      "words": 11316,
+      "fertility": 1.524,
+      "strr": 0.722,
+      "bytes_per_token": 11.38,
+      "conjunct_fragmentation": 7.5e-05,
+      "n_fragmented": 3,
+      "n_clusters": 39963
+    },
+    {
+      "model": "Sarvam-1 (Sarvam AI)",
+      "available": true,
+      "tokens": 29342,
+      "words": 11316,
+      "fertility": 2.593,
+      "strr": 0.415,
+      "bytes_per_token": 6.69,
+      "conjunct_fragmentation": 0.119096,
+      "n_fragmented": 4846,
+      "n_clusters": 40690
+    },
+    {
+      "model": "IndicBERTv2 (AI4Bharat)",
+      "available": true,
+      "tokens": 18695,
+      "words": 11316,
+      "fertility": 1.652,
+      "strr": 0.612,
+      "bytes_per_token": 10.5,
+      "conjunct_fragmentation": 0.04404,
+      "n_fragmented": 1792,
+      "n_clusters": 40690
+    },
+    {
+      "model": "mBERT (Google)",
+      "available": true,
+      "tokens": 31419,
+      "words": 11316,
+      "fertility": 2.777,
+      "strr": 0.385,
+      "bytes_per_token": 6.25,
+      "conjunct_fragmentation": 0.180044,
+      "n_fragmented": 7326,
+      "n_clusters": 40690
+    },
+    {
+      "model": "XLM-RoBERTa (Meta)",
+      "available": true,
+      "tokens": 27888,
+      "words": 11316,
+      "fertility": 2.464,
+      "strr": 0.363,
+      "bytes_per_token": 7.04,
+      "conjunct_fragmentation": 0.101892,
+      "n_fragmented": 4146,
+      "n_clusters": 40690
+    },
+    {
+      "model": "DeepSeek-V3",
+      "available": true,
+      "tokens": 33880,
+      "words": 11316,
+      "fertility": 2.994,
+      "strr": 0.089,
+      "bytes_per_token": 5.79,
+      "conjunct_fragmentation": 0.284542,
+      "n_fragmented": 11578,
+      "n_clusters": 40690
+    },
+    {
+      "model": "GPT-4o (OpenAI o200k)",
+      "available": true,
+      "tokens": 29514,
+      "words": 11316,
+      "fertility": 2.608,
+      "strr": 0.111,
+      "bytes_per_token": 6.65,
+      "conjunct_fragmentation": null,
+      "n_fragmented": null,
+      "n_clusters": null
+    }
+  ]
+}

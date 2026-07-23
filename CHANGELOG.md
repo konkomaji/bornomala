@@ -33,6 +33,14 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Root README rewritten to separate the two concerns clearly: Project Bornomala
   is the Bengali-first, dialect-aware LLM programme (the whitepaper, tracks A to
   E); MotherTongueIndex is a distinct subproject tool. (PR #2)
+- **Bengali tokenizer scaled up**: real literary-weighted training corpus
+  (Wikisource, AI4Bharat Sangraha, Wikipedia, XL-Sum news) replaces the
+  Wikipedia-only v0.1 demonstrator; new 64k-vocabulary artifact beats
+  IndicBERTv2 on fertility, single-token retention, and conjunct fragmentation
+  across every register tested (Wikipedia, literary/formal, general web,
+  news), not only Wikipedia. See `bengali-tokenizer/CHANGELOG.md` and
+  `bengali-tokenizer/docs/known-issues.md` for the full account, including two
+  real bugs found and fixed along the way.
 
 ## History
 

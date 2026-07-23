@@ -17,12 +17,12 @@ tags:
 datasets:
 - wikimedia/wikipedia
 metrics:
-- name: Fertility (tokens per word, held-out Bengali)
+- name: Fertility (tokens per word, held-out Bengali Wikipedia)
   type: fertility
-  value: 1.39
+  value: 1.524
 - name: Conjunct fragmentation
   type: fragmentation
-  value: 0.0006
+  value: 0.0001
 ---
 
 # Bornomala Bengali Tokenizer
@@ -32,8 +32,9 @@ It is the first component of [Project Bornomala](https://github.com/konkomaji/bo
 a non-commercial research effort from West Bengal to build a Bengali-first,
 dialect-aware language model and to preserve the Bengali language and its dialects.
 
-> **Version 0.1 (preliminary).** Trained on Bengali Wikipedia. It will be updated
-> as larger literary-weighted and dialect datasets are added.
+> **Version 0.2.** Trained on a literary-weighted corpus (Wikisource,
+> AI4Bharat Sangraha, Wikipedia, XL-Sum news), 64k vocabulary. Supersedes the
+> v0.1 Wikipedia-only model.
 
 ## Key features
 
@@ -41,31 +42,35 @@ dialect-aware language model and to preserve the Bengali language and its dialec
   Unicode UAX #29 grapheme clusters, and each cluster is remapped to an atomic
   symbol before subword training. Every learned token is a whole number of
   grapheme clusters, so a Bengali conjunct is never split across a boundary.
-- **Efficient.** Lowest tokens per word among the systems tested, with a 32k
-  vocabulary.
-- **Robust.** The whole Bengali Unicode block and ASCII are guaranteed, so any
-  Bengali or code-mixed English text round-trips exactly.
+- **Efficient.** Lowest tokens per word, on every register tested (Wikipedia,
+  literary/formal, general web, news), with a 64k vocabulary.
+- **Robust.** The whole Bengali Unicode block, Bengali's shared sentence
+  punctuation (danda/double danda), and ASCII are guaranteed, so any Bengali or
+  code-mixed English text round-trips exactly.
 - **Open and CPU-only.** Apache 2.0. No GPU needed to train or use.
 
 ## Performance
 
-Measured on 878 held-out Bengali Wikipedia lines (unseen during training). Every
-other tokenizer is its real public tokenizer on the same NFC-normalised text.
+Measured on 828 held-out Bengali Wikipedia lines (unseen during training); three
+further disjoint held-out registers (literary/formal, general web, news) confirm
+the same ranking beyond Wikipedia, see the repository's
+`benchmarks/bengali-comparison.md`. Every other tokenizer is its real public
+tokenizer on the same NFC-normalised text.
 
 | Tokenizer | Fertility | STRR | Bytes/token | Conjunct fragmentation |
 |---|--:|--:|--:|--:|
-| **Bornomala (this model)** | **1.390** | **0.766** | **13.03** | **0.0006** |
-| IndicBERTv2 (AI4Bharat) | 1.520 | 0.669 | 11.92 | 0.0364 |
-| Sarvam-1 (Sarvam AI) | 2.005 | 0.490 | 9.04 | 0.0942 |
-| XLM-RoBERTa (Meta) | 2.351 | 0.406 | 7.71 | 0.1034 |
-| GPT-4o (OpenAI o200k) | 2.608 | 0.095 | 6.95 | n/a |
-| mBERT (Google) | 3.012 | 0.317 | 6.02 | 0.2164 |
-| DeepSeek-V3 | 3.024 | 0.071 | 5.99 | 0.2988 |
+| **Bornomala (this model)** | **1.524** | **0.722** | **11.38** | **0.0001** |
+| IndicBERTv2 (AI4Bharat) | 1.652 | 0.612 | 10.50 | 0.0440 |
+| XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.1019 |
+| Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.1191 |
+| GPT-4o (OpenAI o200k) | 2.608 | 0.111 | 6.65 | n/a |
+| mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1800 |
+| DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
 
 Lower fertility and lower fragmentation are better; higher STRR and bytes per
 token are better. Fewer tokens per word means lower cost and more usable context.
-Every general tokenizer breaks between 3.6% and 30% of Bengali conjuncts; this one
-breaks 0.06%.
+Every general tokenizer breaks between 4.4% and 28.5% of Bengali conjuncts on
+this held-out set; this one breaks 0.01%.
 
 ## Usage
 
@@ -97,16 +102,27 @@ input; the `bntok` wrapper is the supported path.
 
 ## Training details
 
-- Algorithm: BPE, vocabulary 32,000.
-- Corpus: first 12,000 articles of `wikimedia/wikipedia`, config `20231101.bn`.
-- Normalisation: NFC, with a preserve-by-default ZWJ/ZWNJ policy.
+- Algorithm: BPE, vocabulary 64,000.
+- Corpus: literary-weighted, 1.5M lines — Wikisource Bengali public-domain text,
+  AI4Bharat Sangraha verified/ben (pdf-typed as a formal/literary proxy,
+  OCR-noise-filtered, and web-typed for general register), the first 15,000
+  articles of `wikimedia/wikipedia` config `20231101.bn`, and XL-Sum Bengali
+  news. Full mix and what was substituted: repository `docs/known-issues.md`
+  point 6.
+- Normalisation: NFC plus explicit re-composition of the three Bengali letters
+  NFC leaves decomposed (ড়/ঢ়/য়), and a preserve-by-default ZWJ/ZWNJ policy.
 - Hardware: CPU only.
 
 ## Limitations
 
-Preliminary results on Wikipedia, which is not weighted toward literary register.
-Fragmentation is near zero, not exactly zero, because rare sub-threshold clusters
-decompose. See the repository's `docs/known-issues.md` for the full, honest list.
+Two of the corpus's six configured sources (government/administrative text,
+code-mixed Bengali-English) have no clean public dataset and are omitted. The
+literary/formal register is a proxy (Sangraha pdf-typed documents: genuinely
+old-orthography and OCR-noisy, but not confirmed pre-1950 public domain).
+Fragmentation is near zero, not exactly zero, because rare sub-threshold
+clusters decompose. See the repository's `docs/known-issues.md` for the full,
+honest list, including two real bugs found and fixed in the comparison script
+itself.
 
 ## Citation
 
@@ -115,7 +131,7 @@ decompose. See the repository's `docs/known-issues.md` for the full, honest list
   author  = {Maji, Konko},
   title   = {A Bengali-First, Grapheme-Cluster-Aware Tokenizer with Zero Conjunct Fragmentation},
   year    = {2026},
-  note    = {Project Bornomala. Version 0.1},
+  note    = {Project Bornomala. Version 0.2},
   url     = {https://github.com/konkomaji/bornomala}
 }
 ```

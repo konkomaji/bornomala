@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import ClassVar
 
 # Quieten Hugging Face hub noise (symlink + unauthenticated-request warnings)
 # that otherwise floods multilingual output on Windows.
@@ -51,7 +52,7 @@ class Encoding:
 # --------------------------------------------------------------------------
 
 class TiktokenBackend:
-    _cache: dict[str, object] = {}
+    _cache: ClassVar[dict[str, object]] = {}
 
     def __init__(self, encoding_name: str):
         self.encoding_name = encoding_name
@@ -78,7 +79,7 @@ class TiktokenBackend:
         for i in ids:
             try:
                 tokens.append(enc.decode([i]))
-            except Exception:
+            except Exception:  # noqa: BLE001 - a single id may not decode standalone; show a placeholder
                 tokens.append("�")
 
         stw = sum(1 for w in _words(text) if len(enc.encode(w, disallowed_special=())) == 1)
@@ -90,7 +91,7 @@ class TiktokenBackend:
 # --------------------------------------------------------------------------
 
 class HFBackend:
-    _cache: dict[str, object] = {}
+    _cache: ClassVar[dict[str, object]] = {}
 
     def __init__(self, repo_id: str):
         self.repo_id = repo_id
@@ -105,7 +106,7 @@ class HFBackend:
             try:
                 # Fast path: pull tokenizer.json directly from the hub.
                 self._cache[self.repo_id] = Tokenizer.from_pretrained(self.repo_id, token=token)
-            except Exception:
+            except Exception:  # noqa: BLE001 - fast path can fail for many reasons; fall back below
                 # Fallback: transformers can assemble tokenizers that lack a
                 # single tokenizer.json (sentencepiece-only repos).
                 try:
@@ -166,7 +167,7 @@ class EstimateBackend:
 
     # Effective bytes-per-token priors by script (rough, English-anchored).
     # Base table reflects a large modern vocabulary (Claude-class ~cl100k-like).
-    _BPT = {
+    _BPT: ClassVar[dict[str, float]] = {
         "Latin": 4.0, "Number": 3.0, "Other": 3.0,
         "Cyrillic": 2.2, "Greek": 2.4, "Arabic": 2.2, "Hebrew": 2.4,
         "Han": 1.6, "Hiragana": 1.8, "Katakana": 1.8, "Hangul": 2.0,
@@ -179,7 +180,7 @@ class EstimateBackend:
     # Per-model multipliers on the base priors, reflecting known vocabulary size
     # differences. Gemini/Gemma use a very large (256k) multilingual vocabulary,
     # so it packs non-Latin scripts better than a cl100k-class tokenizer.
-    _MODEL_SCALE = {
+    _MODEL_SCALE: ClassVar[dict[str, float]] = {
         "claude": 1.0,
         "gemini": 1.35,   # large multilingual vocab -> fewer tokens on non-Latin
         "grok":   1.0,

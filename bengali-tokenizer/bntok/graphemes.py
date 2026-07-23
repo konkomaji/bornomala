@@ -33,21 +33,36 @@ ZWJ = "‍"
 ZWNJ = "‌"
 
 # Consonants (main range plus the nukta-formed rha/yya letters).
-_CONSONANTS = set(chr(c) for c in range(0x0995, 0x09B9 + 1)) | {"ড়", "ঢ়", "য়", "ৎ"}
+_CONSONANTS = {chr(c) for c in range(0x0995, 0x09B9 + 1)} | {"ড়", "ঢ়", "য়", "ৎ"}
 # Independent vowels.
-_IND_VOWELS = set(chr(c) for c in range(0x0985, 0x098C + 1)) | {"এ", "ঐ", "ও", "ঔ"}
+_IND_VOWELS = {chr(c) for c in range(0x0985, 0x098C + 1)} | {"এ", "ঐ", "ও", "ঔ"}
 # Dependent vowel signs (matra / kar).
-_VOWEL_SIGNS = set(chr(c) for c in range(0x09BE, 0x09CC + 1)) | {"ৗ"}
+_VOWEL_SIGNS = {chr(c) for c in range(0x09BE, 0x09CC + 1)} | {"ৗ"}
 # Signs.
 _SIGNS = {"ঁ", "ং", "ঃ"}  # candrabindu, anusvara, visarga
 
+# Bengali's own sentence- and verse-terminating punctuation (দাঁড়ি / দ্বিদাঁড়ি) is
+# NOT in the Bengali Unicode block: it is the shared, script-neutral DANDA and
+# DOUBLE DANDA (U+0964/U+0965), a Devanagari-block codepoint pair every Indic
+# script that uses this punctuation reuses rather than re-encoding. Without
+# these, the single most common punctuation mark in real Bengali text would
+# only get an atom by corpus frequency, not by guarantee. (There is also a
+# widespread, non-standard practice, especially in older/OCR'd text, of
+# reusing U+09F7 BENGALI CURRENCY NUMERATOR FOUR as a visual danda substitute
+# on fonts/typewriters that lacked the real one; it is covered anyway since
+# it is inside BENGALI_BLOCK.)
+DANDA = "।"
+DOUBLE_DANDA = "॥"
+SHARED_INDIC_PUNCTUATION = frozenset({DANDA, DOUBLE_DANDA})
+
 # Full coverage sets. The tokenizer guarantees an atom for every codepoint in the
-# Bengali block and for ASCII printable characters, regardless of what the
-# induction corpus happened to contain. This makes encode/decode round-trip for
-# any Bengali or code-mixed English text, not only text resembling the corpus.
+# Bengali block, Bengali's shared (non-Bengali-block) punctuation, and ASCII
+# printable characters, regardless of what the induction corpus happened to
+# contain. This makes encode/decode round-trip for any Bengali or code-mixed
+# English text, not only text resembling the corpus.
 BENGALI_BLOCK = frozenset(chr(c) for c in range(0x0980, 0x09FF + 1))
 ASCII_PRINTABLE = frozenset(chr(c) for c in range(0x20, 0x7E + 1))
-GUARANTEED_CODEPOINTS = BENGALI_BLOCK | ASCII_PRINTABLE
+GUARANTEED_CODEPOINTS = BENGALI_BLOCK | SHARED_INDIC_PUNCTUATION | ASCII_PRINTABLE
 
 
 def grapheme_clusters(text: str) -> list[str]:

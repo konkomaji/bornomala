@@ -15,8 +15,8 @@ import argparse
 import json
 import sys
 
-from .registry import list_models, DEFAULT_MODELS, GROUPS
 from .analyze import analyze, cost_explanation
+from .registry import DEFAULT_MODELS, GROUPS, list_models
 
 # Windows consoles default to a legacy codepage (cp1252) that cannot encode
 # Bengali, arrows, or box characters. Force UTF-8 so multilingual output works.

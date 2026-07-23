@@ -16,24 +16,24 @@ Public API:
     report = evaluate(tok, held_out_texts)
 """
 
-from .tokenizer import BengaliTokenizer
-from .evaluate import evaluate, Report
+from . import corpus, errors, shaping
 from .atoms import AtomMap
-from .normalize import normalize
+from .evaluate import Report, evaluate
 from .graphemes import grapheme_clusters
-from . import shaping, corpus, errors
+from .normalize import normalize
+from .tokenizer import BengaliTokenizer
 
 __version__ = "0.1.0"
 
 __all__ = [
-    "BengaliTokenizer",
-    "evaluate",
-    "Report",
     "AtomMap",
-    "normalize",
-    "grapheme_clusters",
-    "shaping",
+    "BengaliTokenizer",
+    "Report",
+    "__version__",
     "corpus",
     "errors",
-    "__version__",
+    "evaluate",
+    "grapheme_clusters",
+    "normalize",
+    "shaping",
 ]

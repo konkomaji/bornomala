@@ -44,8 +44,9 @@ pip install -r requirements.txt        # core (CPU only)
 python -m bntok gate-g1
 
 # Train on your corpus, or stream Bengali Wikipedia
-python -m bntok train --input data/*.txt --algo bpe --vocab-size 32000 --out out/tok
-python -m bntok train --wikipedia bn --limit 5000 --vocab-size 32000 --out out/tok
+python -m bntok train --input data/*.txt --algo bpe --vocab-size 64000 --out out/tok
+python -m bntok train --wikipedia bn --limit 5000 --vocab-size 64000 --out out/tok
+python -m bntok train --corpus-config configs/bpe-64k.json --out out/tok   # recommended: literary-weighted corpus
 
 # Encode and evaluate
 python -m bntok encode --tokenizer out/tok --text "আমি বাংলায় গান গাই"
@@ -54,7 +55,7 @@ python -m bntok evaluate --tokenizer out/tok --input held_out.txt
 
 ```python
 from bntok import BengaliTokenizer, evaluate
-tok = BengaliTokenizer.train(corpus, algo="bpe", vocab_size=32000)
+tok = BengaliTokenizer.train(corpus, algo="bpe", vocab_size=64000)
 ids = tok.encode("আমি বাংলায় ক্ষুদ্র গান গাই")
 assert tok.decode(ids) == "আমি বাংলায় ক্ষুদ্র গান গাই"   # exact round-trip
 tok.save("out/tok")
@@ -74,40 +75,45 @@ tok.save("out/tok")
 
 Reported per the whitepaper (spec section 9.2 step 4): **fertility**,
 **STRR**, **bytes/token**, **grapheme-clusters/token**, and the headline
-**conjunct fragmentation rate** (target 0). Run the full ablation grid (BPE and
-Unigram; 16k, 32k, 48k, 64k; web-natural vs literary-weighted) from
-`configs/ablation.json`.
+**conjunct fragmentation rate** (target 0). An ablation across 16k/32k/48k/64k
+vocab sizes on the literary-weighted corpus showed fertility recovering
+monotonically with vocab size; 64k is the current recommendation and the
+shipped artifact (`configs/bpe-64k.json`).
 
 <!-- METRICS:START -->
 ### Measured result: it leads a cross-tokenizer Bengali comparison
 
 On held-out Bengali, the Bornomala tokenizer needs the fewest tokens per word and
-almost never breaks a conjunct, where every other system breaks many.
+almost never breaks a conjunct, where every other system breaks many. This holds
+across every register tested (Wikipedia, literary/formal, general web, news),
+not only the Wikipedia table shown below.
 
 | Tokenizer | Fertility | STRR | Bytes/token | Conjunct fragmentation |
 |---|--:|--:|--:|--:|
-| **Bornomala (bpe 32k)** | **1.390** | **0.766** | **13.03** | **0.0006** |
-| IndicBERTv2 (AI4Bharat) | 1.520 | 0.669 | 11.92 | 0.0364 |
-| Sarvam-1 (Sarvam AI) | 2.005 | 0.490 | 9.04 | 0.0942 |
-| XLM-RoBERTa (Meta) | 2.351 | 0.406 | 7.71 | 0.1034 |
-| GPT-4o (OpenAI o200k) | 2.608 | 0.095 | 6.95 | n/a |
-| mBERT (Google) | 3.012 | 0.317 | 6.02 | 0.2164 |
-| DeepSeek-V3 | 3.024 | 0.071 | 5.99 | 0.2988 |
+| **Bornomala (bpe 64k)** | **1.524** | **0.722** | **11.38** | **0.0004** |
+| IndicBERTv2 (AI4Bharat) | 1.652 | 0.612 | 10.50 | 0.0440 |
+| XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.1019 |
+| Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.1191 |
+| GPT-4o (OpenAI o200k) | 2.608 | 0.111 | 6.65 | n/a |
+| mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1800 |
+| DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
 
-**How this was measured (full transparency).** Trained on the first 12,000
-articles of the Bengali Wikipedia dump (`wikimedia/wikipedia`, `20231101.bn`);
-evaluated on 878 held-out lines from articles after those 12,000, so the test
-text was unseen in training. Every other tokenizer is its real public tokenizer
-on the same NFC-normalised text. Conjunct fragmentation is computed from each
-tokenizer's own character offsets; GPT-4o exposes none (n/a). The trained
-tokenizer is checked in at `artifacts/bn-bpe-32k/`, the full numbers at
-`benchmarks/comparison.json`, and the method in
+**How this was measured (full transparency).** Trained on a literary-weighted
+corpus (Wikisource, Sangraha verified/ben pdf- and web-typed, the first 15,000
+Bengali Wikipedia articles, XL-Sum Bengali news; full mix in
+[`docs/known-issues.md`](docs/known-issues.md) point 6); evaluated on 828
+held-out lines from Wikipedia articles after those 15,000, unseen in training.
+Every other tokenizer is its real public tokenizer on the same NFC-normalised
+text. Conjunct fragmentation is computed from each tokenizer's own character
+offsets; GPT-4o exposes none (n/a). The trained tokenizer is checked in at
+`artifacts/bn-bpe-64k/`, the full numbers at `benchmarks/comparison.json`, and
+the method plus every-register breakdown in
 [`benchmarks/bengali-comparison.md`](benchmarks/bengali-comparison.md).
 
 Reproduce:
 
 ```bash
-python scripts/compare.py --tokenizer artifacts/bn-bpe-32k --skip 12000 --limit 800
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --skip 15000 --limit 800
 ```
 <!-- METRICS:END -->
 
