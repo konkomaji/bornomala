@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="mothertongueindex/docs/assets/logo.svg" width="132" height="132" alt="Project Bornomala"/>
+  <img src="assets/banner.svg" width="100%" alt="Project Bornomala: building a Bengali-first, dialect-aware large language model"/>
 </p>
-
-<h1 align="center">Project Bornomala &nbsp;বর্ণমালা</h1>
 
 <p align="center">
   <b>Building a Bengali-first, dialect-aware large language model.</b><br/>
