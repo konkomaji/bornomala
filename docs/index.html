@@ -165,25 +165,25 @@
     <p class="eyebrow">What we have achieved, measured and transparent</p>
     <h2>A Bengali tokenizer that beats the field</h2>
     <div class="matra"></div>
-    <p class="lede">Our first result: a Bengali tokenizer that needs fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and that almost never breaks a conjunct while they break many.</p>
+    <p class="lede">Our first result: a Bengali tokenizer that needs fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and that almost never breaks a conjunct while they break many &mdash; and this holds not just on Wikipedia, but on literary/formal, general web, and news text too.</p>
 
     <div class="table-wrap" style="margin-top:22px">
       <table>
         <thead><tr><th>Tokenizer</th><th>Tokens per word</th><th>Whole words kept</th><th>Bytes per token</th><th>Broken conjuncts</th></tr></thead>
         <tbody>
-          <tr class="ours"><td>Bornomala (ours)</td><td class="win">1.39</td><td class="win">77%</td><td class="win">13.03</td><td class="win">0.06%</td></tr>
-          <tr><td>IndicBERTv2 (AI4Bharat)</td><td>1.52</td><td>67%</td><td>11.92</td><td class="bad">3.6%</td></tr>
-          <tr><td>Sarvam-1 (Sarvam AI)</td><td>2.01</td><td>49%</td><td>9.04</td><td class="bad">9.4%</td></tr>
-          <tr><td>XLM-RoBERTa (Meta)</td><td>2.35</td><td>41%</td><td>7.71</td><td class="bad">10.3%</td></tr>
-          <tr><td>GPT-4o (OpenAI)</td><td>2.61</td><td>10%</td><td>6.95</td><td>not measurable</td></tr>
-          <tr><td>mBERT (Google)</td><td>3.01</td><td>32%</td><td>6.02</td><td class="bad">21.6%</td></tr>
-          <tr><td>DeepSeek-V3</td><td>3.02</td><td>7%</td><td>5.99</td><td class="bad">29.9%</td></tr>
+          <tr class="ours"><td>Bornomala (ours)</td><td class="win">1.52</td><td class="win">72%</td><td class="win">11.38</td><td class="win">0.01%</td></tr>
+          <tr><td>IndicBERTv2 (AI4Bharat)</td><td>1.65</td><td>61%</td><td>10.50</td><td class="bad">4.4%</td></tr>
+          <tr><td>XLM-RoBERTa (Meta)</td><td>2.46</td><td>36%</td><td>7.04</td><td class="bad">10.2%</td></tr>
+          <tr><td>Sarvam-1 (Sarvam AI)</td><td>2.59</td><td>42%</td><td>6.69</td><td class="bad">11.9%</td></tr>
+          <tr><td>GPT-4o (OpenAI)</td><td>2.61</td><td>11%</td><td>6.65</td><td>not measurable</td></tr>
+          <tr><td>mBERT (Google)</td><td>2.78</td><td>39%</td><td>6.25</td><td class="bad">18.0%</td></tr>
+          <tr><td>DeepSeek-V3</td><td>2.99</td><td>9%</td><td>5.79</td><td class="bad">28.5%</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="note" style="margin-top:16px">
-      <b>Exactly how this was measured, so anyone can check.</b> Our tokenizer was trained on the first 12,000 articles of the Bengali Wikipedia dump (wikimedia/wikipedia, 20231101.bn). It was then tested, along with every other tokenizer, on 878 held-out lines from Bengali Wikipedia articles that come after those 12,000, so the test text was never seen in training. Every other tokenizer is its real, official public tokenizer, run on the same text. Fewer tokens per word is better; a broken conjunct is a written unit split across a boundary, computed from each tokenizer's own character offsets. GPT-4o exposes no offsets, so its conjunct figure is left unmeasured rather than guessed. Full method and raw numbers are in the repository, and the comparison reruns with a single command.
+      <b>Exactly how this was measured, so anyone can check.</b> Our tokenizer was trained on a literary-weighted corpus mixing Wikisource public-domain text, Sangraha verified Bengali (formal and general register), Bengali Wikipedia, and XL-Sum news. It was then tested, along with every other tokenizer, on 828 held-out lines from Bengali Wikipedia articles never seen in training; three further held-out sets (literary/formal, general web, news) confirm the same ranking beyond Wikipedia. Every other tokenizer is its real, official public tokenizer, run on the same text. Fewer tokens per word is better; a broken conjunct is a written unit split across a boundary, computed from each tokenizer's own character offsets. GPT-4o exposes no offsets, so its conjunct figure is left unmeasured rather than guessed. Full method and raw numbers are in the repository, and the comparison reruns with a single command.
     </div>
 
     <h3 style="margin-top:40px">And an open tool that makes the inequity visible</h3>

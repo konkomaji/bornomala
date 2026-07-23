@@ -42,11 +42,14 @@ citation style change.
 
 ```bash
 cd ..
-python scripts/compare.py --tokenizer artifacts/bn-bpe-32k --skip 12000 --limit 800
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --skip 15000 --limit 800
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register literary_formal --limit 1000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register general_web --limit 1000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register news --limit 1000
 ```
 
 ## Roadmap (will update the preprint as these land)
 
-- Literary-weighted induction corpus (public-domain Bengali literature 1850 to 1950).
-- Literary-register and West Bengal dialect evaluation sets.
-- Vocabulary-size-matched runs and a BPE vs Unigram ablation.
+- Literary-weighted induction corpus: done (Wikisource + Sangraha, see `docs/known-issues.md` point 6; not confirmed pre-1950 for the Sangraha portion).
+- Literary-register, general-web, and news held-out evaluation: done (`bntok.corpus.build_register_held_out`). West Bengal dialect evaluation set: not started.
+- Vocabulary-size ablation (32k/48k/64k): done, see `docs/known-issues.md` point 7. BPE vs Unigram ablation: not started.

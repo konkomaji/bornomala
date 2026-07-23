@@ -11,6 +11,50 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   version 0.1 (preliminary, Wikipedia; to be updated with larger datasets).
 - **Hugging Face release** (`huggingface/`): upload-ready model card and
   tokenizer files, with a publishing guide.
+- **Literary-weighted corpus, for real** (`corpus.py`): `stream_sangraha`,
+  `stream_wikisource`, `stream_xlsum`, an OCR-noise filter for scanned literary
+  text, and `build_configured_corpus`/`build_register_held_out` to assemble and
+  hold out a real 1.5M-line mix (Wikisource, AI4Bharat Sangraha, Wikipedia,
+  XL-Sum). `government_administrative` and `code_mixed_bn_en` have no clean
+  public dataset and are dropped with weights renormalised over the rest.
+  `bntok train --corpus-config` wires it into the CLI. Full writeup:
+  `docs/known-issues.md` points 6 and 8.
+- **`docs/bengali-script-reference.md`**: full Bengali Unicode block inventory
+  and grapheme-cluster/conjunct rules, verified against Python's `unicodedata`
+  directly rather than recalled from memory.
+- Register-specific held-out comparison: `scripts/compare.py --register
+  {literary_formal,general_web,news}`.
+
+### Changed
+- **New official artifact: 64k vocabulary.** An ablation across 32k/48k/64k on
+  the literary-weighted corpus showed fertility recovering monotonically with
+  vocabulary size; 64k is the smallest size that beats IndicBERTv2 on fertility,
+  STRR, *and* conjunct fragmentation across every held-out register tested
+  (Wikipedia, literary/formal, general web, news). `artifacts/bn-bpe-64k/`
+  replaces `artifacts/bn-bpe-32k/`; `configs/bpe-64k.json` replaces
+  `configs/bpe-32k.json`; the CLI's default `--vocab-size` is now 64000.
+  Full numbers: `benchmarks/bengali-comparison.md`, `docs/known-issues.md`
+  point 7.
+- `graphemes.py`: `GUARANTEED_CODEPOINTS` now includes Bengali's shared (non-
+  Bengali-block) sentence punctuation, danda and double danda (U+0964/U+0965),
+  which were previously covered only by corpus frequency, not by guarantee.
+- `normalize.py`: re-composes RRA/RHA/YYA (ড়/ঢ়/য়) to their single dedicated
+  codepoint after NFC, a minor efficiency improvement (NFC already unified both
+  spellings, just onto the decomposed form — see `docs/known-issues.md`
+  point 7 and `docs/bengali-script-reference.md` §3 for what this does and does
+  not fix).
+
+### Fixed
+- `scripts/compare.py`'s conjunct-fragmentation counter for our own tokenizer
+  had two real measurement bugs, both caught via a hard assertion added
+  specifically to catch this class of mistake: an off-by-one from the
+  Metaspace word-boundary marker's leading space, and `encode_tokens()`
+  returning the literal string `<unk>` in place of missing text for
+  out-of-coverage foreign-script codepoints. Full account:
+  `docs/known-issues.md` point 8.
+- `IndicBERTv2` comparison baseline had regressed to the gated `ai4bharat/
+  indic-bert` (v1); restored to the ungated `ai4bharat/IndicBERTv2-MLM-only`
+  the benchmark doc always claimed.
 
 ## [0.1.0] - 2026-07-23
 

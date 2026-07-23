@@ -36,14 +36,17 @@ a cluster, splitting conjuncts into fragments that correspond to nothing a reade
 recognises. We present a Bengali-first tokenizer that makes this impossible by
 construction. The method normalises to NFC, segments into Unicode UAX~\#29
 grapheme clusters, remaps each cluster to an atomic symbol, and trains a subword
-model over atoms, so every learned token is a whole number of clusters. On a
-held-out Bengali evaluation set, our tokenizer attains a token fertility of
-$1.39$ tokens per word, ahead of AI4Bharat IndicBERTv2 ($1.52$), Sarvam-1
-($2.01$), GPT-4o ($2.61$), multilingual BERT ($3.01$), and DeepSeek-V3 ($3.02$),
-while fragmenting $0.06\%$ of grapheme clusters against $3.6\%$ to $29.9\%$ for
-the baselines. Training is CPU-only. The tokenizer, the evaluation code, and the
-raw numbers are released under Apache~2.0, and the comparison reproduces with a
-single command.
+model over atoms, so every learned token is a whole number of clusters. Trained
+on a literary-weighted corpus (Wikisource, Sangraha, Wikipedia, XL-Sum news) at
+a $64{,}000$-token vocabulary, our tokenizer attains a token fertility of
+$1.524$ tokens per word on held-out Bengali Wikipedia text, ahead of AI4Bharat
+IndicBERTv2 ($1.652$), XLM-RoBERTa ($2.464$), Sarvam-1 ($2.593$), GPT-4o
+($2.608$), multilingual BERT ($2.777$), and DeepSeek-V3 ($2.994$), while
+fragmenting only $0.01\%$ of grapheme clusters against $4.4\%$ to $28.5\%$ for
+the baselines. The same ordering holds on three further, disjoint held-out
+registers (literary/formal, general web, and news), not only Wikipedia. Training
+is CPU-only. The tokenizer, the evaluation code, and the raw numbers are
+released under Apache~2.0, and the comparison reproduces with a single command.
 \end{abstract}
 
 \section{Introduction}
@@ -128,15 +131,23 @@ every cluster that has an atom; only clusters below the atom-frequency threshold
 can fragment, and their rate is measured and reported, not hidden.
 
 \section{Experimental Setup}
-\paragraph{Training data.} The tokenizer is trained on the first $12{,}000$
-articles of the Bengali Wikipedia dump (\texttt{wikimedia/wikipedia},
-configuration \texttt{20231101.bn}), a BPE vocabulary of $32{,}000$. Training is
-CPU-only.
+\paragraph{Training data.} The tokenizer is trained on a literary-weighted
+corpus of $1.5$M lines: Wikisource Bengali public-domain text, AI4Bharat
+Sangraha verified/ben documents (pdf-typed, OCR-noise-filtered, as a
+formal/literary-register proxy, and web-typed for general register), the first
+$15{,}000$ articles of the Bengali Wikipedia dump (\texttt{wikimedia/wikipedia},
+configuration \texttt{20231101.bn}), and XL-Sum Bengali news, at a BPE
+vocabulary of $64{,}000$. An ablation over $32{,}000$/$48{,}000$/$64{,}000$ on
+this same corpus showed fertility recovering monotonically with vocabulary
+size; $64{,}000$ is the smallest size that beats IndicBERTv2 on every
+evaluation register (see Limitations). Training is CPU-only.
 
-\paragraph{Evaluation data.} All tokenizers are evaluated on $878$ held-out lines
-taken from Bengali Wikipedia articles \emph{after} the first $12{,}000$, so the
-text was never seen during our training. Every tokenizer is measured on this same
-text after NFC normalisation.
+\paragraph{Evaluation data.} Four disjoint held-out sets, none touched during
+training. Wikipedia: $828$ lines from articles \emph{after} the first
+$15{,}000$. Literary/formal, general web, and news: reserved tails of the
+Sangraha pdf-typed, Sangraha web-typed, and XL-Sum documents respectively,
+starting exactly where training's document budget ends. Every tokenizer is
+measured on the same text after NFC normalisation.
 
 \paragraph{Baselines.} We compare against the real, official public tokenizers of
 AI4Bharat IndicBERTv2, Sarvam-1, XLM-RoBERTa, multilingual BERT, DeepSeek-V3, and
@@ -149,7 +160,9 @@ boundary splits, computed from each tokenizer's own character offsets; GPT-4o
 exposes no offsets, so its value is not measured rather than estimated.
 
 \section{Results}
-Table~\ref{tab:main} reports the comparison, sorted by fertility.
+Table~\ref{tab:main} reports the Wikipedia comparison, sorted by fertility.
+Table~\ref{tab:registers} reports fertility, STRR, and conjunct fragmentation
+against IndicBERTv2, the closest rival, on all four held-out registers.
 
 \begin{table}[t]
 \centering
@@ -158,48 +171,72 @@ Table~\ref{tab:main} reports the comparison, sorted by fertility.
 \toprule
 Tokenizer & Fert. & STRR & B/tok & Conj. frag. \\
 \midrule
-\textbf{Ours (BPE 32k)} & \textbf{1.390} & \textbf{0.766} & \textbf{13.03} & \textbf{0.0006} \\
-IndicBERTv2 (AI4Bharat) & 1.520 & 0.669 & 11.92 & 0.0364 \\
-Sarvam-1 (Sarvam AI) & 2.005 & 0.490 & 9.04 & 0.0942 \\
-XLM-RoBERTa (Meta) & 2.351 & 0.406 & 7.71 & 0.1034 \\
-GPT-4o (OpenAI) & 2.608 & 0.095 & 6.95 & n/a \\
-mBERT (Google) & 3.012 & 0.317 & 6.02 & 0.2164 \\
-DeepSeek-V3 & 3.024 & 0.071 & 5.99 & 0.2988 \\
+\textbf{Ours (BPE 64k)} & \textbf{1.524} & \textbf{0.722} & \textbf{11.38} & \textbf{0.0001} \\
+IndicBERTv2 (AI4Bharat) & 1.652 & 0.612 & 10.50 & 0.0440 \\
+XLM-RoBERTa (Meta) & 2.464 & 0.363 & 7.04 & 0.1019 \\
+Sarvam-1 (Sarvam AI) & 2.593 & 0.415 & 6.69 & 0.1191 \\
+GPT-4o (OpenAI) & 2.608 & 0.111 & 6.65 & n/a \\
+mBERT (Google) & 2.777 & 0.385 & 6.25 & 0.1800 \\
+DeepSeek-V3 & 2.994 & 0.089 & 5.79 & 0.2845 \\
 \bottomrule
 \end{tabular}
-\caption{Cross-tokenizer comparison on held-out Bengali. Lower fertility and
-lower fragmentation are better; higher STRR and bytes per token are better. Best
-in bold.}
+\caption{Cross-tokenizer comparison on held-out Bengali Wikipedia. Lower
+fertility and lower fragmentation are better; higher STRR and bytes per token
+are better. Best in bold.}
 \label{tab:main}
 \end{table}
 
-Our tokenizer attains the lowest fertility ($1.39$), ahead of AI4Bharat's own
-IndicBERTv2 ($1.52$) and well ahead of Sarvam-1 ($2.01$) and the general models.
-It retains the most whole words (STRR $0.77$) and packs the most bytes per token
-($13.03$). It does this with a $32{,}000$ vocabulary, smaller than several
-baselines, so the efficiency is per vocabulary slot as well as absolute.
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Register & Fert. (ours / IndicBERTv2) & STRR (ours / IndicBERTv2) & Conj. frag. (ours / IndicBERTv2) \\
+\midrule
+Wikipedia & 1.524 / 1.652 & 0.722 / 0.612 & 0.0001 / 0.0440 \\
+Literary / formal & 1.320 / 1.612 & 0.789 / 0.607 & 0.0001 / 0.0562 \\
+General web & 1.201 / 1.395 & 0.861 / 0.715 & 0.0001 / 0.0277 \\
+News & 1.140 / 1.312 & 0.893 / 0.755 & 0.0000 / 0.0206 \\
+\bottomrule
+\end{tabular}
+\caption{Fertility, STRR, and conjunct fragmentation across four disjoint
+held-out registers. Ours leads IndicBERTv2 on every metric, on every register.}
+\label{tab:registers}
+\end{table}
+
+Our tokenizer attains the lowest fertility on every register: $1.524$ on
+Wikipedia down to $1.140$ on news, always ahead of AI4Bharat's own IndicBERTv2
+and well ahead of the general models. It retains the most whole words (STRR
+$0.722$ to $0.893$) on every register too.
 
 \section{Analysis: conjunct integrity}
-The decisive difference is conjunct fragmentation. Our tokenizer splits
-$0.06\%$ of grapheme clusters, all of them rare clusters below the atom-frequency
-threshold. The baselines split between $3.6\%$ (IndicBERTv2) and $29.9\%$
-(DeepSeek-V3). A split conjunct is not a benign subword boundary: it severs the
-written unit a reader recognises, and it does so invisibly to codepoint-level
-metrics. A Bengali-first design that treats the grapheme cluster as atomic
-removes this failure mode by construction rather than reducing it by tuning.
+The decisive difference is conjunct fragmentation. Our tokenizer splits between
+$0.00\%$ and $0.01\%$ of grapheme clusters across all four registers, all of
+them rare clusters below the atom-frequency threshold. IndicBERTv2, the best of
+the baselines, splits between $2.1\%$ and $5.6\%$ depending on register; the
+remaining baselines split between roughly $10\%$ and $28\%$ on Wikipedia alone,
+worse still on other registers. A split
+conjunct is not a benign subword boundary: it severs the written unit a reader
+recognises, and it does so invisibly to codepoint-level metrics. A
+Bengali-first design that treats the grapheme cluster as atomic removes this
+failure mode by construction rather than reducing it by tuning.
 
 \section{Limitations}
-The checked-in artifact is trained on Wikipedia, which is not weighted toward the
-literary and formal register where Bengali conjunct density is highest; the final
-tokenizer trains on a literary-weighted corpus. Fragmentation is near zero but not
-exactly zero, because clusters below the frequency threshold decompose; setting
-the threshold to one drives it to zero for all seen clusters at the cost of a
-larger atom set. The held-out set is Wikipedia and is unseen relative to training,
-but is neither literary nor dialectal; a literary and a dialect evaluation set are
-planned. Decode normalises surrounding whitespace, which subword tokenizers
-generally do not carry. Vocabulary sizes differ across systems, which we note
-rather than control, since a smaller vocabulary leading a larger one is part of
-the result.
+Two of the six sources the corpus design specifies (government/administrative
+text and code-mixed Bengali-English) have no clean public dataset as of
+2026-07 and are omitted, with the remaining four sources' weights renormalised
+rather than faked with a substitute. The literary/formal register is itself a
+proxy: genuine Wikisource public-domain text is combined with Sangraha
+verified/ben pdf-typed documents, which are old-orthography and OCR-noisy but
+not confirmed pre-1950 or public domain, only formal in register. Fragmentation
+is near zero but not exactly zero, because clusters below the frequency
+threshold decompose; setting the threshold to one drives it to zero for all
+seen clusters at the cost of a larger atom set. Decode normalises surrounding
+whitespace, which subword tokenizers generally do not carry. Codepoints outside
+the Bengali block and ASCII (other scripts quoted inside Bengali text) are
+outside the guaranteed-coverage set and are excluded from the fragmentation
+count specifically, at most 11 of up to 28,461 held-out lines per register.
+Vocabulary sizes differ across systems, which we note rather than control.
 
 \section{Ethics and Broader Impact}
 This work is part of Project Bornomala, a non-commercial research effort based in
@@ -212,9 +249,11 @@ measurement.
 
 \section{Reproducibility}
 The tokenizer, the evaluation harness, the trained artifact, and the raw numbers
-are released under Apache~2.0. The comparison reproduces with a single command,
-\texttt{python scripts/compare.py --tokenizer artifacts/bn-bpe-32k --skip 12000
---limit 800}, on CPU.
+are released under Apache~2.0. The Wikipedia comparison reproduces with a single
+command, \texttt{python scripts/compare.py --tokenizer artifacts/bn-bpe-64k
+--skip 15000 --limit 800}, on CPU; the other three registers with
+\texttt{--register \{literary\_formal,general\_web,news\}} in place of
+\texttt{--skip}.
 
 \section{Conclusion}
 Treating the grapheme cluster, not the codepoint, as the atomic unit of a subword

@@ -62,23 +62,31 @@ other system breaks many.
 
 | Tokenizer | Tokens per word | Whole words kept | Bytes per token | Broken conjuncts |
 |---|--:|--:|--:|--:|
-| **Bornomala (ours)** | **1.39** | **77%** | **13.03** | **0.06%** |
-| IndicBERTv2 (AI4Bharat) | 1.52 | 67% | 11.92 | 3.6% |
-| Sarvam-1 (Sarvam AI) | 2.01 | 49% | 9.04 | 9.4% |
-| XLM-RoBERTa (Meta) | 2.35 | 41% | 7.71 | 10.3% |
-| GPT-4o (OpenAI) | 2.61 | 10% | 6.95 | not measurable |
-| mBERT (Google) | 3.01 | 32% | 6.02 | 21.6% |
-| DeepSeek-V3 | 3.02 | 7% | 5.99 | 29.9% |
+| **Bornomala (ours)** | **1.52** | **72%** | **11.38** | **0.01%** |
+| IndicBERTv2 (AI4Bharat) | 1.65 | 61% | 10.50 | 4.4% |
+| XLM-RoBERTa (Meta) | 2.46 | 36% | 7.04 | 10.2% |
+| Sarvam-1 (Sarvam AI) | 2.59 | 42% | 6.69 | 11.9% |
+| GPT-4o (OpenAI) | 2.61 | 11% | 6.65 | not measurable |
+| mBERT (Google) | 2.78 | 39% | 6.25 | 18.0% |
+| DeepSeek-V3 | 2.99 | 9% | 5.79 | 28.5% |
+
+This holds up beyond Wikipedia, too: measured separately on literary/formal,
+general web, and news held-out text, ours needs the fewest tokens per word,
+keeps the most whole words, and breaks the fewest conjuncts against IndicBERTv2
+on every one of those registers as well (fragmentation stays at essentially
+zero, 0.00-0.01%, on all four), not only the one shown above. Full per-register
+numbers:
+[`bengali-tokenizer/benchmarks/bengali-comparison.md`](bengali-tokenizer/benchmarks/bengali-comparison.md).
 
 > **How this was measured, so anyone can check.** Our tokenizer was trained on
-> the first 12,000 articles of the Bengali Wikipedia dump (wikimedia/wikipedia,
-> 20231101.bn). It was then tested, along with every other tokenizer, on 878
-> held-out lines from Bengali Wikipedia articles that come after those 12,000, so
-> the test text was never seen in training. Every other tokenizer is its real,
-> official public tokenizer, run on the same text. A broken conjunct is a written
-> unit split across a token boundary, computed from each tokenizer's own
-> character offsets; GPT-4o exposes none, so its figure is left unmeasured rather
-> than guessed. The full method and raw numbers are in the repository, and the
+> a literary-weighted corpus (Wikisource, Sangraha, Wikipedia, XL-Sum news; see
+> the benchmarks doc for the full mix). It was then tested, along with every
+> other tokenizer, on 828 held-out lines from Bengali Wikipedia articles never
+> seen in training. Every other tokenizer is its real, official public
+> tokenizer, run on the same text. A broken conjunct is a written unit split
+> across a token boundary, computed from each tokenizer's own character
+> offsets; GPT-4o exposes none, so its figure is left unmeasured rather than
+> guessed. The full method and raw numbers are in the repository, and the
 > comparison reruns with one command.
 
 **An open tool that makes the inequity visible.** MotherTongueIndex lets anyone
