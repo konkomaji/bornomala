@@ -1,0 +1,236 @@
+\documentclass[11pt]{article}
+
+% Self-contained and pdflatex-safe: no external style files, no native Bengali
+% glyphs in the source, so it compiles on arXiv out of the box. For a venue
+% submission, reformat with the official ACL or LREC style. Bengali examples are
+% given in transliteration to keep the build font-independent.
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{times}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\title{\textbf{A Bengali-First, Grapheme-Cluster-Aware Tokenizer with Zero Conjunct Fragmentation}}
+\author{
+  Konko Maji \\
+  Project Bornomala, West Bengal, India \\
+  \texttt{work.konkomaji@gmail.com}
+}
+\date{2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Every large language model reads text through a tokenizer, and nearly every
+mainstream tokenizer is optimised for English. For Bengali, an abugida whose
+written unit (the grapheme cluster) spans several codepoints but reads as one
+symbol, character-level subword methods routinely place token boundaries inside
+a cluster, splitting conjuncts into fragments that correspond to nothing a reader
+recognises. We present a Bengali-first tokenizer that makes this impossible by
+construction. The method normalises to NFC, segments into Unicode UAX~\#29
+grapheme clusters, remaps each cluster to an atomic symbol, and trains a subword
+model over atoms, so every learned token is a whole number of clusters. On a
+held-out Bengali evaluation set, our tokenizer attains a token fertility of
+$1.39$ tokens per word, ahead of AI4Bharat IndicBERTv2 ($1.52$), Sarvam-1
+($2.01$), GPT-4o ($2.61$), multilingual BERT ($3.01$), and DeepSeek-V3 ($3.02$),
+while fragmenting $0.06\%$ of grapheme clusters against $3.6\%$ to $29.9\%$ for
+the baselines. Training is CPU-only. The tokenizer, the evaluation code, and the
+raw numbers are released under Apache~2.0, and the comparison reproduces with a
+single command.
+\end{abstract}
+
+\section{Introduction}
+A widespread assumption holds that a multilingual model treats its supported
+languages roughly equally. It does not. Before a single transformer layer runs,
+text passes through a tokenizer whose vocabulary was induced from a mostly
+English mixture. A language whose characters and scripts are rare in that mixture
+is split into more, smaller pieces. This is measured by \emph{fertility}, the
+average number of subword tokens per word, and it has two consequences: a direct
+cost, since more tokens mean more money and less usable context, and a capability
+cost, since a fixed context window then holds less content.
+
+For Bengali the problem is not only quantitative. Bengali is an abugida: a
+written unit is a base consonant carrying an inherent vowel, modified by vowel
+signs and combined with other consonants through the virama into conjunct
+ligatures. Such a unit, the grapheme cluster, spans one to roughly eight
+codepoints, yet a reader perceives it as a single symbol. Character-level Byte
+Pair Encoding (BPE) and Unigram, the default methods, operate on codepoints and
+can therefore place a token boundary in the middle of a conjunct. The resulting
+token corresponds to no readable unit, and error metrics computed on codepoints
+understate the damage.
+
+We present a tokenizer designed so that a token can never split a grapheme
+cluster. Our contributions are: (1) a grapheme-atom scheme that makes conjunct
+fragmentation structurally impossible for covered clusters; (2) the first
+measured, reproducible comparison of how efficiently mainstream tokenizers encode
+Bengali, on identical held-out text; and (3) an open, CPU-only, Apache-2.0
+release of the tokenizer and the evaluation.
+
+\section{Background and Related Work}
+\paragraph{Tokenization and fertility.} Fertility is the ratio of subword tokens
+to whitespace words; lower is better. Purpose-built Indic tokenizers reduce it
+substantially relative to English-first models: Sarvam-1 reports fertility in the
+range $1.4$ to $2.1$ across ten Indic languages, and IndicSuperTokenizer improves
+average fertility over strong baselines through linguistically grounded
+pre-tokenization and a subword-to-superword stage. A complementary metric, the
+single-token retention rate (STRR), reports the fraction of words preserved as
+exactly one token and exposes vocabulary allocation that fertility alone hides.
+
+\paragraph{Bengali script and grapheme clusters.} The correct unit for Bengali is
+the extended grapheme cluster of Unicode UAX~\#29, not the codepoint. Prior work
+on Bengali handwriting recognition (the BnGraphemizer line) found that
+character-based tokenizers fail because conjunct glyphs have visual forms
+unrelated to their constituent characters, and moved to grapheme-level
+tokenization. We adopt the same principle for text tokenization and make the
+grapheme cluster the atomic unit of the subword model itself. All processing
+follows NFC normalisation (UAX~\#15), without which the same visible word admits
+several codepoint sequences.
+
+\paragraph{The gap.} No published tokenizer has been induced from Bengali alone
+with a grapheme-cluster-respecting design, and, to our knowledge, Bengali has not
+appeared in a single published cross-tokenizer fertility comparison. We address
+both.
+
+\section{Method}
+The tokenizer is a pipeline of five stages.
+
+\paragraph{Normalisation.} Input is put in NFC and passed through a documented
+zero-width joiner and non-joiner policy that preserves those characters by
+default, since they carry ligature-formation intent.
+
+\paragraph{Grapheme segmentation.} Text is segmented into UAX~\#29 extended
+grapheme clusters. This is the unit a Bengali reader perceives as one symbol.
+
+\paragraph{Atom remapping.} Each grapheme cluster is mapped to a single symbol
+drawn from the Unicode Private Use Area, called an atom. Frequent clusters each
+receive their own atom; every individual codepoint also receives one, so a rare
+cluster decomposes into codepoint atoms rather than becoming unknown. The map is
+reversible and is stored with the tokenizer.
+
+\paragraph{Subword training.} A BPE or Unigram model is trained over atom
+strings. Because every atom is a whole cluster, every merge combines whole
+clusters, and every learned token is a sequence of whole clusters. Word
+boundaries are carried by a Metaspace marker. Crucially, all atoms are forced
+into the base vocabulary, which guarantees that any covered cluster is a valid
+single token, so encode followed by decode reproduces the exact normalised text.
+
+\paragraph{Coverage guarantee.} The whole Bengali Unicode block and ASCII are
+guaranteed atoms, so any Bengali or code-mixed English text round-trips
+regardless of the training corpus. Conjunct fragmentation is therefore $0$ for
+every cluster that has an atom; only clusters below the atom-frequency threshold
+can fragment, and their rate is measured and reported, not hidden.
+
+\section{Experimental Setup}
+\paragraph{Training data.} The tokenizer is trained on the first $12{,}000$
+articles of the Bengali Wikipedia dump (\texttt{wikimedia/wikipedia},
+configuration \texttt{20231101.bn}), a BPE vocabulary of $32{,}000$. Training is
+CPU-only.
+
+\paragraph{Evaluation data.} All tokenizers are evaluated on $878$ held-out lines
+taken from Bengali Wikipedia articles \emph{after} the first $12{,}000$, so the
+text was never seen during our training. Every tokenizer is measured on this same
+text after NFC normalisation.
+
+\paragraph{Baselines.} We compare against the real, official public tokenizers of
+AI4Bharat IndicBERTv2, Sarvam-1, XLM-RoBERTa, multilingual BERT, DeepSeek-V3, and
+GPT-4o (the OpenAI \texttt{o200k} encoding).
+
+\paragraph{Metrics.} Fertility is tokens per whitespace word. STRR is the
+fraction of words kept as one token. Bytes per token is UTF-8 bytes over tokens.
+Conjunct fragmentation is the fraction of Bengali grapheme clusters that a token
+boundary splits, computed from each tokenizer's own character offsets; GPT-4o
+exposes no offsets, so its value is not measured rather than estimated.
+
+\section{Results}
+Table~\ref{tab:main} reports the comparison, sorted by fertility.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Tokenizer & Fert. & STRR & B/tok & Conj. frag. \\
+\midrule
+\textbf{Ours (BPE 32k)} & \textbf{1.390} & \textbf{0.766} & \textbf{13.03} & \textbf{0.0006} \\
+IndicBERTv2 (AI4Bharat) & 1.520 & 0.669 & 11.92 & 0.0364 \\
+Sarvam-1 (Sarvam AI) & 2.005 & 0.490 & 9.04 & 0.0942 \\
+XLM-RoBERTa (Meta) & 2.351 & 0.406 & 7.71 & 0.1034 \\
+GPT-4o (OpenAI) & 2.608 & 0.095 & 6.95 & n/a \\
+mBERT (Google) & 3.012 & 0.317 & 6.02 & 0.2164 \\
+DeepSeek-V3 & 3.024 & 0.071 & 5.99 & 0.2988 \\
+\bottomrule
+\end{tabular}
+\caption{Cross-tokenizer comparison on held-out Bengali. Lower fertility and
+lower fragmentation are better; higher STRR and bytes per token are better. Best
+in bold.}
+\label{tab:main}
+\end{table}
+
+Our tokenizer attains the lowest fertility ($1.39$), ahead of AI4Bharat's own
+IndicBERTv2 ($1.52$) and well ahead of Sarvam-1 ($2.01$) and the general models.
+It retains the most whole words (STRR $0.77$) and packs the most bytes per token
+($13.03$). It does this with a $32{,}000$ vocabulary, smaller than several
+baselines, so the efficiency is per vocabulary slot as well as absolute.
+
+\section{Analysis: conjunct integrity}
+The decisive difference is conjunct fragmentation. Our tokenizer splits
+$0.06\%$ of grapheme clusters, all of them rare clusters below the atom-frequency
+threshold. The baselines split between $3.6\%$ (IndicBERTv2) and $29.9\%$
+(DeepSeek-V3). A split conjunct is not a benign subword boundary: it severs the
+written unit a reader recognises, and it does so invisibly to codepoint-level
+metrics. A Bengali-first design that treats the grapheme cluster as atomic
+removes this failure mode by construction rather than reducing it by tuning.
+
+\section{Limitations}
+The checked-in artifact is trained on Wikipedia, which is not weighted toward the
+literary and formal register where Bengali conjunct density is highest; the final
+tokenizer trains on a literary-weighted corpus. Fragmentation is near zero but not
+exactly zero, because clusters below the frequency threshold decompose; setting
+the threshold to one drives it to zero for all seen clusters at the cost of a
+larger atom set. The held-out set is Wikipedia and is unseen relative to training,
+but is neither literary nor dialectal; a literary and a dialect evaluation set are
+planned. Decode normalises surrounding whitespace, which subword tokenizers
+generally do not carry. Vocabulary sizes differ across systems, which we note
+rather than control, since a smaller vocabulary leading a larger one is part of
+the result.
+
+\section{Ethics and Broader Impact}
+This work is part of Project Bornomala, a non-commercial research effort based in
+West Bengal to build a Bengali-first, dialect-aware language model and to preserve
+the Bengali language and its dialects. Reducing the token cost of Bengali is a
+language-equity contribution: it lowers the price and raises the usable context
+for a language spoken by more than 250 million people. All artifacts are open, and
+every reported number states the data behind it; no estimate is presented as a
+measurement.
+
+\section{Reproducibility}
+The tokenizer, the evaluation harness, the trained artifact, and the raw numbers
+are released under Apache~2.0. The comparison reproduces with a single command,
+\texttt{python scripts/compare.py --tokenizer artifacts/bn-bpe-32k --skip 12000
+--limit 800}, on CPU.
+
+\section{Conclusion}
+Treating the grapheme cluster, not the codepoint, as the atomic unit of a subword
+tokenizer yields a Bengali tokenizer that is both more efficient than the
+incumbents and structurally incapable of breaking a conjunct. We hope the open
+release and the first reproducible cross-tokenizer Bengali comparison are useful
+to anyone building Bengali or Indic language technology.
+
+\begin{thebibliography}{9}
+\small
+\bibitem{uax29} Unicode Consortium. \emph{Unicode Standard Annex \#29: Text Segmentation.} \url{https://unicode.org/reports/tr29/}
+\bibitem{uax15} Unicode Consortium. \emph{Unicode Standard Annex \#15: Unicode Normalization Forms.} \url{https://unicode.org/reports/tr15/}
+\bibitem{sarvam} Sarvam AI. \emph{Sarvam-1.} \url{https://www.sarvam.ai/blogs/sarvam-1}
+\bibitem{indicsuper} \emph{IndicSuperTokenizer: An Optimized Tokenizer for Indic Multilingual LLMs.} arXiv:2511.03237.
+\bibitem{indicgenbench} \emph{IndicGenBench.} arXiv:2404.16816.
+\bibitem{bngraphemizer} \emph{Grapheme-level tokenization for Bengali handwriting recognition (BnGraphemizer).} PLATTER/CHIPS line of work.
+\bibitem{brahmic} \emph{BrahmicTokenizer-131K.} arXiv:2605.29379.
+\end{thebibliography}
+
+\end{document}

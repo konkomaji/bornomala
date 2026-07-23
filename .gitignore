@@ -31,3 +31,10 @@ Thumbs.db
 
 # Local Claude Code config
 .claude/
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.synctex.gz
+bengali-tokenizer/paper/*.pdf
