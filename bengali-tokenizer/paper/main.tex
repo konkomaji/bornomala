@@ -238,6 +238,68 @@ outside the guaranteed-coverage set and are excluded from the fragmentation
 count specifically, at most 11 of up to 28,461 held-out lines per register.
 Vocabulary sizes differ across systems, which we note rather than control.
 
+\section{Verification and Measurement Integrity}
+A methodological point we consider as important as the result itself: our own
+evaluation code was wrong twice before it was right, and both mistakes would
+have been invisible in the final numbers had we not verified the measurement
+against ground truth rather than trusting a single re-run. We record both
+in full, since a paper reporting a tokenizer's own advantage has an obligation
+to show its evaluation code was checked as carefully as the tokenizer was.
+
+\paragraph{A false alarm from an unverified Unicode assumption.} Three Bengali
+consonants formed with a nukta diacritic (RRA, U+09DC; RHA, U+09DD; YYA,
+U+09DF) have two valid spellings: a precomposed single codepoint, and a
+decomposed base-consonant-plus-nukta sequence. We initially assumed NFC
+normalisation left these two spellings inconsistently encoded across corpus
+sources, which would fragment vocabulary between two spellings of one letter.
+Checked directly against Python's \texttt{unicodedata} rather than left as an
+assumption: NFC already unifies both spellings into one, just onto the
+decomposed form, a Unicode Standard "composition exclusion" that is permanent
+and deliberate, not a bug in any tool in our pipeline. There was no
+cross-source inconsistency to fix. The change we shipped (re-composing to the
+single dedicated codepoint) is a real but minor efficiency improvement, not a
+correctness fix for a bug that never existed, and we say so plainly rather
+than let the original, more dramatic framing stand.
+
+\paragraph{A three-version bug in our own fragmentation counter.} The
+conjunct fragmentation metric is the paper's central claim, which makes an
+error in measuring it the most consequential place one could occur. Our first
+implementation compared grapheme-cluster counts of adjacent token surfaces
+pairwise; it produced false positives whenever two tokens were each a
+complete, correctly-decoding cluster on their own but simply had not been
+BPE-merged into one token; nothing was split at the codepoint level, but the
+heuristic could not tell the difference. Replacing it with a character-offset
+method (matching how the baseline tokenizers are already measured) introduced
+two further, distinct bugs: the word-boundary marker prepends a space to the
+first token of every sequence that is not present in the reference text,
+shifting every subsequent offset by one and manufacturing further false
+positives; and the human-readable token-surface view returns the literal
+five-character string \texttt{<unk>} in place of missing text for codepoints
+genuinely outside this tokenizer's coverage (Greek, Arabic, and Japanese text
+quoted inside real Bengali Wikipedia and news articles all occur in our
+held-out sets), silently desynchronising the offsets on any such line. Both
+were caught by a hard assertion, added specifically to catch this class of
+mistake, that the reconstructed text must match the reference exactly on every
+line measured; the assertion failed on every held-out register on first run
+after the offset-based rewrite, which is what surfaced both bugs before either
+was reported. The corrected implementation trims the marker's leading space
+and excludes, from the fragmentation count only, lines that do not cleanly
+round-trip (fertility, STRR, and bytes/token still count them). All results in
+Section~5 are from this corrected implementation. An intermediate, still-wrong
+version of the numbers was briefly written into this project's own
+non-archival documentation before the second and third bugs were found; it is
+not the version reported here, and the repository's own changelog records the
+correction rather than removing the trace of it.
+
+\paragraph{Why report this here.} Neither correction changes the paper's
+central claim (Table~\ref{tab:registers} still holds under the corrected
+measurement, and by a larger margin than the intermediate, buggy pass showed).
+We include this section because a tokenizer comparison is only as trustworthy
+as the code that measured it, that code is rarely scrutinised as closely as
+the artifact it evaluates, and stating what went wrong and how it was caught
+is more useful to a reader trying to reproduce or extend this work than
+silence would be.
+
 \section{Ethics and Broader Impact}
 This work is part of Project Bornomala, a non-commercial research effort based in
 West Bengal to build a Bengali-first, dialect-aware language model and to preserve
