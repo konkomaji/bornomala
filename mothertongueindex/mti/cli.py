@@ -15,6 +15,9 @@ import argparse
 import json
 import sys
 
+from .registry import list_models, DEFAULT_MODELS, GROUPS
+from .analyze import analyze, cost_explanation
+
 # Windows consoles default to a legacy codepage (cp1252) that cannot encode
 # Bengali, arrows, or box characters. Force UTF-8 so multilingual output works.
 for _stream in (sys.stdout, sys.stderr):
@@ -22,9 +25,6 @@ for _stream in (sys.stdout, sys.stderr):
         _stream.reconfigure(encoding="utf-8")
     except (AttributeError, ValueError):  # pragma: no cover
         pass
-
-from .registry import list_models, DEFAULT_MODELS, GROUPS
-from .analyze import analyze, cost_explanation
 
 
 def _fmt_table(results) -> str:

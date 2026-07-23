@@ -4,7 +4,6 @@ Hugging Face downloads and no auth. These assert the invariants the whole tool
 depends on, not specific token counts (which can shift with library versions).
 """
 
-import pytest
 
 from mti.segment import grapheme_clusters, words, script_of, dominant_script
 from mti.metrics import compute

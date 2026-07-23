@@ -73,7 +73,7 @@ _ROWS: list[Language] = [
     Language("khm", "Khmer",       "ខ្មែរ",         "Khmer",       "Austroasiatic",            "Cambodia",        16),
 ]
 
-LANGUAGES: dict[str, Language] = {l.code: l for l in _ROWS}
+LANGUAGES: dict[str, Language] = {lang.code: lang for lang in _ROWS}
 
 
 def all_languages() -> list[Language]:
@@ -81,7 +81,7 @@ def all_languages() -> list[Language]:
 
 
 def by_script(script: str) -> list[Language]:
-    return [l for l in _ROWS if l.script == script]
+    return [lang for lang in _ROWS if lang.script == script]
 
 
 def get(code: str) -> Language | None:
