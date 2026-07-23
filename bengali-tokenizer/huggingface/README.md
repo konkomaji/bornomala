@@ -32,11 +32,9 @@ It is the first component of [Project Bornomala](https://github.com/konkomaji/bo
 a non-commercial research effort from West Bengal to build a Bengali-first,
 dialect-aware language model and to preserve the Bengali language and its dialects.
 
-> **Version 0.2 (this card, staged — not yet the live model on the Hub).**
-> Trained on a literary-weighted corpus (Wikisource, AI4Bharat Sangraha,
-> Wikipedia, XL-Sum news), 64k vocabulary. The Hub currently still serves the
-> v0.1 Wikipedia-only model; this file will be pushed with the v0.2 tokenizer
-> files together, not before.
+> **Version 0.2.** Trained on a literary-weighted corpus (Wikisource,
+> AI4Bharat Sangraha, Wikipedia, XL-Sum news), 64k vocabulary. Supersedes the
+> v0.1 Wikipedia-only model.
 
 ## Key features
 
