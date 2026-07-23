@@ -5,16 +5,16 @@ Maps a short model id to a display name and a backend spec. This is the single
 place that decides which tokenizers the tool knows about.
 
 Availability tiers:
-  * ungated  — loads with no auth. Works out of the box.
-  * gated    — needs HF_TOKEN (Llama, Gemma, Mistral, Command-R). Supported.
-  * estimate — no public tokenizer at all (Claude, Gemini, Grok). Reported as a
+  * ungated  - loads with no auth. Works out of the box.
+  * gated    - needs HF_TOKEN (Llama, Gemma, Mistral, Command-R). Supported.
+  * estimate - no public tokenizer at all (Claude, Gemini, Grok). Reported as a
                clearly-labelled estimate, never as measured (spec rule E4).
 
 `family` groups models that share a tokenizer. Add a model by adding one row.
 
 A note on tiers being best-effort: gated/ungated status on the Hugging Face Hub
 changes over time. If a repo flips, the backend fails soft (reports the model as
-unavailable with a hint) rather than crashing the run — so an out-of-date tier
+unavailable with a hint) rather than crashing the run - so an out-of-date tier
 never breaks the tool, it just mislabels one row's expectation.
 """
 
@@ -49,7 +49,7 @@ _ROWS: list[Model] = [
     Model("gpt-5",    "GPT-5 family",      "openai-o200k",  "ungated", _tk("o200k_base"),
           "o200k_base (assumed)"),
     Model("gpt-4o",   "GPT-4o / GPT-4.1",  "openai-o200k",  "ungated", _tk("o200k_base"),
-          "o200k_base — also GPT-4o-mini, o1/o3"),
+          "o200k_base - also GPT-4o-mini, o1/o3"),
     Model("gpt-4",    "GPT-4 / GPT-3.5",   "openai-cl100k", "ungated", _tk("cl100k_base"),
           "cl100k_base"),
 
@@ -96,7 +96,7 @@ _ROWS: list[Model] = [
     Model("indicbert","IndicBERT (AI4Bharat)","indicbert","ungated", _hf("ai4bharat/indic-bert"),
           "12 Indian languages"),
     Model("titulm",   "TituLLM (Bengali)", "titulm",   "ungated", _hf("hishab/titulm-llama-3.2-1b-v2.0"),
-          "Hishab — Bengali-focused, closest prior art"),
+          "Hishab - Bengali-focused, closest prior art"),
     Model("param1",   "Param-1 (BharatGen)","param1",  "gated",   _hf("bharatgenai/Param-1-2.9B-Instruct"),
           "government-backed, 25% Indic"),
 ]
@@ -118,7 +118,7 @@ def get_model(model_id: str) -> Model:
 
 
 # A no-auth default set spanning OpenAI, open-weight frontier, multilingual, and
-# Indic — every one loads without an HF token.
+# Indic - every one loads without an HF token.
 DEFAULT_MODELS = ["gpt-4o", "gpt-4", "qwen3", "deepseek", "sarvam1", "xlmr", "claude", "gemini"]
 
 # Convenience groups for the CLI / web presets.

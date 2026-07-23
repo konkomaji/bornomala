@@ -3,11 +3,11 @@ Text segmentation primitives.
 
 Three units matter for tokenizer analysis and they are routinely conflated:
 
-  * word            — whitespace-delimited run. Fertility is defined over this
+  * word            - whitespace-delimited run. Fertility is defined over this
                       (spec §4.1: words(D) is whitespace segmentation).
-  * codepoint       — a single Unicode scalar. What naive tools count as a
+  * codepoint       - a single Unicode scalar. What naive tools count as a
                       "character". Misleading for Bengali (§3.1.2).
-  * grapheme cluster— what a human reads as one written unit. For Bengali a
+  * grapheme cluster- what a human reads as one written unit. For Bengali a
                       base consonant plus its conjuncts, matras, reph, phalas.
                       This is the correct notion of "character" (§3.1.1).
 

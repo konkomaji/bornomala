@@ -1,5 +1,5 @@
 """
-Reasoning probe — MEASURED (not derived) capability check across languages.
+Reasoning probe - MEASURED (not derived) capability check across languages.
 
 `mti.capability` *derives* a capability-risk signal from tokenization alone
 (effective context loss). That is a prediction, not a measurement. This script
@@ -7,7 +7,7 @@ is the measurement: it runs an actual model on the same reasoning items in
 English and in a target language, and reports the accuracy gap.
 
 It is deliberately kept OUT of the core package because it needs a model or an
-API key and (optionally) a GPU — the Bornomala plan runs this class of work on a
+API key and (optionally) a GPU - the Bornomala plan runs this class of work on a
 separate rented machine, not on the local CPU box (spec §15). The core tool
 stays pure-CPU and dependency-light; this is opt-in.
 
@@ -15,7 +15,7 @@ Design:
   * A small set of language-neutral reasoning items (arithmetic word problems,
     simple logic) is provided in English. You supply faithful translations into
     the target language (or plug in a translation step).
-  * The probe queries a model via a pluggable `answer_fn(prompt) -> str` — wire
+  * The probe queries a model via a pluggable `answer_fn(prompt) -> str` - wire
     it to the OpenAI/Anthropic/HF endpoint of your choice.
   * It scores exact-match accuracy per language and reports:
         accuracy(EN), accuracy(target), gap, and mean tokens/item per language
@@ -37,7 +37,7 @@ from mti.analyze import analyze_one
 
 
 # Minimal seed items. Extend with a real benchmark (e.g. translated GSM8K subset,
-# MGSM, or native-authored items — native authoring is preferred; see spec §13.5).
+# MGSM, or native-authored items - native authoring is preferred; see spec §13.5).
 SEED_ITEMS = [
     {"id": "arith1", "question_en": "A shop sells pens at 7 rupees each. How much do 6 pens cost? Answer with a number only.", "answer": "42"},
     {"id": "arith2", "question_en": "There are 3 baskets with 8 apples each. How many apples in total? Answer with a number only.", "answer": "24"},
@@ -101,11 +101,11 @@ def main(argv=None) -> int:
         with open(args.items, encoding="utf-8") as f:
             items = json.load(f)
 
-    # No answer_fn wired here — dry mode. Wire one in code for a measured run.
+    # No answer_fn wired here - dry mode. Wire one in code for a measured run.
     score = run(items, args.language, args.model, question_key=args.question_key, answer_fn=None)
     print(json.dumps(score.__dict__, ensure_ascii=False, indent=2))
     if not score.measured:
-        print("\n[dry mode] No answer_fn wired — reported tokens only, no accuracy. "
+        print("\n[dry mode] No answer_fn wired - reported tokens only, no accuracy. "
               "Wire an OpenAI/Anthropic/HF endpoint to measure the reasoning gap.")
     return 0
 

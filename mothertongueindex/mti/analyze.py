@@ -53,7 +53,7 @@ def analyze_one(text: str, model_id: str, want_tokens: bool = True, anchor_engli
         enc: Encoding = backend.encode(text)
     except BackendError as e:
         return Result(model_id, model.display, available=False, error=str(e))
-    except Exception as e:  # pragma: no cover — defensive
+    except Exception as e:  # pragma: no cover - defensive
         return Result(model_id, model.display, available=False, error=f"{type(e).__name__}: {e}")
 
     m = compute(
@@ -127,7 +127,7 @@ def cost_explanation(results: list[Result], baseline_model_english_fertility: fl
     """Plain-language 'why the cost moves' notes derived from the metrics.
 
     Compares each available model's fertility to the best (lowest) among them and
-    states the multiplier — the number that directly explains a token-count, and
+    states the multiplier - the number that directly explains a token-count, and
     therefore cost, difference on the same content.
     """
     avail = [r for r in results if r.available and r.metrics]
@@ -140,7 +140,7 @@ def cost_explanation(results: list[Result], baseline_model_english_fertility: fl
         tag = " (estimate)" if r.metrics.estimated else ""
         if r is best:
             lines.append(
-                f"{r.display}{tag}: most efficient here — {r.metrics.fertility:.2f} tokens/word, "
+                f"{r.display}{tag}: most efficient here - {r.metrics.fertility:.2f} tokens/word, "
                 f"{r.metrics.bytes_per_token:.1f} bytes/token."
             )
         else:

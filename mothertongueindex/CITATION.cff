@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use MotherTongueIndex, please cite it as below."
+title: "MotherTongueIndex: A Multilingual Tokenizer Efficiency Analyzer"
+abstract: >-
+  MotherTongueIndex measures how efficiently the tokenizers of mainstream large
+  language models encode text in any language, anchored to English. It reports
+  fertility, single-token retention, bytes per token, and a derived
+  reasoning-capability impact from effective-context loss, distinguishing exact
+  counts from labelled estimates. It is a subproject of Project Bornomala.
+type: software
+authors:
+  - family-names: Maji
+    given-names: Konko
+    email: work.konkomaji@gmail.com
+repository-code: "https://github.com/konkomaji/bornomala"
+url: "https://github.com/konkomaji/bornomala/tree/main/mothertongueindex"
+license: Apache-2.0
+version: "0.1.0"
+date-released: "2026-07-23"
+keywords:
+  - tokenization
+  - fertility
+  - multilingual
+  - language-equity
+  - llm
+  - unicode
+  - bengali
+  - indic

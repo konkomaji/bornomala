@@ -1,5 +1,5 @@
 """
-MotherTongueIndex — multilingual tokenizer efficiency analyzer.
+MotherTongueIndex - multilingual tokenizer efficiency analyzer.
 
 Runs the real tokenizers of mainstream LLMs against text in any language and
 reports how efficiently each one encodes it: token count, fertility

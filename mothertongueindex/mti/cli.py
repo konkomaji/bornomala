@@ -32,11 +32,11 @@ def _fmt_table(results) -> str:
     rows = []
     for r in results:
         if not r.available:
-            rows.append([r.display, "—", "—", "—", "—", "—", "—", "—", "unavailable"])
+            rows.append([r.display, "-", "-", "-", "-", "-", "-", "-", "unavailable"])
             continue
         m = r.metrics
         flag = "est" if m.estimated else ""
-        xen = f"{r.vs_english:.2f}x" if r.vs_english else "—"
+        xen = f"{r.vs_english:.2f}x" if r.vs_english else "-"
         rows.append([
             r.display,
             str(m.n_tokens),
@@ -63,7 +63,7 @@ def _show_tokens(results, text: str) -> str:
             out.append(f"\n## {r.display}: unavailable ({r.error})")
             continue
         if not r.tokens:
-            out.append(f"\n## {r.display}: {r.metrics.n_tokens} tokens (no surface strings — estimate)")
+            out.append(f"\n## {r.display}: {r.metrics.n_tokens} tokens (no surface strings - estimate)")
             continue
         joined = "│".join(t.replace("\n", "⏎") for t in r.tokens)
         out.append(f"\n## {r.display}: {r.metrics.n_tokens} tokens\n{joined}")
@@ -127,7 +127,7 @@ def main(argv=None) -> int:
                 any_en = True
                 tag = " (estimate)" if r.metrics.estimated else ""
                 print(f"  - {r.display}{tag}: {r.vs_english:.2f}x English "
-                      f"— ~{r.vs_english:.2f}x the tokens, and cost, per word.")
+                      f"- ~{r.vs_english:.2f}x the tokens, and cost, per word.")
         if not any_en:
             print("  - (input looks like English, or no model loaded)")
         print("\nAcross models (which tokenizer is most efficient for THIS text):")

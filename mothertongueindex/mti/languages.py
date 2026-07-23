@@ -1,5 +1,5 @@
 """
-Language metadata — the "all languages" layer.
+Language metadata - the "all languages" layer.
 
 The engine itself is script-agnostic: it will tokenize and score text in ANY of
 the world's languages, because it works from Unicode grapheme clusters and the
@@ -33,7 +33,7 @@ class Language:
 
 
 # A broad, deliberately diverse set spanning scripts and families. Not
-# exhaustive — the tool works on languages absent from this list too; these are
+# exhaustive - the tool works on languages absent from this list too; these are
 # the ones we give first-class labels and presets to.
 _ROWS: list[Language] = [
     Language("eng", "English",     "English",    "Latin",       "Indo-European (Germanic)", "Global",        1500),
@@ -89,7 +89,7 @@ def get(code: str) -> Language | None:
 
 
 # Scripts with well-known tokenization pain (non-Latin, especially Indic/complex
-# scripts) — useful for the tool's "who is most disadvantaged vs English" view.
+# scripts) - useful for the tool's "who is most disadvantaged vs English" view.
 COMPLEX_SCRIPTS = {
     "Bengali", "Devanagari", "Tamil", "Telugu", "Kannada", "Malayalam",
     "Gujarati", "Gurmukhi", "Oriya", "Sinhala", "Myanmar", "Khmer",

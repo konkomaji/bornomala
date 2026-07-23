@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Project Bornomala specification
+    url: https://github.com/konkomaji/bornomala/blob/main/PROJECT_BORNOMALA_Technical_Specification.md
+    about: The parent programme, its tracks, roadmap, and rationale.
+  - name: Security report
+    url: https://github.com/konkomaji/bornomala/blob/main/SECURITY.md
+    about: Please report vulnerabilities privately, not as public issues.

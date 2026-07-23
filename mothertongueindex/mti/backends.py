@@ -3,16 +3,16 @@ Tokenizer backends.
 
 A backend turns text into a token list for one family of models. Three exist:
 
-  TiktokenBackend  — OpenAI GPT models via the public `tiktoken` BPE ranks.
+  TiktokenBackend  - OpenAI GPT models via the public `tiktoken` BPE ranks.
                      Exact. No auth, small download, cached locally.
 
-  HFBackend        — any Hugging Face `tokenizers`/`transformers` tokenizer:
+  HFBackend        - any Hugging Face `tokenizers`/`transformers` tokenizer:
                      Llama, Gemma, Qwen, Mistral, DeepSeek, Sarvam, XLM-R,
                      mBERT, BLOOM, IndicSuperTokenizer, etc. Exact. Some repos
                      are gated (Llama, Gemma) and need HF_TOKEN; ungated ones
                      work out of the box.
 
-  EstimateBackend  — models with no public tokenizer (notably Claude). Produces
+  EstimateBackend  - models with no public tokenizer (notably Claude). Produces
                      a clearly-labelled *estimate* from a bytes-per-token ratio,
                      never presented as measured (spec rule E4).
 
@@ -205,5 +205,5 @@ class EstimateBackend:
             n_tokens=n,
             single_token_words=0,
             estimated=True,
-            note="heuristic estimate — no public tokenizer",
+            note="heuristic estimate - no public tokenizer",
         )

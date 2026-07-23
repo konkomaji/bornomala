@@ -26,7 +26,7 @@ for cross-language script studies).
 
 from __future__ import annotations
 
-# UDHR Article 1 — public domain. Stable, register-neutral, ~34 words.
+# UDHR Article 1 - public domain. Stable, register-neutral, ~34 words.
 ENGLISH_REFERENCE = (
     "All human beings are born free and equal in dignity and rights. "
     "They are endowed with reason and conscience and should act towards "
@@ -58,7 +58,7 @@ def vs_english_ratio(model_id: str, text_fertility: float) -> float | None:
     """text_fertility / english_reference_fertility(model). None if unavailable.
 
     >1.0 means the language spends more tokens per word than English does on the
-    same model — i.e. costs more for equivalent structure.
+    same model - i.e. costs more for equivalent structure.
     """
     ef = english_reference_fertility(model_id)
     if not ef:

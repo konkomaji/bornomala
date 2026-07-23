@@ -2,7 +2,7 @@ r"""
 Reasoning-capability impact of tokenization.
 
 Token *inefficiency* is not only a cost problem. It is a capability problem, and
-this module makes that link explicit and quantitative — while being scrupulous
+this module makes that link explicit and quantitative - while being scrupulous
 about what is measured versus derived.
 
 The mechanism (spec §4.1, IndicGenBench arXiv:2404.16816):
@@ -29,7 +29,7 @@ What this module computes (DERIVED, not measured):
 
 What this module does NOT do:
   It does not measure reasoning accuracy. That requires running a model on a
-  benchmark — see `eval/reasoning_probe.py`, which is designed to run on a
+  benchmark - see `eval/reasoning_probe.py`, which is designed to run on a
   separate machine with an API key. Nothing here is presented as a measured
   capability score.
 """
@@ -110,7 +110,7 @@ def summary_line(ci: CapabilityImpact) -> str:
     pct = ci.effective_context_ratio * 100
     tag = " (from estimated tokens)" if ci.estimated else ""
     return (
-        f"{ci.model_id}: {ci.risk_band} capability risk{tag} — your language gets "
+        f"{ci.model_id}: {ci.risk_band} capability risk{tag} - your language gets "
         f"~{pct:.0f}% of English's usable context on this model "
         f"(fertility {ci.vs_english:.2f}x English). {ci.explanation}"
     )
