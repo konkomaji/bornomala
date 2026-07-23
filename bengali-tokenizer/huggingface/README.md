@@ -81,7 +81,7 @@ pip install "bntok @ git+https://github.com/konkomaji/bornomala#subdirectory=ben
 from huggingface_hub import snapshot_download
 from bntok import BengaliTokenizer
 
-path = snapshot_download("konkomaji/bornomala-bengali-tokenizer")
+path = snapshot_download("konko/bornomala-bengali-tokenizer")
 # the config file is stored as bornomala_config.json; rename to config.json in the folder,
 # or copy the three files (tokenizer.json, atoms.json, config.json) into one directory.
 tok = BengaliTokenizer.load(path)
