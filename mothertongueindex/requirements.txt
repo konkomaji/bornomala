@@ -1,0 +1,11 @@
+# MotherTongueIndex - core engine dependencies (all CPU, no GPU needed)
+regex>=2024.0.0          # UAX #29 grapheme clusters (\X) and script properties
+tiktoken>=0.7.0         # OpenAI GPT tokenizers (exact, ungated)
+tokenizers>=0.20.0      # Hugging Face fast tokenizers (Llama, Gemma, Qwen, ...)
+transformers>=4.44.0    # fallback loader for sentencepiece-only tokenizer repos
+sentencepiece>=0.2.0    # some Indic/LLM tokenizers ship as sentencepiece models
+huggingface_hub>=0.24.0 # tokenizer downloads
+
+# Optional - only for the tokenizer-training pipeline (train/) and shaping check:
+# uharfbuzz>=0.39.0     # HarfBuzz round-trip shaping validation (Req A-1, Gate G1)
+# datasketch>=1.6.0     # MinHash LSH corpus dedup

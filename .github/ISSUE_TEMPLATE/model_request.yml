@@ -1,0 +1,35 @@
+name: "🤖 Add a model tokenizer"
+description: Request or propose a new model in the registry
+labels: ["model-request"]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Model name
+      placeholder: "e.g. Llama 4, Qwen3, some Indian model"
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Tokenizer source
+      options:
+        - "OpenAI tiktoken encoding"
+        - "Hugging Face repo (ungated)"
+        - "Hugging Face repo (gated, needs terms acceptance)"
+        - "No public tokenizer (estimate only)"
+    validations:
+      required: true
+  - type: input
+    id: ref
+    attributes:
+      label: Tokenizer reference
+      description: tiktoken encoding name, or HF repo id, or a link
+      placeholder: "org/repo  or  o200k_base"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Vendor, region, why it matters (e.g. Indic coverage)

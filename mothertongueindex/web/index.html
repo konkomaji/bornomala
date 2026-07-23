@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MotherTongueIndex: how efficient is your language on AI, versus English?</title>
+<meta name="description" content="Paste text in any language and see how many more tokens it costs than English on GPT, Claude, Gemini, Llama, Qwen, Sarvam and 28 model tokenizers. A free, open, understanding tool for token efficiency and the reasoning-capability cost of tokenization. A Project Bornomala subproject."/>
+<meta name="theme-color" content="#4A46E0"/>
+<link rel="canonical" href="https://konkomaji.github.io/bornomala/mothertongueindex/"/>
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml"/>
+<link rel="stylesheet" href="assets/styles.css"/>
+
+<!-- Open Graph / social -->
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="MotherTongueIndex: your language on AI, versus English"/>
+<meta property="og:description" content="How many more tokens does your language cost than English across 28 mainstream LLM tokenizers? Measure it. Understand why. See the capability cost, not just the price."/>
+<meta property="og:image" content="assets/banner.svg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="MotherTongueIndex"/>
+<meta name="twitter:description" content="How efficient is your language on today's AI, versus English? Across 28 model tokenizers."/>
+
+<!-- Answer-engine / generative-engine structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MotherTongueIndex",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform (Python, CPU only)",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "description": "A multilingual tokenizer efficiency analyzer. It runs the real tokenizers of 28 mainstream large language models over text in any language and reports how many more tokens the language costs than English (fertility, single-token retention, bytes per token), plus a derived reasoning-capability impact from effective-context loss.",
+  "author": { "@type": "Person", "name": "Konko Maji", "email": "work.konkomaji@gmail.com" },
+  "isPartOf": { "@type": "CreativeWork", "name": "Project Bornomala" },
+  "url": "https://github.com/konkomaji/bornomala/tree/main/mothertongueindex",
+  "keywords": "tokenizer, tokenization, fertility, multilingual, LLM, language equity, Unicode, Bengali, Indic"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Why does my language cost more tokens than English on AI models?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Every mainstream tokenizer is optimised for English and high-resource Latin-script languages. Its vocabulary was learned from a mostly-English mixture, so words and characters from other languages are split into more, smaller pieces. That is called tokenizer fertility. The same meaning in a different language is charged a different number of tokens." } },
+    { "@type": "Question", "name": "Does tokenization affect reasoning, or only cost?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Both. A context window holds a fixed number of tokens, not a fixed amount of meaning. If your language has four times the fertility of English, the same window holds about a quarter of the content, which the literature links to degraded in-context learning and reasoning at fixed budget. MotherTongueIndex reports this derived effective-context loss and ships a separate probe to measure it directly." } },
+    { "@type": "Question", "name": "How is Claude or Gemini token count computed if there is no public tokenizer?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Anthropic, Google, and xAI do not publish an exact tokenizer for Claude, Gemini, or Grok. MotherTongueIndex reports those as clearly-labelled estimates from a per-script heuristic, never as measured values. OpenAI and open-weight models use their real tokenizers, so those counts are exact." } },
+    { "@type": "Question", "name": "Which languages are supported?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Any language in any script. The tool works from Unicode grapheme clusters and the model's real tokenizer, not from a fixed language list, so it measures every one of the world's languages." } }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Project Bornomala", "item": "https://github.com/konkomaji/bornomala" },
+    { "@type": "ListItem", "position": 2, "name": "MotherTongueIndex", "item": "https://github.com/konkomaji/bornomala/tree/main/mothertongueindex" }
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="container">
+    <a class="brand" href="#top" aria-label="MotherTongueIndex home">
+      <img src="assets/logo.svg" alt=""/><span>MotherTongueIndex</span>
+    </a>
+    <nav class="navlinks" id="nav">
+      <a href="#try">Try it</a>
+      <a href="#results">Results</a>
+      <a href="#metrics">Metrics</a>
+      <a href="#capability">Capability</a>
+      <a href="#models">Models</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/konkomaji/bornomala/tree/main/mothertongueindex">GitHub</a>
+    </nav>
+    <button class="btn btn-tonal nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">Menu</button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- HERO -->
+<section class="section hero">
+  <div class="container hero-grid">
+    <div>
+      <p class="eyebrow">A Project Bornomala subproject</p>
+      <h1>How efficient is <span class="grad">your language</span> on today's AI, versus English?</h1>
+      <p class="lede">Every large language model reads text through a tokenizer, and every mainstream tokenizer is tuned for English. So the same sentence in another language can cost several times more tokens. That is a cost you pay, and a slice of context, and reasoning, you lose. MotherTongueIndex measures exactly how much, across 28 real model tokenizers.</p>
+      <div class="hero-badges">
+        <span class="pill"><b>28</b> model tokenizers</span>
+        <span class="pill"><b>any</b> language or script</span>
+        <span class="pill"><b>CPU</b> only, open source</span>
+      </div>
+      <div class="row" style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">
+        <a class="btn btn-primary" href="#try">Measure your language</a>
+        <a class="btn btn-outline" href="#results">See the results</a>
+      </div>
+    </div>
+    <div class="hero-art"><img src="assets/logo.svg" alt="MotherTongueIndex logo: a ring of world scripts around an index dial"/></div>
+  </div>
+</section>
+
+<!-- WHAT -->
+<section class="section">
+  <div class="container">
+    <p class="eyebrow">What it tells you</p>
+    <h2>Two costs, made visible</h2>
+    <div class="cards" style="margin-top:26px">
+      <div class="card"><div class="ic">💸</div><h3>The token tax</h3><p>How many more tokens your language spends per word than English, on each model. This is the <code>xEN</code> ratio: the headline number.</p></div>
+      <div class="card"><div class="ic">🧠</div><h3>The capability cost</h3><p>Token bloat shrinks the effective context window. A smaller window handicaps reasoning in non-English languages, not just the bill. We surface that link.</p></div>
+      <div class="card"><div class="ic">🔬</div><h3>How it splits</h3><p>See the actual token boundaries. Watch a Bengali conjunct or a Chinese character shatter into pieces, or stay whole, depending on the tokenizer.</p></div>
+      <div class="card"><div class="ic">⚖️</div><h3>Honest by rule</h3><p>Exact counts from real tokenizers where they exist. Clearly-labelled estimates where a vendor ships none. No fabricated numbers, ever.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRY IT -->
+<section class="section" id="try">
+  <div class="container">
+    <p class="eyebrow">Try it</p>
+    <h2>Paste your language</h2>
+    <p class="lede">Type or paste any text. Pick models. See the cost against English. A live server runs the real tokenizers; without one, the sample languages below use precomputed real data.</p>
+
+    <div class="analyzer" style="margin-top:22px">
+      <textarea id="input" placeholder="Type in any language... e.g. আমি বাংলায় গান গাই" aria-label="Text to analyze"></textarea>
+
+      <div class="sample-row">
+        <span class="lbl">Samples:</span>
+        <span class="chips" id="samples"></span>
+      </div>
+
+      <div class="row">
+        <span class="lbl" style="font-size:.82rem;color:var(--on-surface-var);font-weight:700">Models:</span>
+        <span class="chips" id="models"></span>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-primary" id="run">Analyze</button>
+        <button class="btn btn-outline" id="toggleTokens">Show token split</button>
+        <span class="mono-note" id="status"></span>
+      </div>
+
+      <div id="tokenViz" hidden></div>
+      <div class="table-wrap" id="liveTableWrap" hidden><table id="liveTable"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section class="section" id="results">
+  <div class="container">
+    <p class="eyebrow">Evidence</p>
+    <h2>The same sentence, 15 languages, real tokenizers</h2>
+    <p class="lede">Article 1 of the Universal Declaration of Human Rights, identical meaning in every row, so the token counts are directly comparable. The number shown is <b>versus English</b> (1.0 = parity). Two facts jump out: non-Latin and complex scripts pay a heavy tax, and a single OpenAI tokenizer generation (cl100k in GPT-4, o200k in GPT-4o) erases most of it.</p>
+    <div class="table-wrap"><table id="resultsTable"><thead></thead><tbody></tbody></table></div>
+    <p class="mono-note" style="margin-top:10px">Generated by <code>python data/build_tables.py</code>. Claude and Gemini values are estimates (no public tokenizer). Regenerate or extend with more models locally.</p>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section class="section" id="metrics">
+  <div class="container">
+    <p class="eyebrow">Definitions</p>
+    <h2>What the numbers mean</h2>
+    <div class="deflist" style="margin-top:22px">
+      <div class="item"><b>Fertility</b> is tokens divided by whitespace words. Lower is better. It controls training cost, inference cost, and how much of your text fits in a context window.</div>
+      <div class="item"><b>xEN (versus English)</b> is a model's fertility on your text divided by its fertility on English. It is the honest headline: 4.0x means four times the tokens, and roughly four times the cost, for the same kind of content on that model.</div>
+      <div class="item"><b>STRR</b>, single-token retention rate, is the fraction of words the tokenizer keeps as exactly one token. It exposes vocabulary allocation that fertility alone can hide.</div>
+      <div class="item"><b>Bytes per token</b> is script-independent compression: UTF-8 bytes divided by tokens. Higher is better.</div>
+      <div class="item"><b>Grapheme clusters per token</b> is the true characters-per-token, counting what a reader perceives as one unit (Unicode UAX #29), not raw codepoints. For Bengali and other complex scripts this is the meaningful measure.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPABILITY -->
+<section class="section" id="capability">
+  <div class="container">
+    <p class="eyebrow">Beyond cost</p>
+    <h2>Why tokenization hurts reasoning</h2>
+    <div class="two-col" style="margin-top:22px">
+      <div>
+        <p>A context window holds a fixed number of <em>tokens</em>, not a fixed amount of <em>meaning</em>. If your language has four times English fertility, the same window holds about a quarter of the content. Fewer few-shot examples fit. Long documents truncate sooner. Chain-of-thought has less room. The research literature links high fertility to degraded downstream performance at fixed context.</p>
+        <p>MotherTongueIndex turns that into a number: <b>effective context ratio</b> = English fertility divided by your language fertility, plus a risk band from low to severe. This is <b>derived</b> from tokenization, and labelled as such.</p>
+        <p>To <b>measure</b> the reasoning gap directly, the project ships a separate probe that runs the same questions in English and your language on a real model. That runs on a machine with a model or API key, by design, and never fabricates a score.</p>
+      </div>
+      <div class="note">
+        <b>Derived vs measured.</b> The tool is careful never to present a prediction as a measurement.
+        <ul>
+          <li><b>Derived</b> (in the tool): effective-context loss, risk band, from the token math.</li>
+          <li><b>Measured</b> (opt-in probe): actual accuracy on reasoning items, English versus your language.</li>
+        </ul>
+        Both belong side by side: the token overhead predicts the handicap, the probe confirms it.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODELS -->
+<section class="section" id="models">
+  <div class="container">
+    <p class="eyebrow">Coverage</p>
+    <h2>28 model tokenizers, honest tiers</h2>
+    <div class="two-col" style="margin-top:22px">
+      <div>
+        <h3>Exact, no auth</h3>
+        <p>OpenAI GPT-5, GPT-4o and 4.1 (o200k), GPT-4 and 3.5 (cl100k). Open weights: Qwen3, DeepSeek V3 and R1, Kimi K2, GLM-4, Yi, Phi-4, Falcon, BLOOM, XLM-R, mBERT.</p>
+        <h3>Indian models</h3>
+        <p>Sarvam-1, Sarvam-M, OpenHathi, IndicBERT, TituLLM (Bengali-focused), Param-1. The comparison Project Bornomala cares about most.</p>
+      </div>
+      <div>
+        <h3>Exact, gated</h3>
+        <p>Llama 4 and 3.1, Gemma 3, Mistral, Command R. Set an <code>HF_TOKEN</code> and accept the model owner's terms.</p>
+        <h3>Estimate only</h3>
+        <p>Claude, Gemini, Grok. No public tokenizer exists, so these are heuristic estimates, always labelled, never presented as measured.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW / QUICKSTART -->
+<section class="section">
+  <div class="container">
+    <p class="eyebrow">Run it yourself</p>
+    <h2>Command line, 30 seconds</h2>
+<pre><code>pip install mothertongueindex   # or: pip install -r requirements.txt
+
+# Your language vs English:
+python -m mti "আমি বাংলায় গান গাই, আমি বাংলার গান গাই"
+
+# Explain the cost and the capability impact:
+python -m mti --models gpt-4o,gpt-4,sarvam1,claude --why --capability "your text"
+
+# Serve this website with the live analyzer:
+python web/server.py    # then open http://localhost:8000</code></pre>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <p class="eyebrow">Answers</p>
+    <h2>Frequently asked</h2>
+    <div style="margin-top:22px">
+      <details class="faq" open><summary>Why does my language cost more tokens than English?</summary><p>Every mainstream tokenizer learned its vocabulary from a mostly-English mixture, so words and characters from other languages split into more, smaller pieces. That is tokenizer fertility. The same meaning in a different language is charged a different number of tokens.</p></details>
+      <details class="faq"><summary>Does this affect reasoning, or only price?</summary><p>Both. A context window holds a fixed number of tokens, not a fixed amount of meaning. Higher fertility means less of your content fits, which the literature links to weaker in-context learning and reasoning at fixed budget. The tool reports this as derived effective-context loss and ships a probe to measure it.</p></details>
+      <details class="faq"><summary>How can you show a Claude or Gemini count with no public tokenizer?</summary><p>You cannot exactly, and we do not pretend to. Claude, Gemini, and Grok are shown as clearly-labelled estimates from a per-script heuristic. OpenAI and open-weight models use their real tokenizers, so those are exact.</p></details>
+      <details class="faq"><summary>Is this a cost or pricing calculator?</summary><p>No. It is an understanding tool. It shows token efficiency and its consequences. It does not track per-model prices, which change often; the xEN ratio tells you the relative cost of your language versus English on the same model, which is the durable insight.</p></details>
+      <details class="faq"><summary>Which languages are supported?</summary><p>All of them. The engine works from Unicode grapheme clusters and the model's real tokenizer, not a fixed list, so any language in any script can be measured.</p></details>
+      <details class="faq"><summary>How does this relate to Project Bornomala?</summary><p>MotherTongueIndex is a Bornomala subproject. Bornomala is a Bengali-first language technology programme whose thesis is that the binding constraint is data, not compute. This tool quantifies the tokenizer half of that inequity, and will benchmark the Bornomala Bengali tokenizer once it ships.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- CITE / ABOUT -->
+<section class="section" id="cite">
+  <div class="container two-col">
+    <div>
+      <p class="eyebrow">Cite</p>
+      <h2>How to cite</h2>
+<pre><code>@software{maji_mothertongueindex_2026,
+  author  = {Maji, Konko},
+  title   = {MotherTongueIndex: A Multilingual
+             Tokenizer Efficiency Analyzer},
+  year    = {2026},
+  note    = {A subproject of Project Bornomala},
+  url     = {https://github.com/konkomaji/bornomala}
+}</code></pre>
+    </div>
+    <div>
+      <p class="eyebrow">About</p>
+      <h2>Project Bornomala</h2>
+      <p>A Bengali-first language technology programme: tokenization, document recognition, West Bengal dialect documentation, speech, and foundation modelling. Its central claim is that the binding constraint on Bengali language modelling is data, not compute.</p>
+      <p><a class="btn btn-tonal" href="https://github.com/konkomaji/bornomala">Read the programme</a></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site">
+  <div class="container">
+    <div class="brand"><img src="assets/logo.svg" alt="" width="28"/><span>MotherTongueIndex</span></div>
+    <div class="muted">Apache-2.0 · Konko Maji · A Project Bornomala subproject · Built on Unicode UAX #29 and UAX #15</div>
+    <div><a href="https://github.com/konkomaji/bornomala/tree/main/mothertongueindex">GitHub</a> · <a href="assets/../docs/PAPER.md">Paper</a> · <a href="llms.txt">llms.txt</a></div>
+  </div>
+</footer>
+
+<script src="assets/tables.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

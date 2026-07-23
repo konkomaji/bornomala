@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use Project Bornomala or its subprojects, please cite as below."
+title: "Project Bornomala: A Bengali-First Language Technology Stack"
+abstract: >-
+  A multi-year programme to build a Bengali-first language technology stack:
+  tokenization, document recognition, West Bengal dialect documentation, speech,
+  and foundation modelling. The central thesis is that the binding constraint on
+  Bengali language modelling is data, not compute.
+type: software
+authors:
+  - family-names: Maji
+    given-names: Konko
+    email: work.konkomaji@gmail.com
+repository-code: "https://github.com/konkomaji/bornomala"
+license: Apache-2.0
+version: "0.1.0"
+date-released: "2026-07-23"
+keywords:
+  - bengali
+  - indic
+  - tokenization
+  - nlp
+  - language-technology
+  - low-resource

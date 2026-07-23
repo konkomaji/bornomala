@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mothertongueindex"
+version = "0.1.0"
+description = "How efficient is your language on today's AI models, versus English? A multilingual tokenizer efficiency analyzer."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Konko Maji", email = "work.konkomaji@gmail.com" }]
+keywords = [
+  "tokenizer", "tokenization", "fertility", "multilingual", "llm",
+  "bengali", "indic", "nlp", "unicode", "grapheme", "language-equity",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+  "regex>=2024.0.0",
+  "tiktoken>=0.7.0",
+  "tokenizers>=0.20.0",
+  "huggingface_hub>=0.24.0",
+]
+
+[project.optional-dependencies]
+hf = ["transformers>=4.44.0", "sentencepiece>=0.2.0"]
+web = ["fastapi>=0.110.0", "uvicorn[standard]>=0.29.0"]
+train = ["uharfbuzz>=0.39.0", "datasketch>=1.6.0", "sentencepiece>=0.2.0"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/konkomaji/bornomala/tree/main/mothertongueindex"
+Repository = "https://github.com/konkomaji/bornomala"
+"Parent Project" = "https://github.com/konkomaji/bornomala"
+
+[project.scripts]
+mti = "mti.cli:main"
+
+[tool.setuptools]
+packages = ["mti"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
