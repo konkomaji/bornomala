@@ -8,12 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Website: light Material 3 Expressive site with interactive analyzer, docs,
-  and SEO / AEO / GEO metadata. (in progress)
-- Technical research paper (`docs/PAPER.md`) and architecture reference
-  (`docs/architecture.md`). (in progress)
-- GitHub community files: license, contributing guide, code of conduct,
-  security policy, citation metadata, issue and PR templates, CI.
+- **Website** (`web/`): light Material 3 Expressive site with an interactive
+  analyzer (live FastAPI backend plus a static precomputed-data fallback),
+  real cross-language results table, metrics glossary, capability section,
+  model coverage, and FAQ. Responsive and mobile-first, light scheme only.
+- **SEO / AEO / GEO**: semantic HTML, canonical and Open Graph tags, JSON-LD
+  (SoftwareApplication, FAQPage, BreadcrumbList), `robots.txt` (AI crawlers
+  allowed), `sitemap.xml`, and `llms.txt`.
+- **FastAPI backend** (`web/server.py`): serves the site and a JSON API
+  (`/api/analyze`, `/api/models`) backed by the real tokenizers.
+- **Technical research paper** (`docs/PAPER.md`) and architecture reference
+  (`docs/architecture.md`) with mermaid diagrams.
+- **GitHub community files**: Apache-2.0 license, contributing guide, code of
+  conduct, security policy, citation metadata (root and subproject), issue
+  templates (bug, model request, feature), PR template, and CI workflow.
+- **Tests** (`tests/test_smoke.py`): 12 offline tiktoken-based tests.
 
 ## [0.1.0] - 2026-07-23
 

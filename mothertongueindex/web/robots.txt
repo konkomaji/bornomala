@@ -1,0 +1,22 @@
+# MotherTongueIndex
+# All crawlers welcome, including AI answer-engine and generative-engine crawlers.
+User-agent: *
+Allow: /
+
+# Common AI crawlers, explicitly allowed (this is public educational content).
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://konkomaji.github.io/bornomala/mothertongueindex/sitemap.xml
