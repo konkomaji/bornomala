@@ -1,0 +1,150 @@
+/*
+  Project Bornomala website.
+  Material 3 Expressive, light only. A warm, manuscript-inspired palette distinct
+  from any subproject: deep indigo ink, marigold and terracotta accents, a paper
+  background, and the Bengali matra (headline stroke) used as a design motif.
+  System fonts only: fast, private, offline-friendly.
+*/
+
+:root {
+  --ink:        #2A2350;   /* deep indigo text */
+  --primary:    #3A2E8C;
+  --primary-2:  #5B45C7;
+  --marigold:   #F4A400;
+  --terracotta: #E4572E;
+  --teal:       #00A9A5;
+  --rose:       #E0468A;
+
+  --paper:      #FBFAF6;   /* warm off-white */
+  --surface:    #FFFFFF;
+  --surface-2:  #F4F1FB;
+  --surface-warm:#FBF4E6;
+  --on-surface: #2A2350;
+  --muted:      #5A5680;
+  --outline:    #E4DEF5;
+  --outline-warm:#F0E4CC;
+
+  --good:#1a8f4c; --warn:#C77700; --bad:#C6362F;
+
+  --r-sm:12px; --r-md:20px; --r-lg:30px; --r-xl:44px; --r-pill:999px;
+  --spring:cubic-bezier(.2,.8,.2,1);
+  --elev-1:0 1px 2px rgba(58,46,140,.06), 0 6px 20px rgba(58,46,140,.07);
+  --elev-2:0 10px 34px rgba(58,46,140,.14);
+  --maxw:1140px;
+}
+
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+body {
+  margin:0; color:var(--on-surface); line-height:1.65;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Bengali",sans-serif;
+  background:
+    radial-gradient(1100px 520px at 108% -8%, #EFE9FF 0%, transparent 60%),
+    radial-gradient(900px 460px at -8% 4%, #FDF1D8 0%, transparent 55%),
+    var(--paper);
+}
+h1,h2,h3 { line-height:1.12; letter-spacing:-0.02em; color:var(--ink); margin:0 0 .4em; }
+h2 { font-size:clamp(1.7rem,1.1rem+2.4vw,2.7rem); }
+h3 { font-size:1.25rem; }
+p { color:var(--muted); }
+a { color:var(--primary); text-decoration:none; }
+a:hover { text-decoration:underline; }
+code { background:var(--surface-2); padding:.1em .4em; border-radius:8px; font-family:ui-monospace,Consolas,monospace; font-size:.9em; }
+:focus-visible { outline:3px solid var(--primary); outline-offset:3px; border-radius:8px; }
+
+.container { max-width:var(--maxw); margin:0 auto; padding:0 22px; }
+.section { padding:clamp(52px,6.5vw,104px) 0; }
+.eyebrow { color:var(--terracotta); font-weight:800; letter-spacing:.06em; text-transform:uppercase; font-size:.78rem; }
+.lede { font-size:1.16rem; max-width:64ch; color:#443F6B; }
+
+/* matra: the Bengali headline stroke, our divider motif */
+.matra { height:6px; width:96px; border-radius:6px;
+  background:linear-gradient(90deg,var(--marigold),var(--terracotta)); margin:14px 0 22px; }
+.matra.center { margin-left:auto; margin-right:auto; }
+
+/* app bar */
+.appbar { position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.4) blur(10px);
+  background:rgba(251,250,246,.82); border-bottom:1px solid var(--outline-warm); }
+.appbar .container { display:flex; align-items:center; gap:14px; height:66px; }
+.brand { display:flex; align-items:center; gap:10px; font-weight:800; color:var(--ink); }
+.brand img { width:36px; height:36px; }
+.brand .bn { font-family:"Noto Serif Bengali",serif; color:var(--terracotta); font-weight:700; }
+.nav { margin-left:auto; display:flex; gap:4px; }
+.nav a { padding:9px 15px; border-radius:var(--r-pill); color:var(--muted); font-weight:600; }
+.nav a:hover { background:var(--surface-2); text-decoration:none; }
+.nav-toggle { display:none; margin-left:auto; }
+
+.btn { display:inline-flex; align-items:center; gap:8px; padding:13px 24px; border-radius:var(--r-pill);
+  border:none; cursor:pointer; font:inherit; font-weight:800; transition:transform .15s var(--spring),box-shadow .2s; }
+.btn:active { transform:scale(.97); }
+.btn-primary { background:var(--primary); color:#fff; box-shadow:var(--elev-1); }
+.btn-primary:hover { box-shadow:var(--elev-2); text-decoration:none; }
+.btn-warm { background:linear-gradient(90deg,var(--marigold),var(--terracotta)); color:#3a2306; }
+.btn-warm:hover { text-decoration:none; filter:brightness(1.03); }
+.btn-outline { background:transparent; color:var(--primary); box-shadow:inset 0 0 0 1.6px var(--outline); }
+
+/* hero */
+.hero { padding-top:clamp(44px,5vw,80px); }
+.hero-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:44px; align-items:center; }
+.hero h1 { font-size:clamp(2.3rem,1.2rem+4.6vw,4.2rem); }
+.hero h1 .bn { font-family:"Noto Serif Bengali",serif; background:linear-gradient(100deg,var(--primary),var(--terracotta)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero .grad { background:linear-gradient(100deg,var(--primary),var(--rose) 60%,var(--terracotta)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.pills { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+.pill { background:var(--surface); box-shadow:var(--elev-1); border-radius:var(--r-pill); padding:9px 17px; font-weight:700; font-size:.9rem; }
+.pill b { color:var(--terracotta); }
+.hero-art { display:grid; place-items:center; }
+.hero-art img { width:100%; max-width:340px; filter:drop-shadow(0 22px 42px rgba(58,46,140,.2)); }
+
+/* cards */
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:22px; }
+.card { background:var(--surface); border-radius:var(--r-lg); padding:26px; box-shadow:var(--elev-1); border:1px solid var(--outline); transition:transform .2s var(--spring),box-shadow .2s; }
+.card:hover { transform:translateY(-5px); box-shadow:var(--elev-2); }
+.card.warm { background:var(--surface-warm); border-color:var(--outline-warm); }
+.card .ic { font-size:1.9rem; }
+.card h3 { margin:.5em 0 .3em; }
+.card p { margin:0; font-size:.97rem; }
+
+/* stat row */
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; }
+.stat { background:var(--surface); border-radius:var(--r-lg); padding:26px; box-shadow:var(--elev-1); border:1px solid var(--outline); text-align:center; }
+.stat .big { font-size:2.4rem; font-weight:900; color:var(--primary); letter-spacing:-.02em; }
+.stat .big.warm { color:var(--terracotta); }
+.stat .lbl { color:var(--muted); font-size:.92rem; margin-top:4px; }
+
+/* table */
+.table-wrap { overflow-x:auto; border-radius:var(--r-lg); border:1px solid var(--outline); background:var(--surface); box-shadow:var(--elev-1); }
+table { border-collapse:collapse; width:100%; min-width:640px; }
+th,td { padding:13px 16px; text-align:right; border-bottom:1px solid var(--outline); white-space:nowrap; }
+th:first-child,td:first-child { text-align:left; position:sticky; left:0; background:var(--surface); }
+thead th { background:var(--surface-2); font-weight:800; color:var(--ink); }
+tbody tr.ours td { background:var(--surface-warm); font-weight:700; }
+tbody tr:hover td { filter:brightness(.99); }
+.win { color:var(--good); font-weight:800; }
+.bad { color:var(--bad); font-weight:700; }
+
+/* problem list / callouts */
+.two { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.note { background:var(--surface-warm); border-left:5px solid var(--terracotta); border-radius:var(--r-sm); padding:16px 20px; color:#5a4a2a; }
+.quote { font-size:1.25rem; font-weight:700; color:var(--ink); border-left:5px solid var(--marigold); padding-left:18px; margin:0; }
+
+details.faq { background:var(--surface); border-radius:var(--r-md); padding:2px 22px; box-shadow:var(--elev-1); border:1px solid var(--outline); margin-bottom:12px; }
+details.faq summary { cursor:pointer; font-weight:800; padding:16px 0; list-style:none; color:var(--ink); }
+details.faq summary::-webkit-details-marker { display:none; }
+details.faq[open] summary { color:var(--terracotta); }
+
+.contribute { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
+.who { background:var(--surface); border-radius:var(--r-md); padding:20px; border:1px solid var(--outline); box-shadow:var(--elev-1); }
+.who .ic { font-size:1.5rem; }
+
+footer.site { background:var(--surface); border-top:1px solid var(--outline-warm); padding:44px 0; margin-top:36px; }
+footer.site .container { display:flex; flex-wrap:wrap; gap:18px; justify-content:space-between; align-items:center; }
+footer.site .muted { color:var(--muted); font-size:.9rem; }
+
+@media (max-width:880px){
+  .hero-grid,.two{ grid-template-columns:1fr; }
+  .hero-art{ order:-1; }
+  .nav{ display:none; position:absolute; top:66px; left:0; right:0; flex-direction:column; background:var(--surface); padding:12px; box-shadow:var(--elev-2); }
+  .nav.open{ display:flex; }
+  .nav-toggle{ display:inline-flex; }
+}
+@media (prefers-reduced-motion:reduce){ *{ transition:none!important; scroll-behavior:auto; } }
