@@ -24,6 +24,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   measured cross-tokenizer Bengali comparison against Sarvam-1, AI4Bharat
   IndicBERT, mBERT, XLM-R, DeepSeek, and GPT-4o. See its own changelog.
 
+- **Publication preparation**: an arXiv preprint (LaTeX source and submission
+  guide) and an upload-ready Hugging Face release (model card and tokenizer
+  files) for the Bengali tokenizer, version 0.1 (preliminary, to be updated as
+  larger datasets are added).
+
 ### Changed
 - Root README rewritten to separate the two concerns clearly: Project Bornomala
   is the Bengali-first, dialect-aware LLM programme (the whitepaper, tracks A to

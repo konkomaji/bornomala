@@ -135,6 +135,8 @@ bengali-tokenizer/
 - **[Architecture](docs/architecture.md)**: pipeline, diagrams, the integrity proof.
 - **[Known issues and limitations](docs/known-issues.md)**: honest caveats, comparison notes, and the bugs found and fixed during development.
 - **[Benchmark method and results](benchmarks/bengali-comparison.md)**.
+- **[Paper](paper/)**: the arXiv preprint source (LaTeX) and submission guide.
+- **[Hugging Face release](huggingface/)**: upload-ready model card and tokenizer files.
 - **[Changelog](CHANGELOG.md)**.
 - Parent programme: **[Project Bornomala](../README.md)** (the Bengali-first, dialect-aware LLM).
 

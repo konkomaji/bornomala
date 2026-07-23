@@ -4,6 +4,14 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **arXiv preprint** (`paper/`): self-contained LaTeX source, submission guide,
+  version 0.1 (preliminary, Wikipedia; to be updated with larger datasets).
+- **Hugging Face release** (`huggingface/`): upload-ready model card and
+  tokenizer files, with a publishing guide.
+
 ## [0.1.0] - 2026-07-23
 
 First working version of the Project Bornomala Track A tokenizer. CPU only.
