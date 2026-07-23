@@ -1,78 +1,86 @@
 <p align="center">
-  <img src="mothertongueindex/docs/assets/logo.svg" width="132" height="132" alt="Project Bornomala logo"/>
+  <img src="mothertongueindex/docs/assets/logo.svg" width="132" height="132" alt="Project Bornomala"/>
 </p>
 
 <h1 align="center">Project Bornomala &nbsp;বর্ণমালা</h1>
 
 <p align="center">
-  <b>A Bengali-first language technology programme.</b><br/>
-  Tokenization, document recognition, dialect documentation, speech, and foundation modelling.
+  <b>Building a Bengali-first, dialect-aware large language model.</b><br/>
+  A Bengali language model trained for Bengali, including the dialects of West Bengal, not English with Bengali bolted on.
 </p>
 
 <p align="center">
-  <img alt="status" src="https://img.shields.io/badge/status-planning%20%2B%20active%20subproject-4A46E0"/>
+  <img alt="status" src="https://img.shields.io/badge/status-in%20planning-4A46E0"/>
   <img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-00A9A5"/>
-  <img alt="compute" src="https://img.shields.io/badge/GPU%20budget-USD%205k--10k%2F33mo-FF6F5B"/>
-  <img alt="scope" src="https://img.shields.io/badge/language-Bengali%20%2F%20Indic-7A2BE2"/>
+  <img alt="goal" src="https://img.shields.io/badge/goal-Bengali--first%20LLM-FF6F5B"/>
+  <img alt="focus" src="https://img.shields.io/badge/dialect-aware-7A2BE2"/>
 </p>
 
 ---
 
-## What this is
+## The project
 
-Project Bornomala rests on a single, attackable empirical claim:
+**Project Bornomala is a programme to build a Bengali-first large language
+model** that understands Bengali the way Bengali is actually written and spoken,
+including its literary register and the dialects of West Bengal that no existing
+model covers.
+
+It rests on one claim, stated so it can be attacked:
 
 > The binding constraint on Bengali language modelling is not compute or
 > architecture. It is the absence of a large, clean, high-register Bengali
-> corpus (because that corpus exists only as page images), and the total
-> absence of any computational resource for the Bengali dialects of West Bengal.
+> corpus (it exists only as page images), and the total absence of any
+> computational resource for the Bengali dialects of West Bengal.
 
-The causal arrow runs **OCR into corpus into model**, not the reverse. The full
-argument, the five tracks (A Tokenization, B Document Recognition, C Dialect
-Documentation, D Speech, E Foundation Model), the roadmap, the phase gates, and
-the risk register live in the technical specification:
+So the work runs in the causal order **OCR into corpus into model**, and dialect
+documentation is treated as a first-class data asset, not a footnote.
 
-- **[PROJECT_BORNOMALA_Technical_Specification.md](PROJECT_BORNOMALA_Technical_Specification.md)** (Draft 1.0)
+The full plan, the tracks, the roadmap, the phase gates, and the risk register
+are in the technical whitepaper:
 
-## Subprojects
+**[PROJECT_BORNOMALA_Technical_Specification.md](PROJECT_BORNOMALA_Technical_Specification.md)**
 
-Bornomala is built as focused, shippable subprojects. Each is self-contained.
+## The programme (what Bornomala builds)
 
-| Subproject | Track | What it does | Status |
+These five tracks are Project Bornomala itself: they produce the Bengali-first
+model and the data it needs. They are built in this main repository.
+
+| Track | Deliverable | Purpose | Status |
 |---|---|---|---|
-| **[MotherTongueIndex](mothertongueindex/)** | A (support) | Measures how efficiently mainstream LLM tokenizers encode any language, versus English. An understanding tool for token efficiency and the reasoning-capability cost of tokenization. | Active |
-| Bengali tokenizer | A | The Bornomala grapheme-cluster-aware, literary-weighted Bengali tokenizer. Lives in this main repo. | Planned |
-| Bengali document OCR | B | VLM-based Bengali document recognition, grapheme-aware metrics, pre-1950 letterpress. | Planned |
-| West Bengal dialect corpus | C | First computational resource for the five West Bengal dialect groups. | Planned |
+| **A** | Bengali tokenizer | Grapheme-cluster-aware, literary-weighted Bengali vocabulary | Planned |
+| **B** | Bengali document OCR | Recover the 1850 to 1950 Bengali literary corpus trapped in page images | Planned |
+| **C** | West Bengal dialect corpus | First computational resource for the five West Bengal dialect groups | Planned |
+| **D** | Speech (ASR and TTS) | Dialect-aware Bengali speech | Planned |
+| **E** | Foundation model | A 2 to 4B Bengali-first, dialect-aware, on-device model | Planned |
 
-> **Note.** MotherTongueIndex is a **subproject**. It does not train the
-> Bornomala tokenizer. The Track A Bengali tokenizer is a separate deliverable
-> in this main repo. MotherTongueIndex will benchmark it once it exists, by
-> adding it to the model registry alongside GPT, Llama, Gemma, Sarvam, and the
-> rest.
+## Subprojects (separate tools in this repository)
+
+Bornomala also hosts standalone tools that support the mission but are their own,
+distinct things. They are not the Bengali model, and not one of the tracks above.
+
+| Subproject | What it is | Relation to Bornomala | Status |
+|---|---|---|---|
+| **[MotherTongueIndex](mothertongueindex/)** | A multilingual tokenizer efficiency analyzer: measures how efficiently mainstream LLM tokenizers encode any language, versus English. | A separate tool. It studies the tokenization inequity Bornomala exists to fix, and can benchmark Bornomala's Bengali tokenizer once Track A ships. It does not build any Bornomala model. | Active |
+
+> **Two different things.** Project Bornomala is the Bengali-first, dialect-aware
+> LLM programme described in the whitepaper. MotherTongueIndex is a separate
+> subproject tool that happens to live in the same repository. They should not be
+> conflated.
 
 ## Repository layout
 
 ```
 bornomala/
-├── PROJECT_BORNOMALA_Technical_Specification.md   parent spec (the plan)
-├── mothertongueindex/                             subproject: tokenizer efficiency analyzer
-│   ├── mti/        core engine (CPU only)
-│   ├── web/        light Material 3 website + API
-│   ├── docs/       research paper, architecture, assets
-│   ├── data/       multilingual samples + generated tables
-│   └── eval/       measured cross-language reasoning probe
-├── LICENSE         Apache-2.0
-├── CONTRIBUTING.md · CODE_OF_CONDUCT.md · SECURITY.md · CITATION.cff
-└── .github/        CI, issue and PR templates
+├── PROJECT_BORNOMALA_Technical_Specification.md   the whitepaper (the LLM programme)
+├── mothertongueindex/                             subproject: a separate tokenizer-analysis tool
+├── LICENSE · CONTRIBUTING · CODE_OF_CONDUCT · SECURITY · CITATION.cff
+└── .github/                                        CI, issue and PR templates
 ```
 
 ## Licensing
 
 Code is **Apache-2.0**. Corpora and datasets produced by the programme are
-released **CC BY 4.0** or **CC BY-SA 4.0** (spec section 17.3). A restrictive
-licence on a cultural corpus produced from community speech is not defensible
-and is not used here.
+released **CC BY 4.0** or **CC BY-SA 4.0** (whitepaper section 17.3).
 
 ## Citation
 
