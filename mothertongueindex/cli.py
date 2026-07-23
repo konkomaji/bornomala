@@ -23,7 +23,7 @@ for _stream in (sys.stdout, sys.stderr):
     except (AttributeError, ValueError):  # pragma: no cover
         pass
 
-from .registry import list_models, DEFAULT_MODELS
+from .registry import list_models, DEFAULT_MODELS, GROUPS
 from .analyze import analyze, cost_explanation
 
 
@@ -75,7 +75,8 @@ def main(argv=None) -> int:
     p.add_argument("text", nargs="?", help="text to analyze (or use --file / stdin)")
     p.add_argument("--file", help="read text from a file")
     p.add_argument("--models", help="comma-separated model ids (default: a no-auth set)")
-    p.add_argument("--list", action="store_true", help="list known models and exit")
+    p.add_argument("--group", help="preset model group: default, openai, frontier, indian, multilingual, open")
+    p.add_argument("--list", action="store_true", help="list known models (and groups) and exit")
     p.add_argument("--json", action="store_true", help="emit JSON")
     p.add_argument("--show", action="store_true", help="show the token split per model")
     p.add_argument("--why", action="store_true", help="print plain-language cost explanation")
@@ -85,7 +86,10 @@ def main(argv=None) -> int:
 
     if args.list:
         for m in list_models():
-            print(f"{m.id:10s} {m.tier:8s} {m.display}   {m.note}")
+            print(f"{m.id:12s} {m.tier:8s} {m.display}   {m.note}")
+        print("\nGroups (use --group NAME):")
+        for g, ids in GROUPS.items():
+            print(f"  {g:12s} {', '.join(ids)}")
         return 0
 
     if args.file:
@@ -98,7 +102,14 @@ def main(argv=None) -> int:
     else:
         p.error("provide text, --file, or pipe via stdin")
 
-    models = [s.strip() for s in args.models.split(",")] if args.models else DEFAULT_MODELS
+    if args.models:
+        models = [s.strip() for s in args.models.split(",")]
+    elif args.group:
+        if args.group not in GROUPS:
+            p.error(f"unknown group '{args.group}'. Choices: {', '.join(GROUPS)}")
+        models = GROUPS[args.group]
+    else:
+        models = DEFAULT_MODELS
     results = analyze(text, models, want_tokens=args.show)
 
     if args.json:

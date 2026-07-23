@@ -165,6 +165,7 @@ class EstimateBackend:
     """
 
     # Effective bytes-per-token priors by script (rough, English-anchored).
+    # Base table reflects a large modern vocabulary (Claude-class ~cl100k-like).
     _BPT = {
         "Latin": 4.0, "Number": 3.0, "Other": 3.0,
         "Cyrillic": 2.2, "Greek": 2.4, "Arabic": 2.2, "Hebrew": 2.4,
@@ -175,8 +176,18 @@ class EstimateBackend:
         "Oriya": 1.4, "Thai": 1.8,
     }
 
+    # Per-model multipliers on the base priors, reflecting known vocabulary size
+    # differences. Gemini/Gemma use a very large (256k) multilingual vocabulary,
+    # so it packs non-Latin scripts better than a cl100k-class tokenizer.
+    _MODEL_SCALE = {
+        "claude": 1.0,
+        "gemini": 1.35,   # large multilingual vocab -> fewer tokens on non-Latin
+        "grok":   1.0,
+    }
+
     def __init__(self, label: str = "estimate"):
         self.label = label
+        self._scale = self._MODEL_SCALE.get(label, 1.0)
 
     def encode(self, text: str) -> Encoding:
         from .segment import grapheme_clusters, script_of
@@ -186,7 +197,7 @@ class EstimateBackend:
             if g.isspace():
                 continue
             b = len(g.encode("utf-8"))
-            bpt = self._BPT.get(script_of(g), 3.0)
+            bpt = self._BPT.get(script_of(g), 3.0) * self._scale
             est += b / bpt
         n = max(1, round(est))
         return Encoding(
