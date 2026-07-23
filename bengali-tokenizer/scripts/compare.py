@@ -104,7 +104,7 @@ def measure_hf(name: str, repo: str, texts: list[str]) -> dict | None:
     try:
         from transformers import AutoTokenizer
         tk = AutoTokenizer.from_pretrained(repo, use_fast=True)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - report ANY load failure as "unavailable", not estimated
         return {"model": name, "available": False, "error": f"{type(e).__name__}: {e}"}
 
     n_tok = n_words = n_bytes = single = frag = clusters = 0
@@ -115,7 +115,7 @@ def measure_hf(name: str, repo: str, texts: list[str]) -> dict | None:
             enc = tk(nfc, add_special_tokens=False, return_offsets_mapping=True)
             ids = enc["input_ids"]
             offs = enc.get("offset_mapping") or []
-        except Exception:
+        except Exception:  # noqa: BLE001 - some tokenizers don't support offset_mapping; fall back
             ids = tk(nfc, add_special_tokens=False)["input_ids"]
             offs = []
         n_tok += len(ids)
@@ -136,7 +136,7 @@ def measure_tiktoken(name: str, enc_name: str, texts: list[str]) -> dict | None:
     try:
         import tiktoken
         enc = tiktoken.get_encoding(enc_name)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - report ANY load failure as "unavailable", not estimated
         return {"model": name, "available": False, "error": str(e)}
     n_tok = n_words = n_bytes = single = 0
     for raw in texts:

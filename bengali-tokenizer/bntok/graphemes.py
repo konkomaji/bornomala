@@ -33,11 +33,11 @@ ZWJ = "‍"
 ZWNJ = "‌"
 
 # Consonants (main range plus the nukta-formed rha/yya letters).
-_CONSONANTS = set(chr(c) for c in range(0x0995, 0x09B9 + 1)) | {"ড়", "ঢ়", "য়", "ৎ"}
+_CONSONANTS = {chr(c) for c in range(0x0995, 0x09B9 + 1)} | {"ড়", "ঢ়", "য়", "ৎ"}
 # Independent vowels.
-_IND_VOWELS = set(chr(c) for c in range(0x0985, 0x098C + 1)) | {"এ", "ঐ", "ও", "ঔ"}
+_IND_VOWELS = {chr(c) for c in range(0x0985, 0x098C + 1)} | {"এ", "ঐ", "ও", "ঔ"}
 # Dependent vowel signs (matra / kar).
-_VOWEL_SIGNS = set(chr(c) for c in range(0x09BE, 0x09CC + 1)) | {"ৗ"}
+_VOWEL_SIGNS = {chr(c) for c in range(0x09BE, 0x09CC + 1)} | {"ৗ"}
 # Signs.
 _SIGNS = {"ঁ", "ং", "ঃ"}  # candrabindu, anusvara, visarga
 

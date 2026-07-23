@@ -45,7 +45,7 @@ def grapheme_clusters(text: str) -> list[str]:
 
 # Ordered probes: first match wins. Latin last so combining/format chars in
 # other scripts do not steal clusters.
-_SCRIPT_PROBES: list[tuple[str, "_re.Pattern[str]"]] = [
+_SCRIPT_PROBES: list[tuple[str, _re.Pattern[str]]] = [
     ("Bengali", _re.compile(r"\p{Bengali}")),
     ("Devanagari", _re.compile(r"\p{Devanagari}")),
     ("Tamil", _re.compile(r"\p{Tamil}")),

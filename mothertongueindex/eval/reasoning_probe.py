@@ -30,11 +30,10 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
 
 from mti.analyze import analyze_one
-
 
 # Minimal seed items. Extend with a real benchmark (e.g. translated GSM8K subset,
 # MGSM, or native-authored items - native authoring is preferred; see spec §13.5).

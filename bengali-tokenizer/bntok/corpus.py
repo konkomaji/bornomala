@@ -19,7 +19,7 @@ import itertools
 import os
 import re
 
-from .errors import EmptyCorpusError, ConfigError
+from .errors import ConfigError, EmptyCorpusError
 
 
 def load_file(path: str) -> list[str]:

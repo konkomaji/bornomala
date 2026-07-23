@@ -26,15 +26,20 @@ from __future__ import annotations
 import json
 import os
 
-from tokenizers import Tokenizer, models, trainers, pre_tokenizers, decoders
+from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
-from .normalize import normalize
 from .atoms import AtomMap
-from .graphemes import GUARANTEED_CODEPOINTS
 from .errors import (
-    EmptyCorpusError, VocabSizeError, TrainingError,
-    EncodeError, DecodeError, LoadError, require,
+    DecodeError,
+    EmptyCorpusError,
+    EncodeError,
+    LoadError,
+    TrainingError,
+    VocabSizeError,
+    require,
 )
+from .graphemes import GUARANTEED_CODEPOINTS
+from .normalize import normalize
 
 UNK = "<unk>"
 _SPECIALS = ["<pad>", "<unk>", "<s>", "</s>", "<mask>"]
@@ -55,7 +60,7 @@ class BengaliTokenizer:
         vocab_size: int = 32000,
         min_atom_freq: int = 2,
         zwnj_policy: str = "preserve",
-    ) -> "BengaliTokenizer":
+    ) -> BengaliTokenizer:
         """Induce a tokenizer from a corpus (a list of raw strings).
 
         Raises:
@@ -191,7 +196,7 @@ class BengaliTokenizer:
             json.dump(self.config, f, ensure_ascii=False, indent=2)
 
     @classmethod
-    def load(cls, directory: str) -> "BengaliTokenizer":
+    def load(cls, directory: str) -> BengaliTokenizer:
         if not os.path.isdir(directory):
             raise LoadError(f"not a tokenizer directory: {directory}")
         tpath = os.path.join(directory, "tokenizer.json")

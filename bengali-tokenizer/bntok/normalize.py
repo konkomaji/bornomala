@@ -52,7 +52,7 @@ from __future__ import annotations
 
 import unicodedata
 
-from .errors import NormalizationError, ConfigError
+from .errors import ConfigError, NormalizationError
 
 ZWJ = "‍"   # zero-width joiner
 ZWNJ = "‌"  # zero-width non-joiner

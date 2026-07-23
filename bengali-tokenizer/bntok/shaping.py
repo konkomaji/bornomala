@@ -27,8 +27,8 @@ from __future__ import annotations
 
 import os
 
-from .normalize import normalize
 from .graphemes import grapheme_clusters
+from .normalize import normalize
 
 # Common Bengali-capable fonts by platform.
 _FONT_CANDIDATES = [
@@ -66,7 +66,7 @@ def shape_check(text: str, font_path: str) -> dict:
 
     infos = buf.glyph_infos
     missing = sum(1 for g in infos if g.codepoint == 0)  # glyph id 0 = .notdef
-    n_shaping_clusters = len(set(g.cluster for g in infos))
+    n_shaping_clusters = len({g.cluster for g in infos})
 
     return {
         "text": nfc,

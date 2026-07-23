@@ -35,7 +35,7 @@ _DEFAULT_SAMPLES = [
 
 
 def _load_input(args) -> list[str]:
-    from .corpus import load_paths, stream_wikipedia, build_configured_corpus
+    from .corpus import build_configured_corpus, load_paths, stream_wikipedia
     if args.corpus_config:
         with open(args.corpus_config, encoding="utf-8") as f:
             config = json.load(f)
@@ -66,8 +66,8 @@ def cmd_gate_g1(args) -> int:
 
 
 def cmd_train(args) -> int:
-    from .tokenizer import BengaliTokenizer
     from .evaluate import evaluate
+    from .tokenizer import BengaliTokenizer
     corpus = _load_input(args)
     print(f"loaded {len(corpus)} lines; training {args.algo} vocab={args.vocab_size} ...", file=sys.stderr)
     tok = BengaliTokenizer.train(
@@ -82,9 +82,9 @@ def cmd_train(args) -> int:
 
 
 def cmd_evaluate(args) -> int:
-    from .tokenizer import BengaliTokenizer
-    from .evaluate import evaluate
     from .corpus import load_paths
+    from .evaluate import evaluate
+    from .tokenizer import BengaliTokenizer
     tok = BengaliTokenizer.load(args.tokenizer)
     texts = load_paths(args.input)
     rep = evaluate(tok, texts)

@@ -15,7 +15,7 @@ they are for sorting and context only, never presented as precise statistics.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 
 @dataclass(frozen=True)

@@ -8,11 +8,9 @@ code-mixed text, and that every failure mode raises a typed error.
 
 import pytest
 
-from bntok import BengaliTokenizer, evaluate, grapheme_clusters, normalize
+from bntok import BengaliTokenizer, errors, evaluate, grapheme_clusters, normalize
 from bntok.atoms import AtomMap
-from bntok.graphemes import is_conjunct, has_reph
-from bntok import errors
-
+from bntok.graphemes import has_reph, is_conjunct
 
 CORPUS = [
     "আমি বাংলায় গান গাই আমি বাংলার গান গাই",
