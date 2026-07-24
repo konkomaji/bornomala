@@ -22,24 +22,26 @@ from __future__ import annotations
 
 import regex as _re
 
+from . import substrate
+
 _GRAPHEME = _re.compile(r"\X")
 
 # --- Bengali codepoints (U+0980 block) -----------------------------------
-VIRAMA = "্"        # hasanta, triggers conjunct formation
-NUKTA = "়"
-RA = "র"            # র, the consonant that forms reph / ra-phala
-YA = "য"            # য, forms ya-phala
-ZWJ = "‍"
-ZWNJ = "‌"
+VIRAMA = substrate.VIRAMA        # hasanta, triggers conjunct formation
+NUKTA = substrate.NUKTA
+RA = substrate.RA            # র, the consonant that forms reph / ra-phala
+YA = substrate.YA            # য, forms ya-phala
+ZWJ = substrate.ZWJ
+ZWNJ = substrate.ZWNJ
 
 # Consonants (main range plus the nukta-formed rha/yya letters).
-_CONSONANTS = {chr(c) for c in range(0x0995, 0x09B9 + 1)} | {"ড়", "ঢ়", "য়", "ৎ"}
+_CONSONANTS = substrate.CONSONANTS
 # Independent vowels.
-_IND_VOWELS = {chr(c) for c in range(0x0985, 0x098C + 1)} | {"এ", "ঐ", "ও", "ঔ"}
+_IND_VOWELS = substrate.VOWELS
 # Dependent vowel signs (matra / kar).
-_VOWEL_SIGNS = {chr(c) for c in range(0x09BE, 0x09CC + 1)} | {"ৗ"}
+_VOWEL_SIGNS = substrate.MATRAS
 # Signs.
-_SIGNS = {"ঁ", "ং", "ঃ"}  # candrabindu, anusvara, visarga
+_SIGNS = substrate.MODIFIERS  # candrabindu, anusvara, visarga
 
 # Bengali's own sentence- and verse-terminating punctuation (দাঁড়ি / দ্বিদাঁড়ি) is
 # NOT in the Bengali Unicode block: it is the shared, script-neutral DANDA and
@@ -51,18 +53,18 @@ _SIGNS = {"ঁ", "ং", "ঃ"}  # candrabindu, anusvara, visarga
 # reusing U+09F7 BENGALI CURRENCY NUMERATOR FOUR as a visual danda substitute
 # on fonts/typewriters that lacked the real one; it is covered anyway since
 # it is inside BENGALI_BLOCK.)
-DANDA = "।"
-DOUBLE_DANDA = "॥"
-SHARED_INDIC_PUNCTUATION = frozenset({DANDA, DOUBLE_DANDA})
+DANDA = substrate.DANDA
+DOUBLE_DANDA = substrate.DOUBLE_DANDA
+SHARED_INDIC_PUNCTUATION = substrate.SHARED_INDIC_PUNCTUATION
 
 # Full coverage sets. The tokenizer guarantees an atom for every codepoint in the
 # Bengali block, Bengali's shared (non-Bengali-block) punctuation, and ASCII
 # printable characters, regardless of what the induction corpus happened to
 # contain. This makes encode/decode round-trip for any Bengali or code-mixed
 # English text, not only text resembling the corpus.
-BENGALI_BLOCK = frozenset(chr(c) for c in range(0x0980, 0x09FF + 1))
-ASCII_PRINTABLE = frozenset(chr(c) for c in range(0x20, 0x7E + 1))
-GUARANTEED_CODEPOINTS = BENGALI_BLOCK | SHARED_INDIC_PUNCTUATION | ASCII_PRINTABLE
+BENGALI_BLOCK = substrate.BENGALI_BLOCK
+ASCII_PRINTABLE = substrate.ASCII_PRINTABLE
+GUARANTEED_CODEPOINTS = substrate.GUARANTEED_CODEPOINTS
 
 
 def grapheme_clusters(text: str) -> list[str]:
