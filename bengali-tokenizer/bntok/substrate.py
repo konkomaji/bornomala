@@ -36,21 +36,46 @@ ZWNJ = "‌"           # U+200C, zero-width non-joiner
 # (see normalize.py's docstring for the same caution; it happened once there
 # and happened again here while writing this file).
 CONSONANTS = ({chr(c) for c in range(0x0995, 0x09B9 + 1)}
-              | {chr(0x09DC), chr(0x09DD), chr(0x09DF), chr(0x09CE)})
+              | {chr(0x09DC), chr(0x09DD), chr(0x09DF), chr(0x09CE)}
+              # RA WITH MIDDLE DIAGONAL / RA WITH LOWER DIAGONAL: rare in
+              # standard Bengali, used in Assamese (a script Unicode shares
+              # this same block with) and occasionally in older Bengali text.
+              | {chr(0x09F0), chr(0x09F1)})
 
 # Independent vowels: used word-initially or after another vowel/modifier,
 # never directly attached to a consonant (that role belongs to MATRAS).
-VOWELS = {chr(c) for c in range(0x0985, 0x098C + 1)} | {"এ", "ঐ", "ও", "ঔ"}
+# VOCALIC RR / VOCALIC LL (U+09E0/U+09E1) are obsolete in modern Bengali
+# (Sanskrit-loanword vowels not used in everyday spelling) but are real,
+# assigned Bengali-block letters; included for completeness rather than left
+# to fall through to the "other" bucket unnamed.
+VOWELS = ({chr(c) for c in range(0x0985, 0x098C + 1)} | {"এ", "ঐ", "ও", "ঔ"}
+          | {chr(0x09E0), chr(0x09E1)})
 
 # Dependent vowel signs (matra / kar): each is a single Unicode codepoint,
 # including ো and ৌ, which are visually two-part (a component before the
 # consonant and one after) but are still one codepoint each in the Bengali
-# block, unlike some other Brahmic scripts' equivalent signs.
-MATRAS = {chr(c) for c in range(0x09BE, 0x09CC + 1)} | {"ৗ"}
+# block, unlike some other Brahmic scripts' equivalent signs. VOWEL SIGN
+# VOCALIC L / VOCALIC LL (U+09E2/U+09E3) are the matra forms of the obsolete
+# vowels above, included for the same completeness reason.
+MATRAS = ({chr(c) for c in range(0x09BE, 0x09CC + 1)} | {"ৗ"}
+          | {chr(0x09E2), chr(0x09E3)})
 
-# Modifiers: candrabindu (nasalization), anusvara, visarga. Attach after a
-# vowel or a completed consonant-conjunct-matra sequence.
-MODIFIERS = {"ঁ", "ং", "ঃ"}  # candrabindu, anusvara, visarga
+# Modifiers: candrabindu (nasalization), anusvara, visarga, plus the SANDHI
+# MARK (U+09FE, a nonspacing combining mark used to indicate a sandhi/vowel-
+# fusion boundary - included here rather than treated as punctuation since
+# Unicode categorises it Mn, same as the other three). Attach after a vowel
+# or a completed consonant-conjunct-matra sequence.
+MODIFIERS = {"ঁ", "ং", "ঃ", chr(0x09FE)}  # candrabindu, anusvara, visarga, sandhi mark
+
+# BENGALI LETTER VEDIC ANUSVARA (U+09FC) is deliberately NOT in MODIFIERS
+# despite its name: Unicode categorises it Lo (a standalone letter), not Mn/Mc
+# like the combining modifiers above, and it is Vedic-recitation-only, not
+# used in running Bengali text. It correctly falls to akshara.py's "other"
+# bucket. BENGALI ABBREVIATION SIGN (U+09FD) is punctuation (Po), also
+# correctly left to fall through to "other"; both are named here so neither
+# is an unnoticed gap.
+VEDIC_ANUSVARA = chr(0x09FC)
+ABBREVIATION_SIGN = chr(0x09FD)
 
 # --- matra visual position (informational only) -----------------------------
 # A simplified approximation of Unicode's own Indic_Positional_Category:
@@ -71,6 +96,8 @@ MATRA_POSITION: dict[str, str] = {
     "ূ": "below",       # UU
     "ৃ": "below",       # VOCALIC R
     "ৄ": "below",       # VOCALIC RR (rare)
+    chr(0x09E2): "below",  # VOWEL SIGN VOCALIC L (obsolete)
+    chr(0x09E3): "below",  # VOWEL SIGN VOCALIC LL (obsolete)
     "৅": "unassigned",  # no character assigned at this codepoint; MATRAS
                               # includes it only because it falls inside the
                               # 0x09BE-0x09CC blanket range (pre-existing, carried

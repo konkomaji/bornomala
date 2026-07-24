@@ -21,6 +21,32 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   fuzzer contract for the fourth. This supersedes nothing shipped; `bn-bpe-64k`
   remains the current artifact until v2 is built and measured against the same
   benchmarks.
+- **v2 roadmap steps 1-3 built: `bntok/substrate.py` and `bntok/akshara.py`.**
+  `substrate.py` is the single source of truth for the Bengali Unicode
+  inventory (consonants, vowels, matras, modifiers, plus matra visual-position
+  metadata for future featural encoding); `graphemes.py` now imports from it
+  rather than defining its own private copies (pure refactor, zero behaviour
+  change). Also documents Bengali-block letters not in everyday modern use
+  (archaic VOCALIC RR/LL vowels and their matras; RA WITH MIDDLE/LOWER
+  DIAGONAL, rare in standard Bengali, used in Assamese) instead of leaving
+  them to fall through unnamed.
+  `akshara.py` adds `aksharas(text) -> list[Akshara]`: a finite-state parser
+  for the akshara grammar (`Consonant Nukta* (Virama ZWJ? Consonant Nukta*)*
+  (Virama ZWNJ?)? Matra? Modifier* | Vowel Modifier*`), refined from the
+  design doc's simplified grammar after checking it against `regex`'s own
+  `\X` behaviour (ZWJ continues a conjunct, ZWNJ terminates it explicitly;
+  Nukta can repeat). Lossless (pure segmentation, never rewrites), total
+  (never raises for any `str` input), deterministic, and linear (fixed
+  integer offsets, no per-step re-slicing). New CLI: `python -m bntok akshara
+  --text "..."`. 95 tests total (was 15): `tests/test_substrate.py` (a
+  regression tripwire for the moved Unicode ranges) and
+  `tests/test_akshara.py` (a property/round-trip suite covering all 7 fuzzer
+  input classes from `FORMAL_SPEC.md` section 7.1, including the design doc's
+  own named hard words স্ত্রী/ক্ষ্ম/আকাঙ্ক্ষা/ঋত্বিক). See
+  `docs/known-issues.md`'s "Roadmap: a proposed v2" section for the two
+  documented divergences from `\X` this uncovered, and what step 4/5 (measured
+  benchmarking; featural encoding and morphology) still need before anything
+  here changes what `bn-bpe-64k` ships or claims.
 - **`stream_cc100` in `corpus.py`**: streams CC-100 Bengali (a large,
   2018-vintage CommonCrawl general-web corpus, same source used by the
   `nawaz0x1/Bengali-BPE-Tokenizer` baseline). Wired into

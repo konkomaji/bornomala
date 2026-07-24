@@ -17,6 +17,7 @@ Public API:
 """
 
 from . import corpus, errors, shaping
+from .akshara import Akshara, aksharas
 from .atoms import AtomMap
 from .evaluate import Report, evaluate
 from .graphemes import grapheme_clusters
@@ -26,10 +27,12 @@ from .tokenizer import BengaliTokenizer
 __version__ = "0.1.0"
 
 __all__ = [
+    "Akshara",
     "AtomMap",
     "BengaliTokenizer",
     "Report",
     "__version__",
+    "aksharas",
     "corpus",
     "errors",
     "evaluate",

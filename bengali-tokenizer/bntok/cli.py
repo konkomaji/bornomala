@@ -7,6 +7,7 @@ Command line for the Track A Bengali tokenizer.
   python -m bntok train --corpus-config configs/bpe-64k.json --vocab-size 64000 --out out/tok
   python -m bntok evaluate --tokenizer out/tok --input held_out.txt
   python -m bntok encode --tokenizer out/tok --text "আমি বাংলায় গান গাই"
+  python -m bntok akshara --text "স্ত্রী ক্ষ্ম আকাঙ্ক্ষা"
 
 Every command validates its inputs and reports errors as clear messages with a
 non-zero exit code, never a raw traceback.
@@ -106,6 +107,26 @@ def cmd_encode(args) -> int:
     return 0
 
 
+def cmd_akshara(args) -> int:
+    from .akshara import aksharas
+    chunks = aksharas(args.text)
+    print(json.dumps({
+        "text": args.text,
+        "n_chunks": len(chunks),
+        "chunks": [
+            {
+                "text": c.text,
+                "kind": c.kind,
+                "start": c.start,
+                "end": c.end,
+                "codepoints": [f"U+{ord(cp):04X}" for cp in c.text],
+            }
+            for c in chunks
+        ],
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="bntok", description="Project Bornomala Track A Bengali tokenizer.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -137,6 +158,10 @@ def main(argv=None) -> int:
     c.add_argument("--tokenizer", required=True)
     c.add_argument("--text", required=True)
     c.set_defaults(func=cmd_encode)
+
+    a = sub.add_parser("akshara", help="segment a string with the v2 akshara finite-state parser")
+    a.add_argument("--text", required=True)
+    a.set_defaults(func=cmd_akshara)
 
     args = p.parse_args(argv)
     try:

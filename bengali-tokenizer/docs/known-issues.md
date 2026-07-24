@@ -236,16 +236,61 @@ Kept as an honest record of what went wrong and how it was resolved.
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
 still trains a statistical compressor, just over conjunct-safe atoms instead
-of codepoints. A v2 design is proposed, not built: parse the akshara grammar
-(the virama rule) with a finite-state machine as the *primary* segmenter, and
-demote statistics to a fallback for loanwords, code-mixing, and noise, emitting
+of codepoints. A v2 design is proposed: parse the akshara grammar (the virama
+rule) with a finite-state machine as the *primary* segmenter, and demote
+statistics to a fallback for loanwords, code-mixing, and noise, emitting
 featural tokens (onset/vowel/modifier) instead of opaque BPE ids. Full argument
 and formal contract in
 [`docs/design/reading-bengali-on-its-own-terms.md`](design/reading-bengali-on-its-own-terms.md)
-and [`docs/design/FORMAL_SPEC.md`](design/FORMAL_SPEC.md). The named risk to
-resolve first: morphology-aware tokenizers can *raise* fertility even as they
-add structure, so v2's first deliverable is measuring that trade-off, not
-assuming it is favourable.
+and [`docs/design/FORMAL_SPEC.md`](design/FORMAL_SPEC.md).
+
+**Steps 1-3 of the design's own roadmap are now built and property-tested**
+(`bntok/substrate.py`, `bntok/akshara.py`, `tests/test_substrate.py`,
+`tests/test_akshara.py`; `python -m bntok akshara --text "..."`). This is a
+finite-state parser that segments text into akshara chunks by the grammar
+alone, no statistics yet: no vocabulary, no merges, no BPE anywhere in it.
+
+- Two intentional, tested divergences from `regex`'s `\X` (UAX #29 grapheme
+  clusters, what v1's `grapheme_clusters()` uses): (1) khanda-ta (ৎ) is
+  treated as an ordinary consonant here, so `ৎ + virama + consonant` chains
+  into one akshara, where `\X` clusters khanda-ta alone and the next
+  consonant separately - a real but malformed sequence either way, asserted
+  explicitly in `tests/test_akshara.py` rather than silently matched or
+  silently ignored; (2) on *unnormalized* decomposed input (e.g. a nukta
+  letter spelled as base+nukta rather than its precomposed singleton),
+  boundary alignment with `\X` is not asserted, since `aksharas()`
+  deliberately does not normalize internally (same pipeline convention as
+  the rest of this package: `normalize()` is a separate, explicit stage).
+- On well-formed, normalized Bengali, `aksharas()`'s boundaries are expected
+  to be identical to `grapheme_clusters()`'s (verified on the design doc's
+  own named hard words: স্ত্রী, ক্ষ্ম, আকাঙ্ক্ষা, ঋত্বিক). This is stated
+  honestly, not oversold: `\X` already groups full multi-consonant conjuncts
+  correctly via Unicode's own Extend-property rules, so the parser's v1
+  value is a provable, Unicode-library-independent grammar and groundwork
+  for featural encoding, not novel boundary placement on valid text.
+- `bntok/substrate.py` also documents Bengali-block letters not in everyday
+  modern use: the archaic Sanskrit-loanword vowels VOCALIC RR/LL (and their
+  matra forms), and RA WITH MIDDLE/LOWER DIAGONAL (rare in standard Bengali,
+  used in Assamese, which shares this Unicode block). All are included in
+  the relevant grammar class rather than left to fall through to the parser's
+  "other" bucket unnamed. VEDIC ANUSVARA and the ABBREVIATION SIGN are named
+  but deliberately excluded from every grammar class (the former is a
+  standalone letter per Unicode's own categorisation, not a combining
+  modifier; the latter is punctuation) - both correctly fall to "other".
+
+**Still not started**: step 4 (measuring `aksharas()` against `bn-bpe-64k`
+or published baselines like Sarvam-1/SUTRA/IndicSuperTokenizer/BengaliBPE)
+and step 5 (featural onset/vowel/modifier encoding, morphology, the
+statistical fallback layer, `decode()`). Comparing raw, unmerged akshara
+counts against post-vocabulary-merge BPE token counts before some
+merge/vocabulary layer exists over aksharas would be a misleading number
+unrelated to whether the grammar is correct - the named risk below is still
+entirely open and unmeasured.
+
+The named risk to resolve first, once step 4 exists: morphology-aware
+tokenizers can *raise* fertility even as they add structure, so v2's first
+measured deliverable is that trade-off, not an assumption that it is
+favourable.
 
 ## How to report a new issue
 

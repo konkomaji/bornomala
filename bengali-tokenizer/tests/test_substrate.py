@@ -13,33 +13,51 @@ from bntok import substrate
 
 
 def test_consonants_range_and_extras():
-    # 0x0995..0x09B9 inclusive (37) + RRA/RHA/YYA/khanda-ta (4) = 41.
+    # 0x0995..0x09B9 inclusive (37) + RRA/RHA/YYA/khanda-ta (4)
+    # + RA-WITH-MIDDLE-DIAGONAL/RA-WITH-LOWER-DIAGONAL (2, rare/Assamese) = 43.
     expected = {chr(c) for c in range(0x0995, 0x09B9 + 1)} | {
         chr(0x09DC), chr(0x09DD), chr(0x09DF), chr(0x09CE),
+        chr(0x09F0), chr(0x09F1),
     }
     assert substrate.CONSONANTS == expected
-    assert len(substrate.CONSONANTS) == 41
+    assert len(substrate.CONSONANTS) == 43
 
 
 def test_vowels_range_and_extras():
-    # 0x0985..0x098C inclusive (8, includes the rare/archaic VOCALIC L) + E/AI/O/AU (4) = 12.
+    # 0x0985..0x098C inclusive (8, includes the rare/archaic VOCALIC L)
+    # + E/AI/O/AU (4) + VOCALIC RR/LL (2, obsolete) = 14.
     expected = {chr(c) for c in range(0x0985, 0x098C + 1)} | {
         chr(0x098F), chr(0x0990), chr(0x0993), chr(0x0994),
+        chr(0x09E0), chr(0x09E1),
     }
     assert substrate.VOWELS == expected
-    assert len(substrate.VOWELS) == 12
+    assert len(substrate.VOWELS) == 14
 
 
 def test_matras_range_and_extra():
     # 0x09BE..0x09CC inclusive (15, includes 4 Unicode-unassigned codepoints
-    # inside the range) + AU LENGTH MARK (1) = 16.
-    expected = {chr(c) for c in range(0x09BE, 0x09CC + 1)} | {chr(0x09D7)}
+    # inside the range) + AU LENGTH MARK (1) + VOCALIC L/LL matras (2, obsolete) = 18.
+    expected = ({chr(c) for c in range(0x09BE, 0x09CC + 1)} | {chr(0x09D7)}
+                | {chr(0x09E2), chr(0x09E3)})
     assert substrate.MATRAS == expected
-    assert len(substrate.MATRAS) == 16
+    assert len(substrate.MATRAS) == 18
 
 
 def test_modifiers():
-    assert substrate.MODIFIERS == {chr(0x0981), chr(0x0982), chr(0x0983)}
+    assert substrate.MODIFIERS == {chr(0x0981), chr(0x0982), chr(0x0983), chr(0x09FE)}
+
+
+def test_vedic_anusvara_and_abbreviation_sign_are_named_but_not_in_any_grammar_class():
+    # Both are real Bengali-block codepoints intentionally excluded from the
+    # four grammar classes (see substrate.py's comment on VEDIC_ANUSVARA):
+    # VEDIC ANUSVARA is a standalone letter (Lo), not a combining modifier;
+    # ABBREVIATION SIGN is punctuation (Po). Both fall to akshara.py's "other"
+    # bucket, which is correct, not a gap.
+    assert substrate.VEDIC_ANUSVARA == chr(0x09FC)
+    assert substrate.ABBREVIATION_SIGN == chr(0x09FD)
+    for cls in (substrate.CONSONANTS, substrate.VOWELS, substrate.MATRAS, substrate.MODIFIERS):
+        assert substrate.VEDIC_ANUSVARA not in cls
+        assert substrate.ABBREVIATION_SIGN not in cls
 
 
 def test_primitives_are_the_expected_codepoints():
