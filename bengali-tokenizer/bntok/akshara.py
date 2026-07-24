@@ -7,23 +7,51 @@ Where the shipped v1 tokenizer (tokenizer.py) discovers Bengali's structure
 statistically (BPE merges over grapheme-cluster atoms), this module parses it
 directly from Bengali's own generative grammar: the akshara (orthographic
 syllable) is a consonant, optionally extended by further virama-joined
-consonants (an unbounded conjunct), followed by an optional vowel sign and
-zero or more modifiers - or, in the other branch, an independent vowel
-followed by modifiers. That grammar is regular (only Kleene-star, no
-recursion), so it is recognisable by a single left-to-right scan with no
-backtracking: O(n) in the length of the input (FORMAL_SPEC section 4).
+consonants (an unbounded conjunct), decorated along the way by nukta, matra,
+and modifier marks - or, in the other branch, an independent vowel with the
+same trailing decorations, minus the ability to chain into a further
+consonant. That grammar is regular (only Kleene-star, no recursion), so it is
+recognisable by a single left-to-right scan with no backtracking: O(n) in the
+length of the input (FORMAL_SPEC section 4).
 
-The grammar implemented here is refined from the design doc's simplified
-version after checking it against `regex`'s own UAX #29 `\X` behaviour on the
-actual edge cases (ZWJ continues a conjunct, ZWNJ terminates it explicitly;
-Nukta can repeat; a trailing virama needs its own slot):
+The grammar below went through three empirical passes against `regex`'s own
+UAX #29 `\X`, not assumption:
 
-    Akshara := Consonant Nukta*
-                 (Virama ZWJ? Consonant Nukta*)*
-                 (Virama ZWNJ?)?
-                 Matra?
-                 Modifier*
-             |  Vowel Modifier*
+  1. A first pass (ZWJ right after a virama continues a conjunct, ZWNJ right
+     after one terminates it explicitly; Nukta can repeat) was checked
+     against the design doc's simplified grammar and synthetic edge cases.
+  2. Running the parser against real Wikipedia held-out text (v2 roadmap
+     step 4's own measurement) surfaced two real, previously-untested
+     divergences: an independent vowel followed by a virama does NOT chain
+     into a further consonant the way a consonant does (`\X` clusters
+     "vowel+virama" as its own pair, then starts fresh) - Unicode's
+     Indic_Conjunct_Break (InCB) rule requires InCB=Consonant on *both*
+     sides of the virama, and vowels are not InCB=Consonant; and a Modifier
+     (candrabindu/anusvara/visarga/sandhi mark) breaks chain eligibility
+     even though Matra and Nukta do not.
+  3. A second held-out run (after fixing pass 2) surfaced a third: ZWJ and
+     ZWNJ are not tied to a fixed position relative to the virama the way
+     pass 1 assumed - `regex` clusters "Consonant ZWJ Virama Consonant" as
+     one continuing conjunct exactly like "Consonant Virama ZWJ Consonant",
+     and ZWNJ blocks chain continuation the same way a Modifier does,
+     wherever it falls in the run. The grammar below treats virama, nukta,
+     matra, modifier, ZWJ, and ZWNJ as one mixed, order-agnostic run (see
+     `_scan_tail`), tracking only *whether* a virama and a blocking
+     character (Modifier or ZWNJ) occurred anywhere in it, not their
+     positions - which is what actually matches `\X`, verified against
+     every combination tried, not guessed at.
+
+    Akshara := Consonant Tail
+             | Vowel Tail
+
+    Tail := a run mixing {Virama, Nukta, Matra, Modifier, ZWJ, ZWNJ} in any
+            order or repetition; if that run contained at least one Virama,
+            no Modifier or ZWNJ, the akshara started with a Consonant (never
+            a Vowel), and a Consonant immediately follows, that Consonant is
+            consumed too and the whole process repeats for its own tail
+            (an unbounded conjunct chain) - otherwise the run's absorption
+            already happened and the scan tries once more for further
+            trailing decoration.
 
 Anything that does not start a Consonant or Vowel branch (foreign scripts,
 ASCII, digits, punctuation, an orphan/leading virama, an isolated matra, an
@@ -53,10 +81,10 @@ first), it segments whatever string it is given; pre-normalisation and
 post-normalisation calls can legitimately produce different chunk boundaries
 on non-canonical input; see tests/test_akshara.py class 2.
 
-One deliberate, documented divergence from `\X`: khanda-ta (ৎ) is treated as
-an ordinary consonant here (matching the design doc's own "39 consonants...
-ক through ৎ" listing), so `ৎ + virama + consonant` is parsed as one
-continuing akshara. `\X` itself does not let khanda-ta chain this way (it
+One deliberate, documented divergence from `\X` remains: khanda-ta (ৎ) is
+treated as an ordinary consonant here (matching the design doc's own "39
+consonants... ক through ৎ" listing), so `ৎ + virama + consonant` is parsed as
+one continuing akshara. `\X` itself does not let khanda-ta chain this way (it
 clusters `ৎ্` alone, the next consonant separately) - khanda-ta is not
 supposed to take a conjunct in real orthography, so this sequence is
 malformed either way, but the two are asserted to disagree on it explicitly
@@ -110,17 +138,11 @@ def aksharas(text: str) -> list[Akshara]:
         ch = text[pos]
 
         if ch in substrate.CONSONANTS:
-            pos += 1
-            pos = _consume_nukta(text, pos, n)
-            pos = _consume_conjunct_tail(text, pos, n)
-            pos = _consume_trailing_virama(text, pos, n)
-            pos = _consume_matra(text, pos, n)
-            pos = _consume_modifiers(text, pos, n)
+            pos = _scan_tail(text, pos + 1, n, may_chain=True)
             out.append(Akshara(text[start:pos], "akshara", start, pos))
 
         elif ch in substrate.VOWELS:
-            pos += 1
-            pos = _consume_modifiers(text, pos, n)
+            pos = _scan_tail(text, pos + 1, n, may_chain=False)
             out.append(Akshara(text[start:pos], "akshara", start, pos))
 
         else:
@@ -131,41 +153,50 @@ def aksharas(text: str) -> list[Akshara]:
     return out
 
 
-def _consume_nukta(text: str, pos: int, n: int) -> int:
-    while pos < n and text[pos] == substrate.NUKTA:
-        pos += 1
-    return pos
+# Characters absorbable into the current chunk purely as decoration, plus
+# ZWJ/ZWNJ, which additionally interact with virama-chain continuation below.
+# Built once at import time: `substrate.NUKTA` is a single codepoint, the
+# rest are already frozenset-like collections.
+_LINK_CHARS = substrate.MATRAS | substrate.MODIFIERS | {substrate.NUKTA, substrate.ZWJ, substrate.ZWNJ}
+
+# Characters that, if seen anywhere since the last consonant, block a virama
+# in the same run from continuing the conjunct chain (Unicode's
+# Indic_Conjunct_Break rule: only Nukta/Matra/ZWJ are transparent to chain
+# continuation; a Modifier or an explicit ZWNJ are not, verified empirically
+# against `regex`'s own `\\X`, in either position relative to the virama).
+_CHAIN_BLOCKERS = substrate.MODIFIERS | {substrate.ZWNJ}
 
 
-def _consume_conjunct_tail(text: str, pos: int, n: int) -> int:
-    """(Virama ZWJ? Consonant Nukta*)* - greedily extend an unbounded conjunct."""
-    while pos < n and text[pos] == substrate.VIRAMA:
-        lookahead = pos + 1
-        if lookahead < n and text[lookahead] == substrate.ZWJ:
-            lookahead += 1
-        if lookahead < n and text[lookahead] in substrate.CONSONANTS:
-            pos = _consume_nukta(text, lookahead + 1, n)
-        else:
-            break  # this virama does not continue a conjunct; leave it for the trailing slot
-    return pos
+def _scan_tail(text: str, pos: int, n: int, may_chain: bool) -> int:
+    """Consume everything after an akshara's initial Consonant/Vowel.
 
-
-def _consume_trailing_virama(text: str, pos: int, n: int) -> int:
-    """(Virama ZWNJ?)? - an explicit/dangling virama that ends the conjunct here."""
-    if pos < n and text[pos] == substrate.VIRAMA:
-        pos += 1
-        if pos < n and text[pos] == substrate.ZWNJ:
+    Repeatedly: greedily absorb a single mixed run of virama/nukta/matra/
+    modifier/ZWJ/ZWNJ, in any order or repetition (all of these are generic
+    Extend-class characters to `\\X`, so real and malformed text alike can
+    interleave them in ways a rigid ordered grammar would miss - a modifier
+    before its matra, a repeated matra, a ZWJ before rather than after a
+    virama, all real cases found by running this parser against held-out
+    Wikipedia text, not hypothetical). After that run, if it contained at
+    least one virama, no `_CHAIN_BLOCKERS` character, `may_chain` is true
+    (a Consonant start; Vowels never chain), and a Consonant immediately
+    follows, consume that consonant too and repeat the whole process for
+    its own tail. Otherwise the run's absorption already happened and the
+    loop tries once more for further trailing decoration. Stops the moment
+    an iteration makes no progress.
+    """
+    while True:
+        before = pos
+        saw_virama = saw_blocker = False
+        while pos < n and (text[pos] == substrate.VIRAMA or text[pos] in _LINK_CHARS):
+            if text[pos] == substrate.VIRAMA:
+                saw_virama = True
+            elif text[pos] in _CHAIN_BLOCKERS:
+                saw_blocker = True
             pos += 1
-    return pos
 
+        if may_chain and saw_virama and not saw_blocker and pos < n and text[pos] in substrate.CONSONANTS:
+            pos += 1  # consume the chaining consonant; loop back for its own tail
 
-def _consume_matra(text: str, pos: int, n: int) -> int:
-    if pos < n and text[pos] in substrate.MATRAS:
-        pos += 1
-    return pos
-
-
-def _consume_modifiers(text: str, pos: int, n: int) -> int:
-    while pos < n and text[pos] in substrate.MODIFIERS:
-        pos += 1
+        if pos == before:
+            break
     return pos

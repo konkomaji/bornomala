@@ -47,6 +47,28 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   documented divergences from `\X` this uncovered, and what step 4/5 (measured
   benchmarking; featural encoding and morphology) still need before anything
   here changes what `bn-bpe-64k` ships or claims.
+- **v2 roadmap step 4 measured (Wikipedia held-out only): `scripts/compare.py`
+  gains `measure_akshara()`.** Runs `bntok.akshara.aksharas()` over the same
+  828-line held-out set `bn-bpe-64k` is benchmarked on, reported as its own
+  section (not folded into the fertility-sorted table, since the parser has
+  no vocabulary or merges yet, so its chunk count is a different kind of
+  number, not a like-for-like token count). Headline:
+  fertility 4.527 (vs `bn-bpe-64k`'s 1.524, expected pre-compression), and
+  conjunct fragmentation **0.0000 exactly**, better than `bn-bpe-64k`'s own
+  0.0001. Full writeup: `benchmarks/bengali-comparison.md`'s "v2 roadmap step
+  4" section.
+  Running this measurement against real text (not only synthetic tests)
+  found 3 real bugs in `akshara.py`'s grammar, now fixed: an independent
+  vowel followed by a virama does not chain into a further consonant the
+  way a consonant does; a Modifier (not Matra or Nukta) blocks
+  conjunct-chain continuation; and ZWJ/ZWNJ are not tied to a fixed
+  position relative to the virama the way the first version assumed. The
+  grammar is now a single unified tail-scan (`_scan_tail` in `akshara.py`)
+  rather than the rigid ordered sequence from the previous entry above; see
+  `docs/known-issues.md` points 11-13 for the full account, including the
+  intermediate 0.0012 fragmentation number this replaced. Test suite grew
+  from 95 to 103 (6 new regression tests for these cases, plus 2 more for
+  ZWJ/ZWNJ position).
 - **`stream_cc100` in `corpus.py`**: streams CC-100 Bengali (a large,
   2018-vintage CommonCrawl general-web corpus, same source used by the
   `nawaz0x1/Bengali-BPE-Tokenizer` baseline). Wired into

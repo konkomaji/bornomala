@@ -232,6 +232,51 @@ Kept as an honest record of what went wrong and how it was resolved.
     for a future ablation, not a silent change to what `bn-bpe-64k` was
     actually trained on.
 
+11. **An independent vowel followed by a virama does not chain into a
+    further consonant the way a consonant does.** Found by running the v2
+    akshara parser (`bntok/akshara.py`) against real Wikipedia held-out
+    text as its first roadmap-step-4 measurement, not a synthetic test.
+    Unicode's Indic_Conjunct_Break (InCB) rule requires InCB=Consonant on
+    both sides of the virama for a conjunct chain to continue; vowels are
+    not InCB=Consonant, so `\X` (`regex`'s UAX #29 grapheme clustering)
+    clusters "vowel+virama" as its own pair and starts fresh at whatever
+    follows. An earlier version of the parser's grammar had no
+    trailing-virama slot on the Vowel branch at all, so the bare vowel and
+    the following virama ended up as two separately-fragmenting chunks.
+    Fixed by giving the Vowel branch the same tail-scanning logic as
+    Consonant, just with chain continuation permanently disabled.
+
+12. **A Modifier blocks conjunct-chain continuation; Matra and Nukta do
+    not.** Also found via the same held-out measurement. Verified
+    empirically against `\X`: `consonant+matra+virama+consonant` clusters
+    as one continuing conjunct, but `consonant+modifier+virama+consonant`
+    clusters as two (the modifier and virama are absorbed into the first
+    chunk as generic Extend characters, but the chain does not continue).
+    An earlier version's grammar used a rigid `Matra? Modifier*` tail with
+    no re-check for a continuing virama after either, so real
+    repeated-matra sequences (found for real: a consonant followed by the
+    same vowel sign three or four times in a row, likely OCR/encoding
+    noise in the Wikipedia dump) and modifier-then-virama sequences both
+    fragmented. Fixed by a unified tail scan (`_scan_tail` in
+    `akshara.py`) that absorbs any mix or repetition of
+    {Nukta, Matra, Modifier} and only re-checks for a continuing virama
+    after the whole run, tracking whether a Modifier occurred in it.
+
+13. **ZWJ and ZWNJ are not tied to a fixed position relative to the
+    virama.** The first fix for point 12 above still assumed "virama, then
+    optionally ZWJ or ZWNJ" (the design doc's own simplified ordering). A
+    second held-out measurement pass (after fixing point 12) found real
+    Wikipedia text containing `Consonant ZWJ Virama Consonant` sequences
+    that `\X` clusters exactly like `Consonant Virama ZWJ Consonant` -
+    continuing the conjunct either way - and a ZWNJ before the virama
+    blocks chain continuation the same way a ZWNJ after it does. Fixed by
+    folding ZWJ/ZWNJ into the same unified tail-scan run as point 12,
+    order-agnostic, tracking only whether a ZWNJ (like a Modifier)
+    occurred anywhere in the run. This third pass is what brought conjunct
+    fragmentation on the Wikipedia held-out set to exactly 0.0000 (see
+    `benchmarks/bengali-comparison.md`'s "v2 roadmap step 4" section); the
+    first measurement, before any of points 11-13 were fixed, was 0.0012.
+
 ## Roadmap: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
@@ -278,14 +323,32 @@ alone, no statistics yet: no vocabulary, no merges, no BPE anywhere in it.
   standalone letter per Unicode's own categorisation, not a combining
   modifier; the latter is punctuation) - both correctly fall to "other".
 
-**Still not started**: step 4 (measuring `aksharas()` against `bn-bpe-64k`
-or published baselines like Sarvam-1/SUTRA/IndicSuperTokenizer/BengaliBPE)
-and step 5 (featural onset/vowel/modifier encoding, morphology, the
-statistical fallback layer, `decode()`). Comparing raw, unmerged akshara
-counts against post-vocabulary-merge BPE token counts before some
-merge/vocabulary layer exists over aksharas would be a misleading number
-unrelated to whether the grammar is correct - the named risk below is still
-entirely open and unmeasured.
+**Step 4 (Wikipedia held-out only) is now measured, via
+`scripts/compare.py`'s `measure_akshara()`.** Full writeup:
+`benchmarks/bengali-comparison.md`'s "v2 roadmap step 4" section. Headline,
+on the same 828-line held-out set as `bn-bpe-64k`'s own benchmark: fertility
+4.527 (vs `bn-bpe-64k`'s 1.524 - expected, since the parser has no
+vocabulary/merges yet, roadmap step 5), and conjunct fragmentation **0.0000
+exactly**, better than `bn-bpe-64k`'s own 0.0001 (which still carries a
+small residual from its atom-frequency threshold, point 1 above; the
+parser's guarantee has no such threshold).
+
+**This measurement itself found 3 real bugs**, exactly the point of running
+it against real text rather than only synthetic tests: the first
+fragmentation number measured (before fixing them) was 0.0012, worse than
+`bn-bpe-64k`'s 0.0001, and is kept in the commit history rather than quietly
+replaced (the same honesty standard as point 8 above). Full account, in the
+same style as the other bugs found during development: see points 11-13 in
+"Bugs found and fixed during development" above.
+
+**Still not done**: step 4 against the other three registers (literary/
+formal, general web, news) and against the published external baselines
+(Sarvam-1, SUTRA, IndicSuperTokenizer, BengaliBPE) the roadmap also names;
+step 5 (featural onset/vowel/modifier encoding, morphology, the statistical
+fallback layer, `decode()`). Comparing raw, unmerged akshara counts against
+post-vocabulary-merge BPE token counts remains a different-kind-of-number,
+not yet a genuinely comparable fertility claim - the named risk below is
+still open until step 5 exists and is measured.
 
 The named risk to resolve first, once step 4 exists: morphology-aware
 tokenizers can *raise* fertility even as they add structure, so v2's first

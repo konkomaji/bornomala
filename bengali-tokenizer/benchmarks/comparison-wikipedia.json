@@ -85,5 +85,17 @@
       "n_fragmented": null,
       "n_clusters": null
     }
-  ]
+  ],
+  "akshara_v2": {
+    "model": "Bornomala v2 akshara parser (pre-vocabulary, no merges)",
+    "available": true,
+    "tokens": 51228,
+    "words": 11316,
+    "fertility": 4.527,
+    "strr": 0.045,
+    "bytes_per_token": 3.83,
+    "conjunct_fragmentation": 0.0,
+    "n_fragmented": 0,
+    "n_clusters": 40690
+  }
 }

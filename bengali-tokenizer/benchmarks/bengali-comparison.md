@@ -48,6 +48,25 @@ The first measured, reproducible comparison of how efficiently mainstream tokeni
 
 An early version of this comparison's own fragmentation counter for our tokenizer had two bugs, found via a hard assertion added specifically to catch this class of mistake: (1) an off-by-one from the Metaspace word-boundary marker's leading space, which manufactured thousands of false fragmentation hits; (2) `encode_tokens()`'s debug view returning the literal string `<unk>` in place of missing text for out-of-coverage foreign-script codepoints, rather than an empty placeholder, which could silently desynchronise offsets on such lines. Both are now fixed in `scripts/compare.py`, and the fix asserts the reconstruction is exact on every line it measures, so a similar bug cannot silently corrupt a comparison again. The numbers above are from the corrected measurement. Full account: `docs/known-issues.md` point 8.
 
+## v2 roadmap step 4: the akshara finite-state parser, measured (not a like-for-like row)
+
+The v2 design's own roadmap (`docs/design/reading-bengali-on-its-own-terms.md`) calls for benchmarking the akshara parser (`bntok/akshara.py`) before building anything on top of it. Measured on the exact same 828-line Wikipedia held-out set above, via `scripts/compare.py`'s `measure_akshara()`:
+
+| | Fertility | STRR | Bytes/token | Conjunct fragmentation |
+|---|--:|--:|--:|--:|
+| Bornomala v2 akshara parser (pre-vocabulary, no merges) | 4.527 | 0.045 | 3.83 | **0.0000** |
+| Bornomala Track A bpe 64000 (v1, for reference) | 1.524 | 0.722 | 11.38 | 0.0001 |
+
+**This is not a like-for-like comparison and is reported separately on purpose.** The akshara parser has no vocabulary and no merges yet (v2 roadmap step 5 is not built): its "fertility" is the number of un-merged akshara/other chunks per word, the pre-compression granularity, not a trained tokenizer's post-BPE-merge token count. It needing roughly 3x more units per word than v1's compressed BPE tokenizer is expected, not a regression, exactly the number the roadmap's own step 4 asks to be measured and reported honestly before proceeding to step 5.
+
+**Conjunct fragmentation is the one column above that IS a fair, like-for-like number**, since it does not depend on compression: **0.0000**, exactly, across every one of the 828 held-out lines (verified directly, not assumed) — better even than v1's own 0.0001, which still carries a small residual from its atom-frequency threshold (`docs/known-issues.md` point 1). The akshara parser's guarantee has no such threshold: it is 0 by grammar construction, on every cluster the corpus happens to contain or not.
+
+**Three real bugs were found and fixed by running this measurement against real text, not synthetic tests**, all now covered by `tests/test_akshara.py` and documented in `docs/known-issues.md`'s roadmap section: an independent vowel followed by a virama does not chain into a further consonant the way a consonant does; a Modifier (not a Matra or Nukta) blocks conjunct-chain continuation; and ZWJ/ZWNJ are not tied to a fixed position relative to the virama the way an earlier pass assumed. The first fragmentation measurement on this held-out set, before these fixes, was 0.0012 — worse than v1's 0.0001 — and is kept in the commit history rather than quietly replaced, the same way the bug in point 8 above is.
+
+Reproduce: `python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --skip 15000 --limit 800` (the akshara row is printed alongside the tokenizer comparison; raw numbers also in `comparison-wikipedia.json`'s `akshara_v2` key).
+
+Step 4 is not complete: this is v1's own held-out set only, not yet checked against the other three registers, and not yet checked against the published external baselines (Sarvam-1, SUTRA, IndicSuperTokenizer, BengaliBPE) the roadmap also names. Step 5 (featural encoding, morphology, the statistical fallback layer that would make fertility genuinely comparable) has not started.
+
 ## Prior result (v0.1, superseded)
 
 The first released version of this tokenizer (BPE, 32,000 vocabulary, trained on 12,000 Wikipedia articles only) measured fertility 1.39 / STRR 0.766 / conjunct fragmentation 0.0006 on its own held-out Wikipedia set (a different held-out slice than the one above, and measured before the bug fix described above, so not directly comparable). It is kept here for the historical record; it is no longer the shipped artifact. Full writeup of why vocabulary size mattered more than corpus mix alone: `docs/known-issues.md` point 7.
