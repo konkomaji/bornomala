@@ -69,6 +69,21 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   intermediate 0.0012 fragmentation number this replaced. Test suite grew
   from 95 to 103 (6 new regression tests for these cases, plus 2 more for
   ZWJ/ZWNJ position).
+- **v2 roadmap step 4 extended to the other three held-out registers**
+  (literary/formal, general web, news - same held-out sets as `bn-bpe-64k`'s
+  own per-register results). Conjunct fragmentation measured **exactly
+  0.0000 on general web and news**; literary/formal measured 0.000005
+  (13 out of 2,868,557 clusters). Investigated rather than left unexplained:
+  all 13 are a Bengali consonant directly followed by a Devanagari combining
+  mark (U+093E/U+093F/U+0902), almost certainly OCR/font-mapping noise in
+  the scanned 19th/20th-century literature this register draws from. This
+  is a deliberate scope boundary, not a bug - `akshara.py`'s Matra/Modifier
+  sets are Bengali-block only by design, so it correctly does not absorb a
+  foreign-script mark into a Bengali consonant's chunk; widening the
+  grammar to do so would blur what a Bengali akshara grammar means and mask
+  real encoding noise. See `docs/known-issues.md` point 14 and
+  `benchmarks/bengali-comparison.md`'s step 4 section for the full 4-register
+  table and account.
 - **`stream_cc100` in `corpus.py`**: streams CC-100 Bengali (a large,
   2018-vintage CommonCrawl general-web corpus, same source used by the
   `nawaz0x1/Bengali-BPE-Tokenizer` baseline). Wired into

@@ -50,22 +50,34 @@ An early version of this comparison's own fragmentation counter for our tokenize
 
 ## v2 roadmap step 4: the akshara finite-state parser, measured (not a like-for-like row)
 
-The v2 design's own roadmap (`docs/design/reading-bengali-on-its-own-terms.md`) calls for benchmarking the akshara parser (`bntok/akshara.py`) before building anything on top of it. Measured on the exact same 828-line Wikipedia held-out set above, via `scripts/compare.py`'s `measure_akshara()`:
+The v2 design's own roadmap (`docs/design/reading-bengali-on-its-own-terms.md`) calls for benchmarking the akshara parser (`bntok/akshara.py`) before building anything on top of it. Measured via `scripts/compare.py`'s `measure_akshara()`, on the exact same four held-out sets as v1's own results above (828 Wikipedia lines; the three register held-outs, same document budgets):
 
-| | Fertility | STRR | Bytes/token | Conjunct fragmentation |
+| Register | Fertility | STRR | Bytes/token | Conjunct fragmentation |
 |---|--:|--:|--:|--:|
-| Bornomala v2 akshara parser (pre-vocabulary, no merges) | 4.527 | 0.045 | 3.83 | **0.0000** |
-| Bornomala Track A bpe 64000 (v1, for reference) | 1.524 | 0.722 | 11.38 | 0.0001 |
+| Wikipedia | 4.527 | 0.045 | 3.83 | **0.0000** |
+| Literary / formal | 4.055 | 0.078 | 3.99 | 0.000005 (13/2,868,557) |
+| General web | 4.189 | 0.041 | 4.03 | **0.0000** |
+| News | 4.111 | 0.035 | 4.14 | **0.0000** |
+| Bornomala Track A bpe 64000 (v1, Wikipedia, for reference) | 1.524 | 0.722 | 11.38 | 0.0001 |
 
 **This is not a like-for-like comparison and is reported separately on purpose.** The akshara parser has no vocabulary and no merges yet (v2 roadmap step 5 is not built): its "fertility" is the number of un-merged akshara/other chunks per word, the pre-compression granularity, not a trained tokenizer's post-BPE-merge token count. It needing roughly 3x more units per word than v1's compressed BPE tokenizer is expected, not a regression, exactly the number the roadmap's own step 4 asks to be measured and reported honestly before proceeding to step 5.
 
-**Conjunct fragmentation is the one column above that IS a fair, like-for-like number**, since it does not depend on compression: **0.0000**, exactly, across every one of the 828 held-out lines (verified directly, not assumed) — better even than v1's own 0.0001, which still carries a small residual from its atom-frequency threshold (`docs/known-issues.md` point 1). The akshara parser's guarantee has no such threshold: it is 0 by grammar construction, on every cluster the corpus happens to contain or not.
+**Conjunct fragmentation is the one column above that IS a fair, like-for-like number**, since it does not depend on compression: **exactly 0.0000 on three of the four registers** (verified directly, not assumed) — better than v1's own 0.0001 on Wikipedia, which still carries a small residual from its atom-frequency threshold (`docs/known-issues.md` point 1). The akshara parser's guarantee has no such threshold: it is 0 by grammar construction, on every cluster the corpus happens to contain or not.
 
-**Three real bugs were found and fixed by running this measurement against real text, not synthetic tests**, all now covered by `tests/test_akshara.py` and documented in `docs/known-issues.md`'s roadmap section: an independent vowel followed by a virama does not chain into a further consonant the way a consonant does; a Modifier (not a Matra or Nukta) blocks conjunct-chain continuation; and ZWJ/ZWNJ are not tied to a fixed position relative to the virama the way an earlier pass assumed. The first fragmentation measurement on this held-out set, before these fixes, was 0.0012 — worse than v1's 0.0001 — and is kept in the commit history rather than quietly replaced, the same way the bug in point 8 above is.
+**Literary/formal measured 0.000005 (13 out of 2,868,557 clusters), not exactly 0 — investigated, not left unexplained.** All 13 are a Bengali consonant directly followed by a Devanagari combining mark (U+093E/U+093F/U+0902), almost certainly OCR/font-mapping noise in the scanned 19th/20th-century literature this register draws from (which includes a Mahabharata translation, `docs/known-issues.md` point 6). `\X` clusters cross-script combining marks with any preceding base regardless of script; this parser's Matra/Modifier sets are deliberately Bengali-block only, so it correctly does not absorb a foreign-script mark into a Bengali consonant's chunk. This is a documented scope boundary, not a bug — see `docs/known-issues.md` point 14 for the full account and why it is not "fixed" by widening the grammar.
 
-Reproduce: `python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --skip 15000 --limit 800` (the akshara row is printed alongside the tokenizer comparison; raw numbers also in `comparison-wikipedia.json`'s `akshara_v2` key).
+**Three real bugs were found and fixed by running this measurement against real Wikipedia text first, not synthetic tests**, all now covered by `tests/test_akshara.py` and documented in `docs/known-issues.md` points 11-13: an independent vowel followed by a virama does not chain into a further consonant the way a consonant does; a Modifier (not a Matra or Nukta) blocks conjunct-chain continuation; and ZWJ/ZWNJ are not tied to a fixed position relative to the virama the way an earlier pass assumed. The first fragmentation measurement on the Wikipedia set, before these fixes, was 0.0012 — worse than v1's 0.0001 — and is kept in the commit history rather than quietly replaced, the same way the bug in point 8 above is.
 
-Step 4 is not complete: this is v1's own held-out set only, not yet checked against the other three registers, and not yet checked against the published external baselines (Sarvam-1, SUTRA, IndicSuperTokenizer, BengaliBPE) the roadmap also names. Step 5 (featural encoding, morphology, the statistical fallback layer that would make fertility genuinely comparable) has not started.
+Reproduce:
+```
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --skip 15000 --limit 800
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register literary_formal --limit 1000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register general_web --limit 1000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register news --limit 1000
+```
+The akshara row is printed alongside the tokenizer comparison in each case; raw numbers also in each `comparison-*.json`'s `akshara_v2` key.
+
+Step 4 is not complete: measured against v1's own held-out sets across all four registers now, but not yet checked against the published external baselines (Sarvam-1, SUTRA, IndicSuperTokenizer, BengaliBPE) the roadmap also names. Step 5 (featural encoding, morphology, the statistical fallback layer that would make fertility genuinely comparable) has not started.
 
 ## Prior result (v0.1, superseded)
 
