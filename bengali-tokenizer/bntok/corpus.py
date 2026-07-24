@@ -90,45 +90,93 @@ def stream_wikipedia(lang: str = "bn", limit: int = 5000) -> list[str]:
     return out
 
 
+_CC100_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "bntok", "cc100")
+
+
+def _download_cc100_shard(repo_path: str) -> str:
+    """Download one CC-100 parquet shard by plain HTTP streaming, cached locally.
+
+    `huggingface_hub.hf_hub_download` hangs indefinitely on this specific
+    repository (verified directly: a plain HTTP GET to the exact same
+    resolved URL succeeds immediately and streams at normal speed, while
+    `hf_hub_download` on the same file, same revision, does not return even
+    after many minutes, with or without the Xet transfer backend). This is
+    not diagnosed further than that; it is bypassed here, for CC-100 only -
+    every other stream_* function in this module still uses
+    `hf_hub_download` successfully and is unaffected. See
+    docs/known-issues.md for the full account.
+    """
+    try:
+        import requests
+    except ImportError as e:
+        raise ConfigError(
+            "streaming CC-100 needs the requests library: pip install requests"
+        ) from e
+    os.makedirs(_CC100_CACHE_DIR, exist_ok=True)
+    local_path = os.path.join(_CC100_CACHE_DIR, repo_path.replace("/", "_"))
+    if os.path.exists(local_path):
+        return local_path
+    url = f"https://huggingface.co/datasets/cc100/resolve/refs%2Fconvert%2Fparquet/{repo_path}"
+    tmp_path = local_path + ".tmp"
+    try:
+        with requests.get(url, stream=True, timeout=(10, 60)) as r:
+            r.raise_for_status()
+            with open(tmp_path, "wb") as f:
+                f.writelines(r.iter_content(chunk_size=1 << 20))
+        os.replace(tmp_path, local_path)
+    except Exception as e:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise ConfigError(f"could not download CC-100 shard {repo_path}: {e}") from e
+    return local_path
+
+
 def stream_cc100(
     lang: str = "bn", limit_lines: int = 300_000, offset_lines: int = 0,
 ) -> list[str]:
     """Stream CC-100 (CommonCrawl-derived web text) for one language.
 
-    Optional: requires `pip install datasets`. CC-100 (Wenzek et al., 2020;
-    the corpus behind XLM-R's training data) is a large, general-web Bengali
-    source, orders of magnitude bigger than any single source currently in
-    `build_configured_corpus`, but it is 2018-vintage CommonCrawl text: noisier
-    and not literary-weighted, so it is meant as a bulk general-web supplement,
-    not a replacement for the literary-weighted mix. Each dataset row is
+    Optional: requires `pandas`, `pyarrow`, `huggingface_hub` (for listing
+    shards), and `requests` (for downloading them; see
+    `_download_cc100_shard`). CC-100 (Wenzek et al., 2020; the corpus behind
+    XLM-R's training data) is a large, general-web Bengali source, orders of
+    magnitude bigger than any single source currently in
+    `build_configured_corpus`, but it is 2018-vintage CommonCrawl text:
+    noisier and not literary-weighted, so it is meant as a bulk general-web
+    supplement, not a replacement for the literary-weighted mix. Each row is
     already one line/paragraph (CC-100's own format separates documents by a
-    blank line and paragraphs by a single newline, and the HF mirror streams
-    one row per paragraph), so `offset_lines` skips that many rows before
-    collecting, letting a disjoint held-out slice be drawn the same way as the
-    other sources here.
+    blank line and paragraphs by a single newline, and the HF parquet mirror
+    stores one row per paragraph), so `offset_lines` skips that many rows
+    before collecting, letting a disjoint held-out slice be drawn the same
+    way as the other sources here. Reads shards in order, only as many as
+    needed to satisfy `offset_lines + limit_lines`.
     """
     try:
-        from datasets import load_dataset
+        import pandas as pd
     except ImportError as e:
         raise ConfigError(
-            "streaming CC-100 needs the datasets library: pip install datasets"
+            "streaming CC-100 needs pandas: pip install pandas pyarrow"
         ) from e
     if limit_lines < 1:
         raise ConfigError(f"limit_lines must be >= 1, got {limit_lines}")
     if offset_lines < 0:
         raise ConfigError(f"offset_lines must be >= 0, got {offset_lines}")
 
-    ds = load_dataset("cc100", lang=lang, split="train", streaming=True)
+    files = _list_hf_parquet_files("cc100", f"{lang}/train/", revision="refs/convert/parquet")
     out: list[str] = []
     seen = 0
-    for row in ds:
-        text = row.get("text", "")
-        if not text or not text.strip():
-            continue
-        seen += 1
-        if seen <= offset_lines:
-            continue
-        out.append(text.strip())
+    for repo_path in files:
+        local = _download_cc100_shard(repo_path)
+        df = pd.read_parquet(local, columns=["text"])
+        for text in df["text"]:
+            if not isinstance(text, str) or not text.strip():
+                continue
+            seen += 1
+            if seen <= offset_lines:
+                continue
+            out.append(text.strip())
+            if seen - offset_lines >= limit_lines:
+                break
         if seen - offset_lines >= limit_lines:
             break
     if not out:
@@ -170,7 +218,7 @@ def _is_clean_bengali_line(line: str, min_ratio: float = 0.75, min_len: int = 4)
     return (matches / len(line)) >= min_ratio
 
 
-def _list_hf_parquet_files(repo_id: str, prefix: str) -> list[str]:
+def _list_hf_parquet_files(repo_id: str, prefix: str, revision: str | None = None) -> list[str]:
     try:
         from huggingface_hub import HfApi
     except ImportError as e:
@@ -179,7 +227,7 @@ def _list_hf_parquet_files(repo_id: str, prefix: str) -> list[str]:
         ) from e
     api = HfApi()
     files = sorted(
-        f for f in api.list_repo_files(repo_id, repo_type="dataset")
+        f for f in api.list_repo_files(repo_id, repo_type="dataset", revision=revision)
         if f.startswith(prefix) and f.endswith(".parquet")
     )
     if not files:

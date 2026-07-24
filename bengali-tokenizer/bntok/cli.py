@@ -8,6 +8,10 @@ Command line for the Track A Bengali tokenizer.
   python -m bntok evaluate --tokenizer out/tok --input held_out.txt
   python -m bntok encode --tokenizer out/tok --text "আমি বাংলায় গান গাই"
   python -m bntok akshara --text "স্ত্রী ক্ষ্ম আকাঙ্ক্ষা"
+  python -m bntok bmbt-train --corpus-config configs/bpe-64k.json --out out/bmbt
+  python -m bntok bmbt-encode --tokenizer out/bmbt --text "আমি বাংলায় গান গাই"
+  python -m bntok bmbt-evaluate --tokenizer out/bmbt --input held_out.txt
+  python -m bntok bmbt-featurize --text "স্ত্রী ক্ষ্ম আকাঙ্ক্ষা"
 
 Every command validates its inputs and reports errors as clear messages with a
 non-zero exit code, never a raw traceback.
@@ -127,6 +131,64 @@ def cmd_akshara(args) -> int:
     return 0
 
 
+def cmd_bmbt_train(args) -> int:
+    from .bmbt import BMBT
+    from .evaluate import evaluate
+    corpus = _load_input(args)
+    print(f"loaded {len(corpus)} lines; training BMBT {args.algo} vocab={args.vocab_size} ...",
+          file=sys.stderr)
+    tok = BMBT.train(
+        corpus, algo=args.algo, vocab_size=args.vocab_size,
+        min_atom_freq=args.min_atom_freq, zwnj_policy=args.zwnj,
+    )
+    tok.save(args.out)
+    rep = evaluate(tok, corpus[: min(len(corpus), 2000)])
+    print(json.dumps({"saved": args.out, "config": tok.config, "metrics_on_sample": rep.as_dict()},
+                     ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_bmbt_evaluate(args) -> int:
+    from .bmbt import BMBT
+    from .corpus import load_paths
+    from .evaluate import evaluate
+    tok = BMBT.load(args.tokenizer)
+    texts = load_paths(args.input)
+    rep = evaluate(tok, texts)
+    print(json.dumps(rep.as_dict(), ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_bmbt_encode(args) -> int:
+    from .bmbt import BMBT
+    tok = BMBT.load(args.tokenizer)
+    ids = tok.encode(args.text)
+    print(json.dumps({
+        "text": args.text,
+        "n_tokens": len(ids),
+        "ids": ids,
+        "tokens": tok.encode_tokens(args.text),
+        "roundtrip_ok": tok.roundtrip_ok(args.text),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_bmbt_featurize(args) -> int:
+    import dataclasses
+
+    from .bmbt import AksharaFeatures, featurize
+    chunks = featurize(args.text)
+    out = []
+    for c in chunks:
+        if isinstance(c, AksharaFeatures):
+            out.append({"kind": "akshara", **dataclasses.asdict(c)})
+        else:
+            out.append({"kind": c.kind, "text": c.text, "start": c.start, "end": c.end})
+    print(json.dumps({"text": args.text, "n_chunks": len(chunks), "chunks": out},
+                     ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="bntok", description="Project Bornomala Track A Bengali tokenizer.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -162,6 +224,34 @@ def main(argv=None) -> int:
     a = sub.add_parser("akshara", help="segment a string with the v2 akshara finite-state parser")
     a.add_argument("--text", required=True)
     a.set_defaults(func=cmd_akshara)
+
+    bt = sub.add_parser("bmbt-train", help="train BMBT (Bornomala's Bengali Tokenizer, v2)")
+    bt.add_argument("--input", nargs="*", help="text files or glob patterns")
+    bt.add_argument("--wikipedia", help="stream Wikipedia for this language code (e.g. bn)")
+    bt.add_argument("--limit", type=int, default=5000, help="max Wikipedia articles")
+    bt.add_argument("--corpus-config", dest="corpus_config",
+                     help="JSON config with weighted corpus_sources (see configs/bpe-64k.json)")
+    bt.add_argument("--algo", choices=["bpe", "unigram"], default="bpe")
+    bt.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
+    bt.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
+    bt.add_argument("--zwnj", choices=["preserve", "strip"], default="preserve")
+    bt.add_argument("--out", required=True, help="output directory for the tokenizer")
+    bt.set_defaults(func=cmd_bmbt_train)
+
+    be = sub.add_parser("bmbt-evaluate", help="evaluate a saved BMBT tokenizer")
+    be.add_argument("--tokenizer", required=True, help="tokenizer directory")
+    be.add_argument("--input", nargs="+", required=True, help="held-out text files")
+    be.set_defaults(func=cmd_bmbt_evaluate)
+
+    bc = sub.add_parser("bmbt-encode", help="encode a string with a saved BMBT tokenizer")
+    bc.add_argument("--tokenizer", required=True)
+    bc.add_argument("--text", required=True)
+    bc.set_defaults(func=cmd_bmbt_encode)
+
+    bf = sub.add_parser("bmbt-featurize",
+                         help="segment and decompose a string into onset/vowel/modifier features")
+    bf.add_argument("--text", required=True)
+    bf.set_defaults(func=cmd_bmbt_featurize)
 
     args = p.parse_args(argv)
     try:
