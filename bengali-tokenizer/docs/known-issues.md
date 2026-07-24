@@ -277,6 +277,30 @@ Kept as an honest record of what went wrong and how it was resolved.
     `benchmarks/bengali-comparison.md`'s "v2 roadmap step 4" section); the
     first measurement, before any of points 11-13 were fixed, was 0.0012.
 
+14. **A rare, deliberate scope boundary, not a bug: Bengali consonant
+    immediately followed by a Devanagari combining mark.** Found when
+    extending the step-4 measurement to the `literary_formal` held-out
+    register (Sangraha pdf-typed, 19th/20th-century scanned literature
+    including a Mahabharata translation, per point 6 above): 13 out of
+    2,868,557 clusters (fragmentation 0.000005) are a Bengali consonant
+    directly followed by U+093E/U+093F/U+0902 (DEVANAGARI VOWEL SIGN
+    AA/I, DEVANAGARI SIGN ANUSVARA) - almost certainly OCR or font-mapping
+    noise from scanning old books, given the two closely related Brahmic
+    scripts, and not caught by `_is_clean_bengali_line`'s Bengali/ASCII
+    ratio filter since only 1-2 stray codepoints appear per otherwise-clean
+    line. `\X` clusters these together anyway (Grapheme_Cluster_Break=
+    Extend applies to any script's combining marks, not just Bengali's),
+    but `akshara.py`'s `MATRAS`/`MODIFIERS` sets are, by design, Bengali
+    Unicode block only (`substrate.py`) - this parser is a Bengali-script
+    grammar, not an all-scripts one, so it correctly does not absorb a
+    foreign-script combining mark into a Bengali consonant's chunk. This is
+    left as-is rather than "fixed": widening the grammar to swallow
+    arbitrary-script combining marks would blur what a Bengali akshara
+    grammar even means, and would mask exactly the kind of encoding noise
+    this measurement is useful for surfacing. General web and news
+    registers measured exactly 0.0000 (no such contamination); see
+    `benchmarks/bengali-comparison.md`.
+
 ## Roadmap: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
