@@ -89,7 +89,9 @@ numbers:
 > guessed. The full method and raw numbers are in the repository, and the
 > comparison reruns with one command.
 
-**An open tool that makes the inequity visible.** MotherTongueIndex lets anyone
+**An open tool that makes the inequity visible.**
+[MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), a tool
+that grew out of this programme and now has its own repository, lets anyone
 paste text in any language and see how many more tokens it costs than English
 across 28 model tokenizers, and the reasoning cost that follows.
 

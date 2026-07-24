@@ -1,8 +1,8 @@
 # Changelog: Project Bornomala (main repository)
 
 All notable changes to the Project Bornomala repository are documented here. This
-is the repository-level changelog. Each subproject also keeps its own changelog
-(for example `mothertongueindex/CHANGELOG.md`).
+is the repository-level changelog. The `bengali-tokenizer/` subproject also
+keeps its own changelog (`bengali-tokenizer/CHANGELOG.md`).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -34,6 +34,15 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   tokenizer to eventually replace BPE-as-primary in the Bengali tokenizer.
   Not yet built; see `bengali-tokenizer/docs/design/`. Root README and project
   website updated with a "what's next" section pointing to it.
+
+### Removed
+- **MotherTongueIndex extracted to its own repository**:
+  [github.com/konkomaji/mothertongueindex](https://github.com/konkomaji/mothertongueindex).
+  It grew out of this programme but was never the tokenizer itself, and is
+  now maintained separately (its own CI, issues, releases). `mothertongueindex/`
+  removed from this repo; CI workflow, README, project website, CONTRIBUTING,
+  and SECURITY updated to point at the new repository. History up to the
+  extraction remains in this repo's git log.
 
 ### Changed
 - Root README rewritten to separate the two concerns clearly: Project Bornomala

@@ -2,11 +2,12 @@
 
 ## Scope
 
-MotherTongueIndex is a CPU-only analysis tool. It reads text you give it and
-downloads public tokenizer files from official sources (OpenAI tiktoken, the
-Hugging Face Hub). It does not execute untrusted code and does not transmit your
-input anywhere unless you run the optional web server or the optional
-`eval/reasoning_probe.py` with your own API endpoint.
+The Bengali tokenizer (`bengali-tokenizer/`, package `bntok`) is a CPU-only
+library. It reads text you give it and, when asked to build a training corpus,
+downloads public datasets from official sources (the Hugging Face Hub:
+AI4Bharat Sangraha, Wikimedia Wikisource/Wikipedia, XL-Sum, and optionally
+CC-100). It does not execute untrusted code and does not transmit your input
+anywhere.
 
 ## Reporting a vulnerability
 
@@ -22,11 +23,15 @@ chance to address the issue before public disclosure.
 
 ## Things to be aware of
 
-- **Tokenizer downloads.** Model tokenizers are fetched from the Hugging Face
-  Hub and OpenAI. Set `HF_TOKEN` only with a token you trust. Gated models
-  require accepting the model owner's terms.
-- **The web server** (`web/`) is intended for local or trusted deployment. If
-  you expose it publicly, put it behind your own authentication and rate
-  limiting; it runs tokenizers on arbitrary input.
-- **API keys** for the reasoning probe are supplied by you and never stored by
-  this project.
+- **Corpus and model downloads.** Training data and the published tokenizer
+  artifact are fetched from the Hugging Face Hub. Set `HF_TOKEN` only with a
+  token you trust; gated sources require accepting their owner's terms.
+- **Untrusted training corpora.** `bntok train` reads arbitrary text files you
+  point it at; treat corpus files from unknown sources the way you would any
+  other untrusted input to a data pipeline.
+
+## Other repositories
+
+[MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), the
+multilingual tokenizer-efficiency analyzer, is now a separate repository with
+its own security policy.
