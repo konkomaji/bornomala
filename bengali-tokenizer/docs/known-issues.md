@@ -301,6 +301,35 @@ Kept as an honest record of what went wrong and how it was resolved.
     registers measured exactly 0.0000 (no such contamination); see
     `benchmarks/bengali-comparison.md`.
 
+15. **`stream_cc100` never actually worked until BMBT's training run tried
+    to use it for real.** Point 10 above documents CC-100 being "wired in,"
+    but the original implementation called
+    `datasets.load_dataset("cc100", ...)`, which fails outright on any
+    current `datasets` install (`RuntimeError: Dataset scripts are no
+    longer supported, but found cc100.py` - the `cc100` Hub repository
+    still ships a legacy loader script, and `datasets` dropped script
+    support). This was never caught earlier because nothing had actually
+    exercised `cc100_general_web` end to end; it was added, documented as
+    "available," and never run. Fixed in `bntok/corpus.py` by bypassing
+    `datasets` entirely: list the repository's auto-converted parquet
+    shards (`huggingface_hub`'s `refs/convert/parquet` revision, the same
+    mechanism `stream_wikisource`/`stream_xlsum` already use) and read them
+    with `pandas`. A second, unrelated stall surfaced while fixing this:
+    `huggingface_hub.hf_hub_download` (version 0.36.2) hangs indefinitely
+    on this specific repository's files - verified directly, not assumed:
+    a plain HTTP GET to the exact same resolved URL succeeds immediately
+    and streams at normal speed (confirmed via `requests`), with or
+    without the newer Xet transfer backend, while `hf_hub_download` on the
+    identical file/revision does not return even after many minutes. Not
+    diagnosed further than that reproduction; `_download_cc100_shard` in
+    `corpus.py` bypasses `hf_hub_download` for CC-100 only (plain
+    `requests` streaming to a local cache file) - every other `stream_*`
+    function in this module still uses `hf_hub_download` successfully and
+    is unaffected. Verified after the fix: real Bengali-script text (not
+    the `bn_rom` romanized variant CC-100 also has for some languages),
+    genuine training runs completed successfully using it (see the
+    "v2 roadmap step 4/5" sections below for the resulting numbers).
+
 ## Roadmap: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
@@ -365,19 +394,89 @@ replaced (the same honesty standard as point 8 above). Full account, in the
 same style as the other bugs found during development: see points 11-13 in
 "Bugs found and fixed during development" above.
 
-**Still not done**: step 4 against the other three registers (literary/
-formal, general web, news) and against the published external baselines
-(Sarvam-1, SUTRA, IndicSuperTokenizer, BengaliBPE) the roadmap also names;
-step 5 (featural onset/vowel/modifier encoding, morphology, the statistical
-fallback layer, `decode()`). Comparing raw, unmerged akshara counts against
-post-vocabulary-merge BPE token counts remains a different-kind-of-number,
-not yet a genuinely comparable fertility claim - the named risk below is
-still open until step 5 exists and is measured.
+**Step 4 is now complete against v1's own held-out sets (all four
+registers) and against real external baselines**: Sarvam-1, SUTRA, and
+Krutrim are all measured for real (see `scripts/compare.py`'s `HF_MODELS`);
+IndicSuperTokenizer and BengaliBPE have no usable public release (checked
+directly - the IndicSuperTokenizer arXiv page has no code/tokenizer link,
+and the only similarly-named BengaliBPE HF repo fails to load and isn't
+verifiably the paper's own artifact) and are reported as unavailable, not
+faked.
 
-The named risk to resolve first, once step 4 exists: morphology-aware
-tokenizers can *raise* fertility even as they add structure, so v2's first
-measured deliverable is that trade-off, not an assumption that it is
-favourable.
+**Step 5 (partial) is now built: BMBT (Bornomala's Bengali Tokenizer,
+`bntok/bmbt.py`).** Grammar (the akshara parser, reused unchanged) plus a
+featural decomposition (`featurize()`: onset consonants, which carry a
+nukta, vowel, modifiers, ZWJ/ZWNJ flags - a real, tested output, not an
+embedding-layer afterthought) plus a statistical BPE layer over akshara
+atoms, the same architecture as v1 with the atomic unit swapped from
+grapheme cluster to akshara. **Morphology (root/suffix decomposition,
+sandhi) is explicitly NOT built** - deferred, not abandoned. Full
+architecture: `docs/bmbt-architecture.md`. `bmbt.py` is deliberately
+self-contained: it imports nothing from `atoms.py` or `tokenizer.py`, so
+v1 (`bn-bpe-64k`) is completely unaffected by anything here - verified by
+`tests/test_tokenizer.py` passing unmodified.
+
+**The measured comparison, trained on the identical corpus as
+`bn-bpe-64k` (`configs/bpe-64k.json`, same vocab size 64000), reported
+honestly, exactly as it came out - not the outcome anyone assumed in
+advance:**
+
+| Register | Fertility (v1 / BMBT) | STRR (v1 / BMBT) | Conjunct frag. (v1 / BMBT) |
+|---|--:|--:|--:|
+| Wikipedia | 1.524 / 1.524 | 0.722 / 0.722 | 0.000075 / 0.000075 |
+| Literary/formal | 1.320 / 1.320 | 0.789 / 0.789 | 0.000104 / 0.000112 |
+| General web | 1.201 / 1.201 | 0.861 / 0.861 | 0.000055 / 0.000057 |
+| News | 1.140 / 1.140 | 0.893 / 0.894 | 0.000025 / 0.000025 |
+
+On Wikipedia, the two are not just close but byte-for-byte identical down
+to the raw counts (17,245 tokens, 11,316 words, 3 fragmented clusters,
+both tokenizers - verified directly, not a rounding coincidence: the two
+artifacts have genuinely different atom vocabularies, 12,233 atoms for v1
+vs 12,199 for BMBT). On the larger registers, tiny real, non-identical
+differences appear in both directions: BMBT needs marginally *fewer*
+tokens on literary/formal, general web, and news (25-60 fewer out of
+370,000-1,230,000, roughly 0.005-0.02%) but has marginally *more*
+fragmented clusters on the same three (2-23 more, still in the same
+0.00005-0.0001 near-zero band as v1). Neither direction is large enough to
+call a win; this is an honest tie, not a hedge.
+
+**Why they tie rather than BMBT clearly losing**, given `FORMAL_SPEC.md`'s
+own proof that a constrained BPE cannot beat an unconstrained one on raw
+token count: akshara-grammar boundaries are already nearly identical to
+`\X`'s grapheme-cluster boundaries on well-formed Bengali (the step-3/4
+measurement's own finding, points 11-14 above), so constraining BPE to
+respect akshara boundaries instead of grapheme-cluster boundaries barely
+constrains anything further in practice - the two atom schemes are close
+to isomorphic on real text, so BPE trained to the same vocabulary size
+over either converges to near-identical tokenization behaviour, even
+though the actual vocabularies differ.
+
+**What BMBT adds, independent of this tie**: a provable, Unicode-library-
+independent grammar instead of delegated trust in `regex`'s own `\X`
+implementation, and `featurize()` - a real structural decomposition
+v1 never had at all, at zero fertility cost either way.
+
+**CC-100 ablation** (`configs/bpe-64k-cc100.json`, the same corpus plus
+`cc100_general_web`, trained on both architectures as `artifacts/*-cc100`):
+adding CC-100 very slightly *hurts* Wikipedia fertility (1.531 vs 1.524
+without it - the same 64k-token vocabulary budget now split across five
+sources instead of four, diluting Wikipedia-specific coverage slightly)
+and very slightly *helps* general web fertility (1.199 vs 1.201 - the
+register CC-100 actually targets). Both effects are in the third decimal
+place, directionally sensible, and together amount to a wash, not a case
+for or against adopting CC-100 in the default weights. `bn-bpe-64k` and
+`bmbt-64k` (no CC-100) remain the recommended artifacts.
+
+**Still not done**: morphology (root/suffix decomposition, sandhi) -
+BMBT's featural output has no morphological layer yet, so it cannot yet
+claim the "quality-per-token" advantage the design doc's own risk section
+frames as the actual bet worth making. The named risk from the design
+doc - that a constrained tokenizer can raise fertility even as it adds
+structure - did not materialise here (the tie holds, it did not get
+worse), but that was measured, not assumed, and the deeper claim (a
+featural, eventually morphology-aware tokenizer produces genuinely better
+downstream model quality per token) remains completely unmeasured; this
+project has no downstream task evaluation at all yet.
 
 ## How to report a new issue
 

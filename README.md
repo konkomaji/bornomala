@@ -76,8 +76,10 @@ This holds up beyond Wikipedia, too: measured separately on literary/formal,
 general web, and news held-out text, ours needs the fewest tokens per word,
 keeps the most whole words, and breaks the fewest conjuncts against IndicBERTv2
 on every one of those registers as well (fragmentation stays at essentially
-zero, 0.00-0.01%, on all four), not only the one shown above. Full per-register
-numbers:
+zero, 0.00-0.01%, on all four), not only the one shown above. **These exact
+numbers are shared by two architectures now** - `bn-bpe-64k` (v1) and BMBT
+(v2, see below) tie on every register, so the table above holds for either.
+Full per-register numbers:
 [`bengali-tokenizer/benchmarks/bengali-comparison.md`](bengali-tokenizer/benchmarks/bengali-comparison.md).
 
 > **How this was measured, so anyone can check.** Our tokenizer was trained on
@@ -97,24 +99,37 @@ that grew out of this programme and now has its own repository, lets anyone
 paste text in any language and see how many more tokens it costs than English
 across 28 model tokenizers, and the reasoning cost that follows.
 
-## What's next: beyond BPE
+## Beyond BPE: BMBT, Bornomala's Bengali Tokenizer
 
-The tokenizer above already leads the field by retraining BPE, a statistical
-compressor, on Bengali data. That fixes the vocabulary but keeps the frame, and
-we think the frame is the real problem: Bengali is an abugida, a generative
-system with explicit, Unicode-standardized rules for how a written syllable
-(an akshara) is built, not a language whose structure needs discovering by
-counting bytes. We are now designing a v2 tokenizer that parses the script by
-its own grammar first and falls back to statistics only for what the grammar
-cannot explain (loanwords, code-mixing, noise), emitting each akshara as a
-structured, featural token instead of an opaque BPE id.
+The tokenizer above led the field by retraining BPE, a statistical compressor,
+on Bengali data. That fixed the vocabulary but kept the frame, and we thought
+the frame was the real problem: Bengali is an abugida, a generative system with
+explicit, Unicode-standardized rules for how a written syllable (an akshara) is
+built, not a language whose structure needs discovering by counting bytes. We
+built a v2 tokenizer, **BMBT**, that parses the script by its own grammar
+first (a finite-state machine, not a statistical guess) and falls back to
+statistics only for what the grammar cannot explain (loanwords, code-mixing,
+noise), plus a real featural decomposition (onset consonants, vowel,
+modifiers) as an actual output of the tokenizer, not an embedding-layer
+afterthought. Morphology (root/suffix decomposition) is not built yet -
+deferred, not abandoned.
 
-This is a position paper and a formal specification, not yet a shipped result:
+**Measured, reported honestly, not the outcome we assumed going in: BMBT ties
+v1, it does not beat it.** On Wikipedia held-out the two are identical down to
+the raw token count; on the other three registers, tiny real differences
+appear in both directions (BMBT needs marginally fewer tokens, has marginally
+more fragmented clusters), neither large enough to call a win. This matches
+the formal spec's own proof that a grammar-constrained BPE cannot beat an
+unconstrained one on raw token count - what BMBT adds is the featural
+structure, at no fertility cost, not a fertility win. Full account:
+[`bengali-tokenizer/docs/known-issues.md`](bengali-tokenizer/docs/known-issues.md)
+and [`bengali-tokenizer/benchmarks/bengali-comparison.md`](bengali-tokenizer/benchmarks/bengali-comparison.md).
+
+The design and its formal contract:
 [Reading Bengali on Its Own Terms](bengali-tokenizer/docs/design/reading-bengali-on-its-own-terms.md)
-and its [formal spec](bengali-tokenizer/docs/design/FORMAL_SPEC.md) (losslessness,
+and the [formal spec](bengali-tokenizer/docs/design/FORMAL_SPEC.md) (losslessness,
 totality, linear time, and constrained optimality stated as proofs and a fuzzer
-contract). Nothing above changes until it is built and measured against the same
-held-out benchmarks, in the open.
+contract).
 
 ## Our values
 

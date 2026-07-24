@@ -1,0 +1,15 @@
+{
+  "_about": "Ablation: the same literary-weighted corpus as configs/bpe-64k.json, plus CC-100 Bengali (bntok.corpus.stream_cc100, cc100_general_web) as a bulk general-web supplement. Weights are normalised over all five sources by bntok.corpus.build_configured_corpus, so they need not sum to 1. Trained on both the v1 (BengaliTokenizer) and v2 (BMBT) architectures for a direct before/after comparison of adding CC-100, isolated from the architecture comparison itself. Neither run replaces the shipped artifacts/bn-bpe-64k or artifacts/bmbt-64k; see artifacts/bn-bpe-64k-cc100 and artifacts/bmbt-64k-cc100.",
+  "algo": "bpe",
+  "vocab_size": 64000,
+  "min_atom_freq": 2,
+  "zwnj_policy": "preserve",
+  "total_lines": 1500000,
+  "corpus_sources": {
+    "public_domain_literature": 0.30,
+    "sangraha_verified_bn": 0.35,
+    "bengali_wikipedia": 0.10,
+    "contemporary_news": 0.10,
+    "cc100_general_web": 0.25
+  }
+}

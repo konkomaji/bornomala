@@ -14,6 +14,18 @@
       "n_clusters": 2867769
     },
     {
+      "model": "Bornomala BMBT (bpe 64000)",
+      "available": true,
+      "tokens": 1230262,
+      "words": 932211,
+      "fertility": 1.32,
+      "strr": 0.789,
+      "bytes_per_token": 12.25,
+      "conjunct_fragmentation": 0.000112,
+      "n_fragmented": 320,
+      "n_clusters": 2867769
+    },
+    {
       "model": "Sarvam-1 (Sarvam AI)",
       "available": true,
       "tokens": 2435555,
@@ -23,6 +35,30 @@
       "bytes_per_token": 6.19,
       "conjunct_fragmentation": 0.144589,
       "n_fragmented": 414761,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "SUTRA (TWO AI)",
+      "available": true,
+      "tokens": 2043294,
+      "words": 932211,
+      "fertility": 2.192,
+      "strr": 0.402,
+      "bytes_per_token": 7.38,
+      "conjunct_fragmentation": 0.179977,
+      "n_fragmented": 516275,
+      "n_clusters": 2868557
+    },
+    {
+      "model": "Krutrim (Krutrim AI)",
+      "available": true,
+      "tokens": 2965393,
+      "words": 932211,
+      "fertility": 3.181,
+      "strr": 0.074,
+      "bytes_per_token": 5.08,
+      "conjunct_fragmentation": 0.340328,
+      "n_fragmented": 976250,
       "n_clusters": 2868557
     },
     {

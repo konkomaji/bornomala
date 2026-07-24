@@ -4,26 +4,26 @@
     {
       "model": "Bornomala Track A (bpe 64000)",
       "available": true,
-      "tokens": 366934,
+      "tokens": 366364,
       "words": 305557,
-      "fertility": 1.201,
-      "strr": 0.861,
-      "bytes_per_token": 14.07,
-      "conjunct_fragmentation": 5.5e-05,
-      "n_fragmented": 54,
-      "n_clusters": 981581
+      "fertility": 1.199,
+      "strr": 0.862,
+      "bytes_per_token": 14.09,
+      "conjunct_fragmentation": 6.3e-05,
+      "n_fragmented": 62,
+      "n_clusters": 981862
     },
     {
       "model": "Bornomala BMBT (bpe 64000)",
       "available": true,
-      "tokens": 366906,
+      "tokens": 366345,
       "words": 305557,
-      "fertility": 1.201,
-      "strr": 0.861,
-      "bytes_per_token": 14.07,
-      "conjunct_fragmentation": 5.7e-05,
-      "n_fragmented": 56,
-      "n_clusters": 981581
+      "fertility": 1.199,
+      "strr": 0.862,
+      "bytes_per_token": 14.09,
+      "conjunct_fragmentation": 6.6e-05,
+      "n_fragmented": 65,
+      "n_clusters": 981862
     },
     {
       "model": "Sarvam-1 (Sarvam AI)",

@@ -124,6 +124,21 @@ clusters decompose. See the repository's `docs/known-issues.md` for the full,
 honest list, including two real bugs found and fixed in the comparison script
 itself.
 
+## BMBT: a v2 tokenizer now exists (not published here yet)
+
+The GitHub repository now also has **BMBT (Bornomala's Bengali Tokenizer)**,
+a v2 tokenizer that parses Bengali's akshara grammar directly with a
+finite-state machine instead of discovering structure statistically, and
+adds a real featural decomposition (`featurize()`) as an output of the
+tokenizer itself. Measured against this model on identical held-out text,
+BMBT ties it rather than beating it - reported honestly, matching the
+design's own formal proof that a grammar-constrained subword model cannot
+beat an unconstrained one on raw token count. Morphology is not built yet.
+This Hugging Face listing still serves the model above (v1, unchanged);
+BMBT has not been published as a separate Hugging Face model yet. See
+[the GitHub repository](https://github.com/konkomaji/bornomala/tree/main/bengali-tokenizer)
+for BMBT's code, architecture doc, and full measured comparison.
+
 ## Citation
 
 ```bibtex
