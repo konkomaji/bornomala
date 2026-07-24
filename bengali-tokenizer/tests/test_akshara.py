@@ -141,6 +141,85 @@ def test_banglish_english_words_fall_to_other_kind():
 
 
 # --- class 4: adversarial Unicode ---------------------------------------------
+#
+# The cases below (vowel+virama non-chaining, matra not blocking a conjunct
+# chain, modifier blocking one, repeated/reordered matra and modifier) were
+# not hypothesized - they were found by running the parser against real
+# Wikipedia held-out text (v2 roadmap step 4's own measurement surfaced 5
+# lines with a genuine boundary-inside-cluster bug), then verified one at a
+# time against regex's own \\X before the grammar in akshara.py was fixed.
+
+
+def test_vowel_virama_does_not_chain_into_a_further_consonant():
+    # regex's \\X clusters an independent vowel + virama as its own pair, and
+    # does NOT let it continue into a following consonant the way a
+    # consonant-initiated virama does (Unicode's Indic_Conjunct_Break rule
+    # requires InCB=Consonant on both sides; vowels are not InCB=Consonant).
+    a, virama, ta = chr(0x0985), chr(0x09CD), chr(0x09A4)
+    text = a + virama + ta
+    chunks = assert_seg_total_det(text)
+    assert [c.kind for c in chunks] == ["akshara", "akshara"]
+    assert [(c.start, c.end) for c in chunks] == [(0, 2), (2, 3)]
+    assert_aligned_with_grapheme_clusters(chunks, text)
+
+
+def test_matra_does_not_block_conjunct_chain_continuation():
+    # Consonant+matra+virama+consonant clusters as ONE unit in \\X: a matra
+    # between the first consonant and the continuing virama does not break
+    # chain eligibility, unlike a modifier (see the next test).
+    ka, aa_matra, virama, ta = chr(0x0995), chr(0x09BE), chr(0x09CD), chr(0x09A4)
+    text = ka + aa_matra + virama + ta
+    chunks = assert_seg_total_det(text)
+    assert len(chunks) == 1
+    assert chunks[0].kind == "akshara"
+    assert_aligned_with_grapheme_clusters(chunks, text)
+
+
+def test_modifier_blocks_conjunct_chain_continuation():
+    # A modifier (anusvara here) between the first consonant and a following
+    # virama DOES break chain eligibility in \\X, unlike matra/nukta: the
+    # modifier+virama are absorbed into the first chunk (both are generic
+    # Extend characters), but the chain does not continue to the next
+    # consonant, which starts its own chunk instead.
+    ka, anusvara, virama, ta = chr(0x0995), chr(0x0982), chr(0x09CD), chr(0x09A4)
+    text = ka + anusvara + virama + ta
+    chunks = assert_seg_total_det(text)
+    assert [c.kind for c in chunks] == ["akshara", "akshara"]
+    assert [(c.start, c.end) for c in chunks] == [(0, 3), (3, 4)]
+    assert_aligned_with_grapheme_clusters(chunks, text)
+
+
+def test_modifier_before_matra_unusual_order_still_clusters_as_one():
+    # Linguistically backwards (a modifier before its matra), but \\X still
+    # absorbs both into one cluster regardless of order.
+    ka, anusvara, aa_matra = chr(0x0995), chr(0x0982), chr(0x09BE)
+    text = ka + anusvara + aa_matra
+    chunks = assert_seg_total_det(text)
+    assert len(chunks) == 1
+    assert chunks[0].kind == "akshara"
+    assert_aligned_with_grapheme_clusters(chunks, text)
+
+
+def test_repeated_matra_absorbed_like_repeated_nukta():
+    # Malformed (a matra doesn't normally repeat), found for real in
+    # Wikipedia held-out text: base consonant followed by the same matra
+    # several times in a row. \\X absorbs all of them into one cluster.
+    da, u_matra = chr(0x09A6), chr(0x09C1)
+    text = da + u_matra * 4
+    chunks = assert_seg_total_det(text)
+    assert len(chunks) == 1
+    assert chunks[0].kind == "akshara"
+    assert_aligned_with_grapheme_clusters(chunks, text)
+
+
+def test_vowel_nukta_absorbed_even_though_not_real_orthography():
+    # Not real Bengali (nukta modifies consonants), but \\X absorbs any
+    # Extend-class character generically, vowels included.
+    text = chr(0x0985) + chr(0x09BC)
+    chunks = assert_seg_total_det(text)
+    assert len(chunks) == 1
+    assert chunks[0].kind == "akshara"
+    assert_aligned_with_grapheme_clusters(chunks, text)
 
 
 def test_dangling_hasanta_seg_total_det():
@@ -179,6 +258,40 @@ def test_zwj_continues_conjunct_zwnj_terminates_it():
     assert len(chunks) == 2
     assert [c.kind for c in chunks] == ["akshara", "akshara"]
     assert_aligned_with_grapheme_clusters(chunks, zwnj_text)
+
+
+def test_zwj_before_virama_also_continues_the_conjunct():
+    # Found for real in Wikipedia held-out text: ZWJ is not tied to a fixed
+    # position relative to the virama. "Consonant ZWJ Virama Consonant"
+    # clusters as one continuing conjunct in \\X exactly like
+    # "Consonant Virama ZWJ Consonant" above.
+    ka, zwj, virama, ta = chr(0x0995), chr(0x200D), chr(0x09CD), chr(0x09A4)
+    text = ka + zwj + virama + ta
+    chunks = assert_seg_total_det(text)
+    assert len(chunks) == 1
+    assert chunks[0].kind == "akshara"
+    assert_aligned_with_grapheme_clusters(chunks, text)
+
+
+def test_zwnj_before_virama_blocks_chain_but_is_still_absorbed():
+    # Found for real in Wikipedia held-out text: a ZWNJ before the virama
+    # (not just after) still blocks chain continuation to a following
+    # consonant, but the ZWNJ+virama themselves are absorbed into the
+    # current chunk either way (verified both with and without a following
+    # consonant).
+    na, zwnj, virama, ta = chr(0x09A8), chr(0x200C), chr(0x09CD), chr(0x09A4)
+
+    no_following_consonant = na + zwnj + virama
+    chunks = assert_seg_total_det(no_following_consonant)
+    assert len(chunks) == 1
+    assert chunks[0].kind == "akshara"
+    assert_aligned_with_grapheme_clusters(chunks, no_following_consonant)
+
+    with_following_consonant = na + zwnj + virama + ta
+    chunks = assert_seg_total_det(with_following_consonant)
+    assert len(chunks) == 2
+    assert [c.kind for c in chunks] == ["akshara", "akshara"]
+    assert_aligned_with_grapheme_clusters(chunks, with_following_consonant)
 
 
 def test_double_nukta_combining_overflow_seg_total_det():

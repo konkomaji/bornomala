@@ -39,6 +39,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bntok import BengaliTokenizer, normalize
+from bntok.akshara import aksharas
 from bntok.graphemes import grapheme_clusters
 
 # HF tokenizers to compare against (all load without auth).
@@ -233,6 +234,45 @@ def measure_ours(directory: str, texts: list[str]) -> dict:
     return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
 
 
+def measure_akshara(texts: list[str]) -> dict:
+    """Measure the v2 akshara finite-state parser (roadmap step 4).
+
+    This is NOT a like-for-like comparison with the tokenizer rows above, and
+    is reported separately, not folded into the fertility-sorted table: the
+    parser has no vocabulary and no merges yet (v2 roadmap step 5, featural
+    encoding + statistical fallback, is not built), so its chunk count is the
+    PRE-compression granularity, the same kind of number as grapheme-cluster
+    count, not the POST-BPE-merge token count every tokenizer row above
+    reports. Expect it to need more chunks per word than any trained
+    tokenizer; that is not a regression, it is what "no compression yet"
+    means, and is exactly the number the design doc's own roadmap (step 4)
+    asks to be measured and reported honestly before building further.
+
+    Conjunct fragmentation is the one metric that IS a fair, like-for-like
+    comparison: `Akshara.start`/`.end` are exact codepoint offsets carried by
+    the parser itself (no surface reconstruction needed, unlike the BPE rows
+    above), fed straight into the same `_frag_from_offsets` used for
+    everything else.
+    """
+    n_tok = n_words = n_bytes = single = frag = clusters = 0
+    for raw in texts:
+        nfc = normalize(raw)
+        words = nfc.split()
+        chunks = aksharas(nfc)
+        n_tok += len(chunks)
+        n_words += len(words)
+        n_bytes += len(nfc.encode("utf-8"))
+        for w in words:
+            if len(aksharas(w)) == 1:
+                single += 1
+        offsets = [(c.start, c.end) for c in chunks]
+        f, c = _frag_from_offsets(nfc, offsets)
+        frag += f
+        clusters += c
+    return _row("Bornomala v2 akshara parser (pre-vocabulary, no merges)",
+                n_tok, n_words, n_bytes, single, frag, clusters)
+
+
 def _row(name, n_tok, n_words, n_bytes, single, frag, clusters):
     def d(a, b):
         return a / b if b else 0.0
@@ -272,12 +312,16 @@ def main(argv=None) -> int:
     for name, enc in TIKTOKEN_MODELS:
         rows.append(measure_tiktoken(name, enc, texts))
 
+    print("measuring v2 akshara parser (pre-vocabulary, no merges) ...", file=sys.stderr)
+    akshara_row = measure_akshara(texts)
+
     avail = [r for r in rows if r.get("available")]
     avail.sort(key=lambda r: r["fertility"])
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
-        json.dump({"held_out_lines": len(texts), "rows": rows}, f, ensure_ascii=False, indent=2)
+        json.dump({"held_out_lines": len(texts), "rows": rows, "akshara_v2": akshara_row},
+                   f, ensure_ascii=False, indent=2)
 
     # Markdown table, sorted by fertility (best first).
     print("\n| Tokenizer | Fertility | STRR | Bytes/tok | Conjunct frag. |")
@@ -288,6 +332,11 @@ def main(argv=None) -> int:
     for r in rows:
         if not r.get("available"):
             print(f"| {r['model']} | unavailable: {r.get('error','')} |", file=sys.stderr)
+
+    print("\nv2 akshara parser (roadmap step 4, NOT a like-for-like row above -- "
+          "no vocabulary or merges yet, see measure_akshara()'s docstring):")
+    print(f"| {akshara_row['model']} | {akshara_row['fertility']:.3f} | {akshara_row['strr']:.3f} | "
+          f"{akshara_row['bytes_per_token']:.2f} | {akshara_row['conjunct_fragmentation']:.4f} |")
     return 0
 
 
