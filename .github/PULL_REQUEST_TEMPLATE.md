@@ -12,13 +12,14 @@
 
 ## Checklist
 
-- [ ] `pytest` passes and `ruff check .` is clean (in `mothertongueindex/`).
-- [ ] I updated `mothertongueindex/CHANGELOG.md` under `[Unreleased]`.
+- [ ] `pytest` passes and `ruff check .` is clean (in `bengali-tokenizer/`).
+- [ ] I updated `bengali-tokenizer/CHANGELOG.md` under `[Unreleased]`.
 - [ ] No fabricated numbers; exact vs estimate stays clearly labelled.
-- [ ] The core `mti` package still runs on CPU with no GPU or API key.
+- [ ] `bntok` still runs on CPU only (no GPU or external API required).
 - [ ] No em dashes in added content.
-- [ ] If I added a model, I set an honest availability tier and verified it
-      locally with `python -m mti --models <id> "test"`.
+- [ ] If I changed the tokenizer or corpus, I reran
+      `python scripts/compare.py` and updated the affected benchmark numbers
+      wherever they are stated (README, paper, website, docs).
 
 ## Notes for reviewers
 

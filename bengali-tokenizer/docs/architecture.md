@@ -113,7 +113,8 @@ Nothing here needs a GPU.
 
 ## Relation to the rest of Bornomala
 
-This is Track A, built in the main repository. It is a different thing from the
-MotherTongueIndex subproject, which measures and benchmarks tokenizers (and will
-benchmark this one once it ships). This module produces the tokenizer; that tool
-scores it.
+This is Track A, built in the main repository. It is a different thing from
+[MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), which
+grew out of this programme, now lives in its own repository, and measures and
+benchmarks tokenizers, including this one. This module produces the
+tokenizer; that tool scores it.
