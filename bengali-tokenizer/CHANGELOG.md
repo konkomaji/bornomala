@@ -7,6 +7,20 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Two more real external baselines wired into `scripts/compare.py`'s
+  `HF_MODELS`: SUTRA (`TWO/sutra-mlt256-v2`) and Krutrim
+  (`krutrim-ai-labs/Krutrim-2-instruct`)**, both verified loadable before
+  adding. On the Wikipedia held-out set: SUTRA fertility 2.218 (3rd best,
+  after ours and IndicBERTv2), Krutrim 3.207 (worst of the field). The two
+  other baselines the v2 design doc's roadmap names, IndicSuperTokenizer
+  and BengaliBPE, have no usable public release (checked directly, not
+  assumed) and are reported as unavailable rather than faked with a
+  similarly-named but unverified stand-in. Root `README.md`,
+  `bengali-tokenizer/README.md`, and the project website's comparison
+  tables updated to match; also fixed a stale `0.0004` conjunct-fragmentation
+  figure for our own row in `bengali-tokenizer/README.md` (should have been
+  `0.0001`, a pre-existing error unrelated to this change). Full detail:
+  `benchmarks/bengali-comparison.md`.
 - **`docs/design/`: v2 design record, not yet built.** [*Reading Bengali on
   Its Own Terms*](docs/design/reading-bengali-on-its-own-terms.md), a
   literature-grounded position paper (surveying ~30 works) arguing that

@@ -43,8 +43,21 @@ from bntok.akshara import aksharas
 from bntok.graphemes import grapheme_clusters
 
 # HF tokenizers to compare against (all load without auth).
+#
+# Two named baselines from the v2 design doc's own roadmap step 4 could not
+# be added, honestly rather than faked:
+#   - IndicSuperTokenizer (Rana, Menezes et al., Krutrim AI, arXiv:2511.03237):
+#     no public code/tokenizer release found (checked the arXiv abstract page
+#     directly for a Hugging Face/GitHub link; none listed).
+#   - BengaliBPE (Patwary & Noman, 2025, arXiv:2511.05324): the only
+#     similarly-named public HF repo found (spitfire4794/bengali_bpe_tokenizer_hf)
+#     fails to load (custom tokenizer class not supported by `transformers`)
+#     and is not verifiably the paper's own artifact, so it is not used as a
+#     stand-in.
 HF_MODELS = [
     ("Sarvam-1 (Sarvam AI)", "sarvamai/sarvam-1"),
+    ("SUTRA (TWO AI)", "TWO/sutra-mlt256-v2"),
+    ("Krutrim (Krutrim AI)", "krutrim-ai-labs/Krutrim-2-instruct"),
     ("IndicBERTv2 (AI4Bharat)", "ai4bharat/IndicBERTv2-MLM-only"),
     ("mBERT (Google)", "google-bert/bert-base-multilingual-cased"),
     ("XLM-RoBERTa (Meta)", "FacebookAI/xlm-roberta-base"),

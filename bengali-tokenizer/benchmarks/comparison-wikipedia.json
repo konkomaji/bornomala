@@ -26,6 +26,30 @@
       "n_clusters": 40690
     },
     {
+      "model": "SUTRA (TWO AI)",
+      "available": true,
+      "tokens": 25100,
+      "words": 11316,
+      "fertility": 2.218,
+      "strr": 0.419,
+      "bytes_per_token": 7.82,
+      "conjunct_fragmentation": 0.157852,
+      "n_fragmented": 6423,
+      "n_clusters": 40690
+    },
+    {
+      "model": "Krutrim (Krutrim AI)",
+      "available": true,
+      "tokens": 36291,
+      "words": 11316,
+      "fertility": 3.207,
+      "strr": 0.076,
+      "bytes_per_token": 5.41,
+      "conjunct_fragmentation": 0.285869,
+      "n_fragmented": 11632,
+      "n_clusters": 40690
+    },
+    {
       "model": "IndicBERTv2 (AI4Bharat)",
       "available": true,
       "tokens": 18695,

@@ -64,11 +64,13 @@ other system breaks many.
 |---|--:|--:|--:|--:|
 | **Bornomala (ours)** | **1.52** | **72%** | **11.38** | **0.01%** |
 | IndicBERTv2 (AI4Bharat) | 1.65 | 61% | 10.50 | 4.4% |
+| SUTRA (TWO AI) | 2.22 | 42% | 7.82 | 15.8% |
 | XLM-RoBERTa (Meta) | 2.46 | 36% | 7.04 | 10.2% |
 | Sarvam-1 (Sarvam AI) | 2.59 | 42% | 6.69 | 11.9% |
 | GPT-4o (OpenAI) | 2.61 | 11% | 6.65 | not measurable |
 | mBERT (Google) | 2.78 | 39% | 6.25 | 18.0% |
 | DeepSeek-V3 | 2.99 | 9% | 5.79 | 28.5% |
+| Krutrim (Krutrim AI) | 3.21 | 8% | 5.41 | 28.6% |
 
 This holds up beyond Wikipedia, too: measured separately on literary/formal,
 general web, and news held-out text, ours needs the fewest tokens per word,
