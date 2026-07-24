@@ -142,6 +142,7 @@ bengali-tokenizer/
 - **[Known issues and limitations](docs/known-issues.md)**: honest caveats, comparison notes, and the bugs found and fixed during development.
 - **[Benchmark method and results](benchmarks/bengali-comparison.md)**.
 - **[Paper](paper/)**: the arXiv preprint source (LaTeX) and submission guide.
+- **v2 design (not yet built):** [Reading Bengali on Its Own Terms](docs/design/reading-bengali-on-its-own-terms.md), a grammar-first, featural akshara tokenizer proposal that replaces BPE-as-primary with a finite-state akshara parser and demotes statistics to a fallback, plus its [formal specification](docs/design/FORMAL_SPEC.md) (losslessness, totality, linear time, constrained optimality as proofs and a fuzzer contract). The shipped `bn-bpe-64k` tokenizer above is v1; this is the position paper for v2.
 - **[Hugging Face release](huggingface/)**: upload-ready model card and tokenizer files.
 - **[Changelog](CHANGELOG.md)**.
 - Parent programme: **[Project Bornomala](../README.md)** (the Bengali-first, dialect-aware LLM).

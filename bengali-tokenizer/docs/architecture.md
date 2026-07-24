@@ -3,6 +3,12 @@
 This document describes exactly what the tokenizer does and why, module by
 module. It is the technical reference for Project Bornomala Track A.
 
+> This is the shipped v1 design: grapheme-atom BPE/Unigram. A v2 direction is
+> proposed but not yet built, replacing BPE-as-primary with a grammar-first
+> finite-state akshara parser: see
+> [`docs/design/reading-bengali-on-its-own-terms.md`](design/reading-bengali-on-its-own-terms.md)
+> and [`docs/design/FORMAL_SPEC.md`](design/FORMAL_SPEC.md).
+
 ## The one guarantee
 
 A trained token never splits a Bengali grapheme cluster across a boundary. The

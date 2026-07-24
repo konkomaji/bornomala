@@ -7,6 +7,26 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **`docs/design/`: v2 design record, not yet built.** [*Reading Bengali on
+  Its Own Terms*](docs/design/reading-bengali-on-its-own-terms.md), a
+  literature-grounded position paper (surveying ~30 works) arguing that
+  retraining BPE on Bengali fixes the vocabulary but keeps the English-shaped
+  frame, and proposing instead a grammar-first tokenizer: a finite-state
+  parser for the akshara (orthographic syllable) as the primary segmenter,
+  emitting featural tokens (onset/vowel/modifier), with statistics demoted to
+  a fallback for loanwords and noise. Companion
+  [`docs/design/FORMAL_SPEC.md`](docs/design/FORMAL_SPEC.md) states
+  losslessness, totality, linear time, and constrained optimality as formal
+  predicates, proves three by construction, and specifies the property-based
+  fuzzer contract for the fourth. This supersedes nothing shipped; `bn-bpe-64k`
+  remains the current artifact until v2 is built and measured against the same
+  benchmarks.
+- **`stream_cc100` in `corpus.py`**: streams CC-100 Bengali (a large,
+  2018-vintage CommonCrawl general-web corpus, same source used by the
+  `nawaz0x1/Bengali-BPE-Tokenizer` baseline). Wired into
+  `build_configured_corpus` as an available source, `cc100_general_web`, not
+  part of the shipped `configs/bpe-64k.json` weights until it is
+  retrained-and-benchmarked in. See `docs/known-issues.md` point 10.
 - **arXiv preprint** (`paper/`): self-contained LaTeX source, submission guide,
   version 0.1 (preliminary, Wikipedia; to be updated with larger datasets).
 - **Hugging Face release** (`huggingface/`): upload-ready model card and

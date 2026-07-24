@@ -90,6 +90,52 @@ def stream_wikipedia(lang: str = "bn", limit: int = 5000) -> list[str]:
     return out
 
 
+def stream_cc100(
+    lang: str = "bn", limit_lines: int = 300_000, offset_lines: int = 0,
+) -> list[str]:
+    """Stream CC-100 (CommonCrawl-derived web text) for one language.
+
+    Optional: requires `pip install datasets`. CC-100 (Wenzek et al., 2020;
+    the corpus behind XLM-R's training data) is a large, general-web Bengali
+    source, orders of magnitude bigger than any single source currently in
+    `build_configured_corpus`, but it is 2018-vintage CommonCrawl text: noisier
+    and not literary-weighted, so it is meant as a bulk general-web supplement,
+    not a replacement for the literary-weighted mix. Each dataset row is
+    already one line/paragraph (CC-100's own format separates documents by a
+    blank line and paragraphs by a single newline, and the HF mirror streams
+    one row per paragraph), so `offset_lines` skips that many rows before
+    collecting, letting a disjoint held-out slice be drawn the same way as the
+    other sources here.
+    """
+    try:
+        from datasets import load_dataset
+    except ImportError as e:
+        raise ConfigError(
+            "streaming CC-100 needs the datasets library: pip install datasets"
+        ) from e
+    if limit_lines < 1:
+        raise ConfigError(f"limit_lines must be >= 1, got {limit_lines}")
+    if offset_lines < 0:
+        raise ConfigError(f"offset_lines must be >= 0, got {offset_lines}")
+
+    ds = load_dataset("cc100", lang=lang, split="train", streaming=True)
+    out: list[str] = []
+    seen = 0
+    for row in ds:
+        text = row.get("text", "")
+        if not text or not text.strip():
+            continue
+        seen += 1
+        if seen <= offset_lines:
+            continue
+        out.append(text.strip())
+        if seen - offset_lines >= limit_lines:
+            break
+    if not out:
+        raise EmptyCorpusError(f"CC-100 stream for '{lang}' yielded no text")
+    return out
+
+
 def _split_lines(text: str) -> list[str]:
     """Split one document into lines, falling back to sentence splits.
 
@@ -323,6 +369,7 @@ WIKIPEDIA_TRAIN_ARTICLES = 15_000
 SANGRAHA_PDF_TRAIN_DOCS = 50_000
 SANGRAHA_WEB_TRAIN_DOCS = 200_000
 XLSUM_TRAIN_DOCS = 8_000  # XL-Sum bn is ~10.1k docs total; this reserves ~2k for held-out
+CC100_TRAIN_LINES = 300_000  # bulk general-web supplement; not in the default corpus_sources weights yet
 
 
 def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
@@ -338,6 +385,11 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
       * sangraha_verified_bn: Sangraha verified/ben web-typed documents.
       * bengali_wikipedia: Bengali Wikipedia (via `stream_wikipedia`).
       * contemporary_news: XL-Sum Bengali news articles.
+      * cc100_general_web: CC-100 Bengali (via `stream_cc100`), a large
+        2018-vintage CommonCrawl web-text supplement. Available as a source
+        name but not part of the shipped `configs/bpe-64k.json` weights: it
+        has not yet been retrained-and-benchmarked in, so including it here
+        does not change the current artifact until a config opts in.
 
     `government_administrative` and `code_mixed_bn_en` from the original spec
     have no clean public dataset and are silently skipped if present in the
@@ -349,7 +401,10 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
         raise ConfigError("config has no 'corpus_sources'")
     total_lines = config.get("total_lines", 1_500_000)
 
-    known = {"public_domain_literature", "sangraha_verified_bn", "bengali_wikipedia", "contemporary_news"}
+    known = {
+        "public_domain_literature", "sangraha_verified_bn", "bengali_wikipedia",
+        "contemporary_news", "cc100_general_web",
+    }
     unavailable = {"government_administrative", "code_mixed_bn_en"}
     weights = {k: v for k, v in sources.items() if k in known}
     skipped = {k: v for k, v in sources.items() if k in unavailable}
@@ -381,6 +436,10 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
         log("loading contemporary_news: XL-Sum bn (holding out the tail for eval) ...")
         loaders["contemporary_news"] = stream_xlsum("bengali", limit_docs=XLSUM_TRAIN_DOCS)
         log(f"  {len(loaders['contemporary_news'])} lines")
+    if "cc100_general_web" in weights:
+        log("loading cc100_general_web: CC-100 bn (holding out the tail for eval) ...")
+        loaders["cc100_general_web"] = stream_cc100("bn", limit_lines=CC100_TRAIN_LINES)
+        log(f"  {len(loaders['cc100_general_web'])} lines")
 
     log(f"combining into {total_lines} weighted lines ...")
     return weighted_corpus(loaders, weights, total_lines)

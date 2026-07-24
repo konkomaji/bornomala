@@ -70,6 +70,7 @@
       <a href="#problem">The problem</a>
       <a href="#approach">Our approach</a>
       <a href="#achieved">Achievements</a>
+      <a href="#next">What's next</a>
       <a href="#values">Values</a>
       <a href="#contribute">Contribute</a>
       <a href="https://github.com/konkomaji/bornomala">GitHub</a>
@@ -189,6 +190,27 @@
     <h3 style="margin-top:40px">And an open tool that makes the inequity visible</h3>
     <p>MotherTongueIndex lets anyone paste text in any language and see how many more tokens it costs than English across 28 model tokenizers, and the reasoning cost that follows. It is how we hold ourselves, and everyone else, to measured claims.</p>
     <p><a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/tree/main/mothertongueindex">Explore MotherTongueIndex</a></p>
+  </div>
+</section>
+
+<!-- WHAT'S NEXT -->
+<section class="section" id="next">
+  <div class="container">
+    <p class="eyebrow">What's next, not yet built</p>
+    <h2>Beyond BPE: reading Bengali on its own terms</h2>
+    <div class="matra"></div>
+    <p class="lede">The tokenizer above already leads the field, and it does so the way almost every serious tokenizer does today: it retrains BPE, a statistical compressor, on Bengali data. We think that fixes the vocabulary while keeping the frame, and the frame is the actual problem. Bengali is not a language whose structure needs discovering by counting bytes. It is an abugida, a generative system with explicit, Unicode-standardized rules for how a written syllable (an akshara) is built from a consonant, its conjuncts, and its vowel signs. So we are designing a v2 tokenizer that reads the script by its own grammar first, and falls back to statistics only for what the grammar cannot explain: loanwords, code-mixing, noise.</p>
+    <div class="cards" style="margin-top:26px">
+      <div class="card warm"><div class="ic">📐</div><h3>Grammar first, statistics as fallback</h3><p>A finite-state parser for the akshara grammar (the virama rule, matra reordering, unbounded conjuncts) runs before any learned merge. Bengali BPE only ever tunes the frame; this replaces it.</p></div>
+      <div class="card warm"><div class="ic">🧬</div><h3>Featural tokens, not opaque IDs</h3><p>Each akshara is emitted as its own structure &mdash; onset, vowel, modifiers &mdash; so a model can see for free that related syllables share an onset, instead of learning every combination as an unrelated integer.</p></div>
+      <div class="card warm"><div class="ic">🔁</div><h3>Lossless by construction, proven not assumed</h3><p>A formal specification states losslessness, totality, linear time, and constrained optimality as predicates, proves three of the four by construction, and pins the fourth to a property-based fuzzer contract in CI.</p></div>
+      <div class="card warm"><div class="ic">⚖️</div><h3>An honest, open risk</h3><p>Morphology-aware tokenizers can trade fertility for structure and end up costing more tokens, not fewer &mdash; a real failure mode reported elsewhere in the literature. This is the first number the design must produce, and we will report it either way.</p></div>
+    </div>
+    <p style="margin-top:22px">This is a position paper and a formal specification, not a shipped result. Nothing on this page's achievements table changes until the design is built and measured against the same held-out benchmarks, in the open.</p>
+    <p style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap">
+      <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/design/reading-bengali-on-its-own-terms.md">Read the position paper</a>
+      <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/design/FORMAL_SPEC.md">Read the formal spec</a>
+    </p>
   </div>
 </section>
 

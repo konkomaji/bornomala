@@ -220,6 +220,33 @@ Kept as an honest record of what went wrong and how it was resolved.
    tokenizer this project currently recommends. Flagged here rather than
    silently left unresolved.
 
+10. **CC-100 is wired in as an available bulk general-web source, but is not
+    part of the shipped 64k corpus weights.** `bntok.corpus.stream_cc100`
+    streams CC-100 Bengali (`bn.txt.xz`, ~860MB compressed, 2018-vintage
+    CommonCrawl text via the same pipeline behind XLM-R's training data;
+    Wenzek et al., 2020) and `build_configured_corpus` accepts it as source
+    name `cc100_general_web`. It is orders of magnitude larger than any
+    current single source, but noisier and not literary-weighted, so adding
+    it to `configs/bpe-64k.json`'s weights would require retraining and
+    re-benchmarking before any claim about it changes. It is available now
+    for a future ablation, not a silent change to what `bn-bpe-64k` was
+    actually trained on.
+
+## Roadmap: a proposed v2
+
+Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
+still trains a statistical compressor, just over conjunct-safe atoms instead
+of codepoints. A v2 design is proposed, not built: parse the akshara grammar
+(the virama rule) with a finite-state machine as the *primary* segmenter, and
+demote statistics to a fallback for loanwords, code-mixing, and noise, emitting
+featural tokens (onset/vowel/modifier) instead of opaque BPE ids. Full argument
+and formal contract in
+[`docs/design/reading-bengali-on-its-own-terms.md`](design/reading-bengali-on-its-own-terms.md)
+and [`docs/design/FORMAL_SPEC.md`](design/FORMAL_SPEC.md). The named risk to
+resolve first: morphology-aware tokenizers can *raise* fertility even as they
+add structure, so v2's first deliverable is measuring that trade-off, not
+assuming it is favourable.
+
 ## How to report a new issue
 
 Open an issue on the repository with the exact input, the command, and the

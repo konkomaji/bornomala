@@ -29,6 +29,12 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   files) for the Bengali tokenizer, version 0.1 (preliminary, to be updated as
   larger datasets are added).
 
+- **Track A v2 design record**: a literature-grounded position paper and
+  companion formal specification proposing a grammar-first, featural akshara
+  tokenizer to eventually replace BPE-as-primary in the Bengali tokenizer.
+  Not yet built; see `bengali-tokenizer/docs/design/`. Root README and project
+  website updated with a "what's next" section pointing to it.
+
 ### Changed
 - Root README rewritten to separate the two concerns clearly: Project Bornomala
   is the Bengali-first, dialect-aware LLM programme (the whitepaper, tracks A to
