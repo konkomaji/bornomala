@@ -31,7 +31,16 @@ The first measured, reproducible comparison of how efficiently mainstream tokeni
 | DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
 | Krutrim (Krutrim AI) | 3.207 | 0.076 | 5.41 | 0.2859 |
 
-SUTRA and Krutrim are measured on the Wikipedia held-out set only so far, not yet the other three registers (extending them there would need three more large-corpus runs against two more large tokenizers; not done in this pass).
+SUTRA and Krutrim are now measured on all four registers (added after the initial Wikipedia-only pass):
+
+| Register | SUTRA fertility / STRR / frag | Krutrim fertility / STRR / frag |
+|---|--:|--:|
+| Wikipedia | 2.218 / 0.419 / 0.1579 | 3.207 / 0.076 / 0.2859 |
+| Literary/formal | 2.192 / 0.402 / 0.1800 | 3.181 / 0.074 / 0.3403 |
+| General web | 2.066 / 0.432 / 0.1620 | 3.135 / 0.049 / 0.3234 |
+| News | 1.954 / 0.468 / 0.1509 | 3.061 / 0.035 / 0.3232 |
+
+Neither changes the ranking: our tokenizer (and BMBT, see below) leads every register; SUTRA is consistently 3rd; Krutrim is consistently last or near-last.
 
 ## Results across every register (ours vs. AI4Bharat IndicBERTv2, the closest rival)
 
@@ -81,7 +90,48 @@ python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register news --lim
 ```
 The akshara row is printed alongside the tokenizer comparison in each case; raw numbers also in each `comparison-*.json`'s `akshara_v2` key.
 
-Step 4 is not complete: measured against v1's own held-out sets across all four registers, and now also against Sarvam-1, SUTRA, and Krutrim (Wikipedia held-out only - `scripts/compare.py`'s single run prints every tokenizer row, our own, the external baselines, and the akshara parser, together, on the same held-out text). IndicSuperTokenizer and BengaliBPE, the two other baselines the roadmap names, have no usable public release (see the "Other tokenizers" bullet above) and are reported as unavailable rather than estimated. Extending SUTRA/Krutrim to the other three registers has not been done yet. Step 5 (featural encoding, morphology, the statistical fallback layer that would make fertility genuinely comparable) has not started.
+**Step 4 is now complete**: measured against v1's own held-out sets across all four registers, and against every real external baseline that has a usable public release (Sarvam-1, SUTRA, Krutrim, IndicBERTv2, XLM-RoBERTa, mBERT, DeepSeek-V3, GPT-4o), on all four registers. IndicSuperTokenizer and BengaliBPE remain unavailable, reported honestly rather than faked (see the "Other tokenizers" bullet above).
+
+## v2 roadmap step 5 (partial): BMBT, measured (a genuine like-for-like row)
+
+BMBT (Bornomala's Bengali Tokenizer, `bntok/bmbt.py`) is grammar (the akshara parser above) plus a featural decomposition (`featurize()`) plus a statistical BPE layer over akshara atoms - the same architecture as v1, with the atomic unit swapped from grapheme cluster to akshara. **Morphology is explicitly not built yet.** Full design: `docs/bmbt-architecture.md`.
+
+Unlike the raw akshara-parser row above, a trained BMBT has a real vocabulary and real merges the same way `bn-bpe-64k` does, so it is a genuine like-for-like fertility comparison, trained on the identical corpus (`configs/bpe-64k.json`, same vocab size 64000) for a controlled comparison:
+
+| Register | Fertility (v1 / BMBT) | STRR (v1 / BMBT) | Bytes/token (v1 / BMBT) | Conjunct frag. (v1 / BMBT) |
+|---|--:|--:|--:|--:|
+| Wikipedia | 1.524 / 1.524 | 0.722 / 0.722 | 11.38 / 11.38 | 0.000075 / 0.000075 |
+| Literary/formal | 1.320 / 1.320 | 0.789 / 0.789 | 12.25 / 12.25 | 0.000104 / 0.000112 |
+| General web | 1.201 / 1.201 | 0.861 / 0.861 | 14.07 / 14.07 | 0.000055 / 0.000057 |
+| News | 1.140 / 1.140 | 0.893 / 0.894 | 14.93 / 14.93 | 0.000025 / 0.000025 |
+
+**Reported exactly as measured, not the outcome anyone assumed going in.** On Wikipedia the two are not just close but identical down to the raw integer counts (17,245 tokens, 11,316 words, 3 fragmented clusters, both tokenizers) despite the two artifacts having genuinely different vocabularies (12,233 atoms for v1, 12,199 for BMBT - verified directly, not a coincidence of rounding). On the three larger registers, tiny real, non-identical differences appear in *both* directions: BMBT needs marginally fewer tokens (25-60 fewer out of 370,000-1,230,000, roughly 0.005-0.02%) but has marginally more fragmented clusters (2-23 more, still within the same 0.00005-0.0001 near-zero band as v1). Neither direction is large enough to call a win. This is an honest tie.
+
+**Why a tie, not a loss**, given `docs/design/FORMAL_SPEC.md`'s own proof that a constrained BPE cannot beat an unconstrained one on raw token count: akshara-grammar boundaries are already nearly identical to `\X`'s grapheme-cluster boundaries on well-formed Bengali (the akshara-parser measurement above, points 11-14 in `docs/known-issues.md`), so constraining BPE to akshara boundaries instead of grapheme-cluster boundaries barely constrains anything further in practice - the two atom schemes are close to isomorphic on real text.
+
+**What BMBT adds, independent of the fertility tie**: a provable, Unicode-library-independent grammar instead of delegated trust in `regex`'s own `\X`, and `featurize()` - a real, tested structural decomposition (onset/vowel/modifier per akshara) v1 never had, at zero fertility cost.
+
+### CC-100 ablation
+
+Trained both architectures again with CC-100 Bengali added to the corpus (`configs/bpe-64k-cc100.json`, same weights plus `cc100_general_web`; see `docs/known-issues.md` point 15 for a real bug found and fixed in `stream_cc100` while running this):
+
+| Register | Fertility, no CC-100 | Fertility, +CC-100 | Change |
+|---|--:|--:|--:|
+| Wikipedia | 1.524 | 1.531 | +0.007 (slightly worse) |
+| General web | 1.201 | 1.199 | -0.002 (slightly better) |
+
+Both directions make sense: the same 64,000-token vocabulary budget now spans five sources instead of four, diluting Wikipedia-specific coverage slightly, while general web (the register CC-100 actually targets) gets a small real benefit. Both effects round to the third decimal place - a wash, not a case for or against adopting CC-100 in the default weights. `bn-bpe-64k` and `bmbt-64k` (without CC-100) remain the recommended artifacts; `bn-bpe-64k-cc100`/`bmbt-64k-cc100` are kept as the ablation record, not shipped as a recommendation. v1 and BMBT tie exactly on this ablation too (identical fertility/STRR/bytes/fragmentation on both registers tested).
+
+Reproduce:
+```
+python -m bntok bmbt-train --corpus-config configs/bpe-64k.json --out artifacts/bmbt-64k
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --skip 15000 --limit 800
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --register literary_formal --limit 1000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --register general_web --limit 1000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --register news --limit 1000
+```
+
+**Still not done**: morphology. BMBT's featural output has no morphological layer yet, so it cannot yet claim the "quality-per-token" advantage the design doc's own risk section frames as the actual bet worth making - that claim needs a downstream task evaluation this project does not have at all yet, and remains completely unmeasured.
 
 ## Prior result (v0.1, superseded)
 

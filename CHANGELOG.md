@@ -10,6 +10,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
+- **BMBT (Bornomala's Bengali Tokenizer)**: the v2 tokenizer, now built and
+  the recommended/primary tokenizer of the project. Parses Bengali's akshara
+  grammar directly (a finite-state machine) instead of discovering structure
+  statistically, and adds a real featural decomposition (`featurize()`) as
+  an actual tokenizer output. Morphology is not built yet. Measured against
+  the original tokenizer (`bn-bpe-64k`) on identical held-out text: an
+  honest tie, not a win - reported exactly as measured, matching the design's
+  own formal proof that a grammar-constrained BPE cannot beat an
+  unconstrained one on raw token count. `bn-bpe-64k` remains fully available
+  and unchanged. Full detail: `bengali-tokenizer/CHANGELOG.md`,
+  `bengali-tokenizer/docs/known-issues.md`,
+  `bengali-tokenizer/benchmarks/bengali-comparison.md`.
 - **Bornomala identity**: a distinct project logo built around the Bengali
   letter ব (Ba), the first letter of বর্ণমালা, with the matra headline and five
   dialect marks for the West Bengal dialect groups. Plus a matching banner.

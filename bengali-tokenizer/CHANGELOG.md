@@ -7,6 +7,52 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **BMBT (Bornomala's Bengali Tokenizer, v2 roadmap step 5, partial):
+  `bntok/bmbt.py`.** The recommended, primary tokenizer as of this
+  release. Grammar (the akshara finite-state parser, reused unchanged)
+  plus a real featural decomposition (`featurize()`: onset consonants,
+  which carry a nukta, vowel, modifiers, ZWJ/ZWNJ flags) plus a
+  statistical BPE layer over akshara atoms - the same architecture as v1
+  with the atomic unit swapped from grapheme cluster to akshara.
+  **Morphology is explicitly not built** - deferred, not abandoned.
+  `bmbt.py` is fully self-contained: it imports nothing from `atoms.py` or
+  `tokenizer.py`, so v1 (`bn-bpe-64k`) is completely unaffected -
+  `tests/test_tokenizer.py` passes unmodified. New CLI: `bmbt-train`,
+  `bmbt-encode`, `bmbt-evaluate`, `bmbt-featurize`. 24 new tests
+  (`tests/test_bmbt.py`), including a property test proving `featurize()`
+  reconstructs the original akshara text exactly (lossless, not just
+  "looks right on examples").
+  **Trained on the identical corpus as `bn-bpe-64k` (`configs/bpe-64k.json`,
+  vocab 64000) and measured the same way, reported exactly as it came
+  out**: BMBT *ties* v1, it does not beat it. On Wikipedia held-out the
+  two are identical down to the raw token count (17,245 tokens, 11,316
+  words) despite genuinely different vocabularies (12,233 atoms for v1,
+  12,199 for BMBT). On the other three registers, tiny real differences
+  appear in both directions (BMBT needs marginally fewer tokens,
+  marginally more fragmented clusters - both within 0.02% either way).
+  This confirms, in practice, `FORMAL_SPEC.md`'s own proof that a
+  grammar-constrained BPE cannot beat an unconstrained one on raw token
+  count. What BMBT adds regardless is the featural output, at no fertility
+  cost. Full numbers and a CC-100 corpus ablation (trained again with
+  CC-100 added: very slightly worse Wikipedia fertility, very slightly
+  better general-web fertility, a wash): `benchmarks/bengali-comparison.md`.
+  New docs: `docs/bmbt-architecture.md`.
+- **Real bug found and fixed while training BMBT: `stream_cc100` never
+  actually worked.** It had been wired in and documented as "available"
+  in an earlier change but never exercised end to end; it called
+  `datasets.load_dataset("cc100", ...)`, which fails outright on any
+  current `datasets` install (the `cc100` Hub repo still ships a legacy
+  loader script, unsupported by current `datasets`). Fixed by bypassing
+  `datasets` entirely (list and read the repo's auto-converted parquet
+  shards via `huggingface_hub` + `pandas`, the same mechanism
+  `stream_wikisource`/`stream_xlsum` already use). A second, unrelated
+  stall surfaced while fixing this: `huggingface_hub.hf_hub_download`
+  (0.36.2) hangs indefinitely on this specific repository's files -
+  verified directly (a plain HTTP GET to the identical URL succeeds
+  immediately) rather than assumed; `_download_cc100_shard` bypasses
+  `hf_hub_download` for CC-100 only, via plain `requests` streaming to a
+  local cache. Every other `stream_*` function is unaffected. See
+  `docs/known-issues.md` point 15.
 - **Two more real external baselines wired into `scripts/compare.py`'s
   `HF_MODELS`: SUTRA (`TWO/sutra-mlt256-v2`) and Krutrim
   (`krutrim-ai-labs/Krutrim-2-instruct`)**, both verified loadable before
