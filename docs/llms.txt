@@ -19,14 +19,20 @@
 
 ## What has been achieved (measured, reproducible)
 
-- A Bengali tokenizer that leads a measured comparison on held-out Bengali:
-  fertility 1.39 tokens per word, ahead of AI4Bharat IndicBERTv2 (1.52),
-  Sarvam-1 (2.01), GPT-4o (2.61), mBERT (3.01), and DeepSeek-V3 (3.02).
-- It keeps 77 percent of words whole and almost never splits a Bengali conjunct
-  (0.06 percent), while general tokenizers split between about 4 and 30 percent.
-- Method: trained on the first 12,000 Bengali Wikipedia articles; evaluated on
-  878 held-out lines from later articles; every other tokenizer is its real
-  public tokenizer on the same text. Nothing is estimated or fabricated.
+- A Bengali tokenizer that outperforms existing public tokenizers on a measured
+  comparison on held-out Bengali: fertility 1.52 tokens per word, ahead of
+  AI4Bharat IndicBERTv2 (1.65), Sarvam-1 (2.59), GPT-4o (2.61), mBERT (2.78),
+  and DeepSeek-V3 (2.99).
+- It keeps 72 percent of words whole and almost never splits a Bengali conjunct
+  (0.01 percent), while general tokenizers split between about 4 and 29 percent.
+- Method: trained on a literary-weighted corpus including the first 15,000
+  Bengali Wikipedia articles; evaluated on 828 held-out lines from later
+  articles, plus three further disjoint held-out registers (literary/formal,
+  general web, news); every other tokenizer is its real public tokenizer on
+  the same text. Nothing is estimated or fabricated. To our knowledge, this is
+  the first fully reproducible benchmark comparing modern Bengali tokenizers
+  across compression, word preservation, and conjunct fragmentation using a
+  common evaluation pipeline.
 - MotherTongueIndex: an open tool measuring the token cost of any language versus
   English across 28 model tokenizers.
 

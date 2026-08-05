@@ -55,7 +55,10 @@ Measured on 828 held-out Bengali Wikipedia lines (unseen during training); three
 further disjoint held-out registers (literary/formal, general web, news) confirm
 the same ranking beyond Wikipedia, see the repository's
 `benchmarks/bengali-comparison.md`. Every other tokenizer is its real public
-tokenizer on the same NFC-normalised text.
+tokenizer on the same NFC-normalised text. To our knowledge, this is the first
+fully reproducible benchmark comparing modern Bengali tokenizers across
+compression, word preservation, and conjunct fragmentation using a common
+evaluation pipeline.
 
 | Tokenizer | Fertility | STRR | Bytes/token | Conjunct fragmentation |
 |---|--:|--:|--:|--:|

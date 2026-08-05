@@ -78,10 +78,11 @@ understate the damage.
 
 We present a tokenizer designed so that a token can never split a grapheme
 cluster. Our contributions are: (1) a grapheme-atom scheme that makes conjunct
-fragmentation structurally impossible for covered clusters; (2) the first
-measured, reproducible comparison of how efficiently mainstream tokenizers encode
-Bengali, on identical held-out text; and (3) an open, CPU-only, Apache-2.0
-release of the tokenizer and the evaluation.
+fragmentation structurally impossible for covered clusters; (2) to our
+knowledge, the first fully reproducible benchmark comparing modern Bengali
+tokenizers across compression, word preservation, and conjunct fragmentation
+using a common evaluation pipeline, on identical held-out text; and (3) an
+open, CPU-only, Apache-2.0 release of the tokenizer and the evaluation.
 
 \section{Background and Related Work}
 \paragraph{Tokenization and fertility.} Fertility is the ratio of subword tokens
@@ -207,7 +208,7 @@ News & 1.140 / 1.312 & 0.893 / 0.755 & 0.0000 / 0.0206 \\
 \bottomrule
 \end{tabular}
 \caption{Fertility, STRR, and conjunct fragmentation across four disjoint
-held-out registers. Ours leads IndicBERTv2 on every metric, on every register.}
+held-out registers. Ours outperforms IndicBERTv2 on every metric, on every register.}
 \label{tab:registers}
 \end{table}
 

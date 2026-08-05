@@ -9,6 +9,7 @@ dist/
 
 # HF / model caches (never commit downloaded tokenizers or weights)
 .cache/
+.hfcache/
 *.safetensors
 *.bin
 *.model

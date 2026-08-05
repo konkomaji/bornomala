@@ -56,9 +56,9 @@ preservation carried out with modern tools.
 
 ## What we have achieved so far
 
-**A Bengali tokenizer that leads the field.** Measured on held-out Bengali, it
-needs the fewest tokens per word and almost never breaks a conjunct, where every
-other system breaks many.
+**A Bengali tokenizer that achieves state-of-the-art results on our benchmark.**
+Measured on held-out Bengali, it needs the fewest tokens per word and almost
+never breaks a conjunct, where every other system breaks many.
 
 | Tokenizer | Tokens per word | Whole words kept | Bytes per token | Broken conjuncts |
 |---|--:|--:|--:|--:|
@@ -91,7 +91,10 @@ Full per-register numbers:
 > across a token boundary, computed from each tokenizer's own character
 > offsets; GPT-4o exposes none, so its figure is left unmeasured rather than
 > guessed. The full method and raw numbers are in the repository, and the
-> comparison reruns with one command.
+> comparison reruns with one command. To our knowledge, this is the first
+> fully reproducible benchmark comparing modern Bengali tokenizers across
+> compression, word preservation, and conjunct fragmentation using a common
+> evaluation pipeline.
 
 **An open tool that makes the inequity visible.**
 [MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), a tool
