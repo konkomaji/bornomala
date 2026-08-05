@@ -1,6 +1,6 @@
 # Bengali cross-tokenizer comparison
 
-The first measured, reproducible comparison of how efficiently mainstream tokenizers encode Bengali. Every number is produced from the real tokenizer of each system on identical text. Nothing is estimated or fabricated.
+To our knowledge, the first fully reproducible benchmark comparing modern Bengali tokenizers across compression, word preservation, and conjunct fragmentation using a common evaluation pipeline. Every number is produced from the real tokenizer of each system on identical text. Nothing is estimated or fabricated.
 
 ## Exactly how this was measured (full transparency)
 
@@ -40,7 +40,7 @@ SUTRA and Krutrim are now measured on all four registers (added after the initia
 | General web | 2.066 / 0.432 / 0.1620 | 3.135 / 0.049 / 0.3234 |
 | News | 1.954 / 0.468 / 0.1509 | 3.061 / 0.035 / 0.3232 |
 
-Neither changes the ranking: our tokenizer (and BMBT, see below) leads every register; SUTRA is consistently 3rd; Krutrim is consistently last or near-last.
+Neither changes the ranking: our tokenizer (and BMBT, see below) outperforms every other tokenizer on every register; SUTRA is consistently 3rd; Krutrim is consistently last or near-last.
 
 ## Results across every register (ours vs. AI4Bharat IndicBERTv2, the closest rival)
 
