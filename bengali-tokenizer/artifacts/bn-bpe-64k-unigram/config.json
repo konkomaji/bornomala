@@ -1,0 +1,10 @@
+{
+  "algo": "unigram",
+  "vocab_size": 64000,
+  "actual_vocab_size": 64000,
+  "min_atom_freq": 2,
+  "zwnj_policy": "preserve",
+  "num_atoms": 12233,
+  "num_cluster_atoms": 10258,
+  "format": "bornomala-track-a/1"
+}
