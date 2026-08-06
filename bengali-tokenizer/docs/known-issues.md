@@ -330,6 +330,74 @@ Kept as an honest record of what went wrong and how it was resolved.
     genuine training runs completed successfully using it (see the
     "v2 roadmap step 4/5" sections below for the resulting numbers).
 
+16. **Corpus was diluted by Bangladesh-sourced text; no public dataset
+    exists that is labelled "West Bengal (India) Bengali" specifically.**
+    User asked for the training corpus to skew toward Indian, not
+    Bangladeshi, Bengali. Checked directly rather than assumed: written
+    standard Bengali does not split cleanly by border in any public
+    corpus's own metadata, so there is no dataset that filters to
+    "West Bengal only." The real, checkable lever is *pipeline origin*:
+    `contemporary_news` (XL-Sum bn) is BBC Bangla, a Bangladesh-based
+    source, and `cc100`/general web crawls mix both countries' domains
+    with no split given. Added `stream_indiccorp_v2` (`bntok/corpus.py`) -
+    AI4Bharat IndicCorp v2 Bengali, 30.0B tokens (10.6B verified + 13.8B
+    synthetic + 5.6B unverified), the largest published Bengali corpus as
+    of 2026-08 and built by an Indian pipeline (AI4Bharat, IIT Madras) -
+    as a new `indiccorp_v2_bn` source, wired into `configs/bpe-64k.json`
+    at weight 0.10, with `contemporary_news` halved (0.10 -> 0.05) to
+    reduce the Bangladesh-sourced share. Streams the source's single large
+    per-language text file directly over HTTP, stopping early rather than
+    downloading the full multi-GB file, the same line-offset contract as
+    `stream_cc100`. **Honest caveat**: IndicCorp v2's own README does not
+    itself label per-document country provenance, so "India-origin" here
+    means "built by an India-based pipeline for Indian-language NLP," not
+    a verified per-line geographic filter - the same caveat applies to
+    Sangraha, which the corpus already used before this change.
+    Retraining against the updated config had not yet been run as of this
+    entry (see the corpus-mix table below once it lands).
+
+    **Survey of who else builds Indic-language AI and what they train on**
+    (verified via each org's own materials, not assumed), done to inform
+    this decision and to seed the competitor-tokenizer list below:
+    AI4Bharat (IIT Madras) is the shared foundation layer (Sangraha,
+    IndicCorp v2, IndicTrans2) that both Bhashini (govt API/data platform,
+    not itself a model) and BharatGen build on. BharatGen (IIT Bombay-led
+    consortium, Dept. of Science & Technology, Param-1 2.9B -> Param2 17B
+    MoE, 2026) trains on a 5T-token mix (majority English: FineWeb-Edu/
+    DCLM/Common Crawl) whose Indic slice leans on Books-OCR archives,
+    government-funded "Udaan" translations, and Sangraha directly - i.e.
+    a funded, technically strong player still leans on the same public
+    corpus this repo uses. Sarvam AI (govt-backed under IndiaAI Mission,
+    models now at 30B/105B as of 2026) is the one exception: their own
+    materials state Sangraha lacks the "depth, diversity, and quality"
+    needed and describe building a proprietary ~2T-token corpus
+    ("Sarvam-2T") instead, not publicly released. Krutrim (Ola) and
+    Hanooman/SML (BharatGPT ecosystem, up to 40B params) are further
+    Indic players; no public HF tokenizer repo was found for Hanooman
+    (checked, not just assumed absent), so it could not be added to the
+    benchmark table.
+
+17. **Competitor and frontier tokenizers added to `scripts/compare.py`'s
+    `HF_MODELS`/`TIKTOKEN_MODELS`, per user request to also benchmark
+    against India's own funded competitors and the global frontier, not
+    only past baselines.** Every addition was verified loadable via
+    `transformers.AutoTokenizer.from_pretrained` directly against the
+    real Hub repo before being added, not assumed from a model card:
+    added `bharatgenai/Param2-17B-A2.4B-Thinking` (BharatGen, see point 16
+    above), `meta-llama/Llama-3.1-8B` (Meta; the tokenizer files load
+    without a HF auth token even though the model weights are gated -
+    verified directly), `mistralai/Mistral-7B-v0.3`, `Qwen/Qwen2.5-7B`,
+    and a second tiktoken encoding `cl100k_base` (GPT-4/3.5) alongside the
+    existing `o200k_base` (GPT-4o). Also added `google/gemma-2-9b` as the
+    closest available open proxy for Gemini's own tokenizer (Google has
+    not published one): this one **fails to load** in this environment
+    (`403: gated repo`, confirmed by direct load attempt) and will report
+    as `available: false` at measurement time per `measure_hf`'s existing
+    "report unavailable, never estimate" policy - kept in the list rather
+    than removed, since a user who configures a HF token can make it
+    resolve, and the honest-failure path is exactly what this file's own
+    `measure_hf` was built to do.
+
 ## Roadmap: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which

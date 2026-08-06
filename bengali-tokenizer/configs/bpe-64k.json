@@ -1,5 +1,5 @@
 {
-  "_about": "Training configuration for the Bornomala Track A Bengali tokenizer (spec section 9.2 step 1). government_administrative and code_mixed_bn_en have no clean public dataset as of 2026-07 and are omitted; weights below are normalised over the remaining four sources by bntok.corpus.build_configured_corpus, so they need not sum to 1. public_domain_literature is a mix of genuine Wikisource public-domain text (thin, ~90 lines) and Sangraha verified/ben pdf-typed documents used as a formal-register proxy, not confirmed pre-1950 material; see bengali-tokenizer/docs/known-issues.md. vocab_size=64000 is the current recommendation: an ablation across 32k/48k/64k on this same corpus showed fertility recovering monotonically with vocab size, and only 64k beats IndicBERTv2 on fertility and STRR across every held-out register tested (see docs/known-issues.md point 7).",
+  "_about": "Training configuration for the Bornomala Track A Bengali tokenizer (spec section 9.2 step 1). government_administrative and code_mixed_bn_en have no clean public dataset as of 2026-07 and are omitted; weights below are normalised over the remaining five sources by bntok.corpus.build_configured_corpus, so they need not sum to 1. public_domain_literature is a mix of genuine Wikisource public-domain text (thin, ~90 lines) and Sangraha verified/ben pdf-typed documents used as a formal-register proxy, not confirmed pre-1950 material; see bengali-tokenizer/docs/known-issues.md. vocab_size=64000 is the current recommendation: an ablation across 32k/48k/64k on this same corpus showed fertility recovering monotonically with vocab size, and only 64k beats IndicBERTv2 on fertility and STRR across every held-out register tested (see docs/known-issues.md point 7). 2026-08: added indiccorp_v2_bn (AI4Bharat, India-origin, largest published Bengali corpus, 30.0B tokens) and halved contemporary_news (XL-Sum bn = BBC Bangla, Bangladesh-sourced) to skew the corpus toward Indian-pipeline Bengali text over Bangladesh-sourced text, per explicit user request - NOT YET retrained/rebenchmarked against this new config as of this edit, see bengali-tokenizer/docs/known-issues.md.",
   "algo": "bpe",
   "vocab_size": 64000,
   "min_atom_freq": 2,
@@ -9,6 +9,7 @@
     "public_domain_literature": 0.30,
     "sangraha_verified_bn": 0.35,
     "bengali_wikipedia": 0.10,
-    "contemporary_news": 0.10
+    "contemporary_news": 0.05,
+    "indiccorp_v2_bn": 0.10
   }
 }

@@ -184,6 +184,65 @@ def stream_cc100(
     return out
 
 
+def stream_indiccorp_v2(
+    lang: str = "bn", limit_lines: int = 300_000, offset_lines: int = 0,
+) -> list[str]:
+    """Stream AI4Bharat IndicCorp v2 (30.0B Bengali tokens: 10.6B verified,
+    13.8B synthetic, 5.6B unverified - the largest published Indic-origin
+    Bengali corpus as of 2026-08, 2.6x bigger than IndicCorp v2's own
+    predecessor per AI4Bharat's own comparison) for one language.
+
+    Optional: requires `requests`. Hosted as one large plain-text file per
+    language (`data/{lang}.txt` in `ai4bharat/IndicCorpV2`, already one
+    sentence/line), not parquet shards, so this streams the raw HTTP body
+    line-by-line and stops as soon as `offset_lines + limit_lines` lines are
+    read - it does not download the full file (each language file can run
+    into the multi-GB range across the full 275GB dataset). Same
+    line-based offset/limit contract as `stream_cc100`, so a disjoint
+    held-out slice can be drawn the same way. Unlike CC-100 (2018 web
+    crawl, BD/IN mixed origin), IndicCorp v2 is built by AI4Bharat (IIT
+    Madras) specifically for Indian-language NLP, making it the best
+    available proxy for India-sourced (as opposed to Bangladesh-sourced)
+    Bengali web text - though the README does not itself label per-document
+    provenance by country, so this is a pipeline-origin proxy, not a
+    verified geographic filter.
+    """
+    try:
+        import requests
+    except ImportError as e:
+        raise ConfigError(
+            "streaming IndicCorp v2 needs the requests library: pip install requests"
+        ) from e
+    if limit_lines < 1:
+        raise ConfigError(f"limit_lines must be >= 1, got {limit_lines}")
+    if offset_lines < 0:
+        raise ConfigError(f"offset_lines must be >= 0, got {offset_lines}")
+
+    url = f"https://huggingface.co/datasets/ai4bharat/IndicCorpV2/resolve/main/data/{lang}.txt"
+    out: list[str] = []
+    seen = 0
+    try:
+        with requests.get(url, stream=True, timeout=(10, 60)) as r:
+            r.raise_for_status()
+            for raw_line in r.iter_lines():
+                if not raw_line:
+                    continue
+                line = raw_line.decode("utf-8", errors="replace").strip()
+                if not line:
+                    continue
+                seen += 1
+                if seen <= offset_lines:
+                    continue
+                out.append(line)
+                if seen - offset_lines >= limit_lines:
+                    break
+    except requests.RequestException as e:
+        raise ConfigError(f"could not stream IndicCorp v2 for '{lang}': {e}") from e
+    if not out:
+        raise EmptyCorpusError(f"IndicCorp v2 stream for '{lang}' yielded no text")
+    return out
+
+
 def _split_lines(text: str) -> list[str]:
     """Split one document into lines, falling back to sentence splits.
 
@@ -418,6 +477,7 @@ SANGRAHA_PDF_TRAIN_DOCS = 50_000
 SANGRAHA_WEB_TRAIN_DOCS = 200_000
 XLSUM_TRAIN_DOCS = 8_000  # XL-Sum bn is ~10.1k docs total; this reserves ~2k for held-out
 CC100_TRAIN_LINES = 300_000  # bulk general-web supplement; not in the default corpus_sources weights yet
+INDICCORP_V2_TRAIN_LINES = 300_000  # India-origin bulk web supplement (see stream_indiccorp_v2)
 
 
 def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
@@ -438,6 +498,12 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
         name but not part of the shipped `configs/bpe-64k.json` weights: it
         has not yet been retrained-and-benchmarked in, so including it here
         does not change the current artifact until a config opts in.
+      * indiccorp_v2_bn: AI4Bharat IndicCorp v2 Bengali (via
+        `stream_indiccorp_v2`), the largest published India-origin Bengali
+        corpus (30.0B tokens). Unlike cc100_general_web this IS part of the
+        shipped `configs/bpe-64k.json` weights as of 2026-08 - added
+        specifically to skew the corpus toward Indian-pipeline (vs
+        Bangladesh-sourced) Bengali text; see docs/known-issues.md.
 
     `government_administrative` and `code_mixed_bn_en` from the original spec
     have no clean public dataset and are silently skipped if present in the
@@ -451,7 +517,7 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
 
     known = {
         "public_domain_literature", "sangraha_verified_bn", "bengali_wikipedia",
-        "contemporary_news", "cc100_general_web",
+        "contemporary_news", "cc100_general_web", "indiccorp_v2_bn",
     }
     unavailable = {"government_administrative", "code_mixed_bn_en"}
     weights = {k: v for k, v in sources.items() if k in known}
@@ -488,6 +554,10 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
         log("loading cc100_general_web: CC-100 bn (holding out the tail for eval) ...")
         loaders["cc100_general_web"] = stream_cc100("bn", limit_lines=CC100_TRAIN_LINES)
         log(f"  {len(loaders['cc100_general_web'])} lines")
+    if "indiccorp_v2_bn" in weights:
+        log("loading indiccorp_v2_bn: AI4Bharat IndicCorp v2 bn (India-origin, holding out the tail for eval) ...")
+        loaders["indiccorp_v2_bn"] = stream_indiccorp_v2("bn", limit_lines=INDICCORP_V2_TRAIN_LINES)
+        log(f"  {len(loaders['indiccorp_v2_bn'])} lines")
 
     log(f"combining into {total_lines} weighted lines ...")
     return weighted_corpus(loaders, weights, total_lines)
