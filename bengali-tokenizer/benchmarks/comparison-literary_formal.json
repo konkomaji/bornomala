@@ -120,6 +120,30 @@
       "conjunct_fragmentation": null,
       "n_fragmented": null,
       "n_clusters": null
+    },
+    {
+      "model": "Bornomala Track A (unigram 64000)",
+      "available": true,
+      "tokens": 1061938,
+      "words": 762735,
+      "fertility": 1.392,
+      "strr": 0.742,
+      "bytes_per_token": 11.58,
+      "conjunct_fragmentation": 0.000107,
+      "n_fragmented": 250,
+      "n_clusters": 2337650
+    },
+    {
+      "model": "Bornomala BMBT (unigram 64000)",
+      "available": true,
+      "tokens": 1061890,
+      "words": 762735,
+      "fertility": 1.392,
+      "strr": 0.742,
+      "bytes_per_token": 11.58,
+      "conjunct_fragmentation": 0.000114,
+      "n_fragmented": 266,
+      "n_clusters": 2337650
     }
   ],
   "akshara_v2": {
