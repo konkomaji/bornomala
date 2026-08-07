@@ -398,6 +398,32 @@ Kept as an honest record of what went wrong and how it was resolved.
     resolve, and the honest-failure path is exactly what this file's own
     `measure_hf` was built to do.
 
+18. **India-skewed corpus (point 16) measured, not promoted.** Full held-out
+    benchmark run 2026-08-07 against `artifacts/bn-bpe-64k-india` /
+    `artifacts/bmbt-64k-india` on all four registers, alongside the new
+    competitor rows from point 17. Result: a wash-to-slight-regression, not
+    a win.
+
+    | Register | Fertility (old default) | Fertility (India-skewed) |
+    |---|--:|--:|
+    | Wikipedia | 1.524 | 1.527 (worse) |
+    | Literary/formal | 1.320 | 1.327 (worse) |
+    | General web | 1.201 | 1.200 (same) |
+    | News | 1.140 | 1.142 (same) |
+
+    BMBT-india tracks Track-A-india near-identically, the same tie pattern
+    as the non-India comparison above. Halving `contemporary_news`'s weight
+    (Bangladesh-sourced XL-Sum) and adding `indiccorp_v2_bn` did not
+    sharpen fertility on any register and cost a little on two of four.
+    **Decision (user, 2026-08-07): keep as a labeled alternative artifact,
+    do not promote.** `bn-bpe-64k`/`bmbt-64k` remain the recommended
+    default; `*-india` stays available for anyone who wants corpus
+    provenance skewed toward an India-based pipeline regardless of the
+    small fertility cost. Full rows merged into
+    `benchmarks/comparison-{register}.json` alongside this run's new
+    competitor baselines (Param2-17B, Llama-3.1, Gemma-2 [gated, reports
+    unavailable], Mistral-7B, Qwen2.5, GPT-4 cl100k).
+
 ## Roadmap: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
