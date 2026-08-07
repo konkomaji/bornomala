@@ -561,6 +561,25 @@ place, directionally sensible, and together amount to a wash, not a case
 for or against adopting CC-100 in the default weights. `bn-bpe-64k` and
 `bmbt-64k` (no CC-100) remain the recommended artifacts.
 
+**Unigram-vs-BPE algorithm ablation** (`artifacts/bn-bpe-64k-unigram`,
+`artifacts/bmbt-64k-unigram`: same corpus, same atom scheme, same 64k
+vocab budget as the shipped artifacts, only the `tokenizers` trainer
+algorithm swapped from BPE to Unigram): Unigram is worse than BPE on
+every register, for both v1 and BMBT, by a consistent 2.5-5.4%:
+
+| Register | Fertility (BPE) | Fertility (Unigram) | Worse by |
+|---|--:|--:|--:|
+| Wikipedia | 1.524 | 1.562 | 2.5% |
+| Literary/formal | 1.320 | 1.392 | 5.5% |
+| General web | 1.201 | 1.235 | 2.8% |
+| News | 1.140 | 1.175 | 3.1% |
+
+STRR moves the same direction (worse) on every register; conjunct
+fragmentation is unaffected either way (same near-zero band as BPE, the
+atom scheme, not the merge algorithm, is what controls fragmentation).
+`bn-bpe-64k`/`bmbt-64k` (BPE) remain the recommended artifacts; Unigram
+is kept as a measured, negative ablation result, not deleted.
+
 **Still not done**: morphology (root/suffix decomposition, sandhi) -
 BMBT's featural output has no morphological layer yet, so it cannot yet
 claim the "quality-per-token" advantage the design doc's own risk section
