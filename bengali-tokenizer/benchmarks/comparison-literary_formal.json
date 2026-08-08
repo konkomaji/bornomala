@@ -233,6 +233,18 @@
       "conjunct_fragmentation": null,
       "n_fragmented": null,
       "n_clusters": null
+    },
+    {
+      "model": "Bornomala BMBT-Hybrid (bpe 64355)",
+      "available": true,
+      "tokens": 42994,
+      "words": 31912,
+      "fertility": 1.347,
+      "strr": 0.775,
+      "bytes_per_token": 11.77,
+      "conjunct_fragmentation": 8.3e-05,
+      "n_fragmented": 8,
+      "n_clusters": 96273
     }
   ],
   "akshara_v2": {
