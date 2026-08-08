@@ -172,6 +172,7 @@ bengali-tokenizer/
 - **[BMBT architecture](docs/bmbt-architecture.md)**: pipeline, featurize(), the isolation-from-v1 design.
 - **[v1 architecture](docs/architecture.md)**: pipeline, diagrams, the integrity proof.
 - **[Known issues and limitations](docs/known-issues.md)**: honest caveats, comparison notes, and the bugs found and fixed during development.
+- **[Track A2: corpus dedup and quality filtering](docs/track-a2-corpus-survival.md)**: Gate G3 survival-ratio measurement on real data.
 - **[Benchmark method and results](benchmarks/bengali-comparison.md)**, and the [hard-words showcase](benchmarks/hard-words.md) (conjuncts and Bengali place names, every tokenizer tracked).
 - **[Paper](paper/)**: the arXiv preprint source (LaTeX) and submission guide.
 - **v2 design docs:** [Reading Bengali on Its Own Terms](docs/design/reading-bengali-on-its-own-terms.md) (the position paper BMBT implements) and its [formal specification](docs/design/FORMAL_SPEC.md) (losslessness, totality, linear time, constrained optimality as proofs and a fuzzer contract).
