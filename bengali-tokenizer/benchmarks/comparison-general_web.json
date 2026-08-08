@@ -120,6 +120,131 @@
       "conjunct_fragmentation": null,
       "n_fragmented": null,
       "n_clusters": null
+    },
+    {
+      "model": "Bornomala Track A (unigram 64000)",
+      "available": true,
+      "tokens": 309721,
+      "words": 250694,
+      "fertility": 1.235,
+      "strr": 0.833,
+      "bytes_per_token": 13.7,
+      "conjunct_fragmentation": 5.7e-05,
+      "n_fragmented": 46,
+      "n_clusters": 804365
+    },
+    {
+      "model": "Bornomala BMBT (unigram 64000)",
+      "available": true,
+      "tokens": 309723,
+      "words": 250694,
+      "fertility": 1.235,
+      "strr": 0.833,
+      "bytes_per_token": 13.7,
+      "conjunct_fragmentation": 6e-05,
+      "n_fragmented": 48,
+      "n_clusters": 804365
+    },
+    {
+      "model": "Bornomala Track A (bpe 64000, India-skewed corpus)",
+      "available": true,
+      "tokens": 366675,
+      "words": 305557,
+      "fertility": 1.2,
+      "strr": 0.861,
+      "bytes_per_token": 14.08,
+      "conjunct_fragmentation": 5.7e-05,
+      "n_fragmented": 56,
+      "n_clusters": 982156
+    },
+    {
+      "model": "Bornomala BMBT (bpe 64000, India-skewed corpus)",
+      "available": true,
+      "tokens": 366652,
+      "words": 305557,
+      "fertility": 1.2,
+      "strr": 0.862,
+      "bytes_per_token": 14.08,
+      "conjunct_fragmentation": 6e-05,
+      "n_fragmented": 59,
+      "n_clusters": 982156
+    },
+    {
+      "model": "Param2-17B (BharatGen)",
+      "available": true,
+      "tokens": 721345,
+      "words": 305557,
+      "fertility": 2.361,
+      "strr": 0.108,
+      "bytes_per_token": 7.16,
+      "conjunct_fragmentation": 0.191776,
+      "n_fragmented": 188403,
+      "n_clusters": 982414
+    },
+    {
+      "model": "Llama-3.1 (Meta)",
+      "available": true,
+      "tokens": 2332476,
+      "words": 305557,
+      "fertility": 7.634,
+      "strr": 0.013,
+      "bytes_per_token": 2.21,
+      "conjunct_fragmentation": 0.521749,
+      "n_fragmented": 512574,
+      "n_clusters": 982414
+    },
+    {
+      "model": "Gemma-2 (Google)",
+      "available": false,
+      "error": "OSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/google/gemma-2-9b.\n403 Client Error. (Request ID: Root=1-6a7506ff-44792a6d1f2fe1725d206f70;4197cf96-d992-4f6a-bf5c-4c2e641e70a2)\n\nCannot access gated repo for url https://huggingface.co/google/gemma-2-9b/resolve/main/config.json.\nAccess to model google/gemma-2-9b is restricted and you are not in the authorized list. Visit https://huggingface.co/google/gemma-2-9b to ask for access."
+    },
+    {
+      "model": "Mistral-7B (Mistral AI)",
+      "available": true,
+      "tokens": 2255629,
+      "words": 305557,
+      "fertility": 7.382,
+      "strr": 0.011,
+      "bytes_per_token": 2.29,
+      "conjunct_fragmentation": 0.521749,
+      "n_fragmented": 512574,
+      "n_clusters": 982414
+    },
+    {
+      "model": "Qwen2.5 (Alibaba)",
+      "available": true,
+      "tokens": 2106485,
+      "words": 305557,
+      "fertility": 6.894,
+      "strr": 0.027,
+      "bytes_per_token": 2.45,
+      "conjunct_fragmentation": 0.521749,
+      "n_fragmented": 512574,
+      "n_clusters": 982414
+    },
+    {
+      "model": "GPT-4 (OpenAI cl100k)",
+      "available": true,
+      "tokens": 2356321,
+      "words": 305557,
+      "fertility": 7.712,
+      "strr": 0.012,
+      "bytes_per_token": 2.19,
+      "conjunct_fragmentation": null,
+      "n_fragmented": null,
+      "n_clusters": null
+    },
+    {
+      "model": "Bornomala BMBT-Hybrid (bpe 64355)",
+      "available": true,
+      "tokens": 37423,
+      "words": 28558,
+      "fertility": 1.31,
+      "strr": 0.805,
+      "bytes_per_token": 12.82,
+      "conjunct_fragmentation": 1.1e-05,
+      "n_fragmented": 1,
+      "n_clusters": 92438
     }
   ],
   "akshara_v2": {

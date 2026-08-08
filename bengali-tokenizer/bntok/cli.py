@@ -12,6 +12,9 @@ Command line for the Track A Bengali tokenizer.
   python -m bntok bmbt-encode --tokenizer out/bmbt --text "আমি বাংলায় গান গাই"
   python -m bntok bmbt-evaluate --tokenizer out/bmbt --input held_out.txt
   python -m bntok bmbt-featurize --text "স্ত্রী ক্ষ্ম আকাঙ্ক্ষা"
+  python -m bntok hybrid-train --corpus-config configs/bpe-64k.json --out out/hybrid
+  python -m bntok hybrid-encode --tokenizer out/hybrid --text "আমি বাংলায় গান গাই"
+  python -m bntok hybrid-evaluate --tokenizer out/hybrid --input held_out.txt
 
 Every command validates its inputs and reports errors as clear messages with a
 non-zero exit code, never a raw traceback.
@@ -189,6 +192,48 @@ def cmd_bmbt_featurize(args) -> int:
     return 0
 
 
+def cmd_hybrid_train(args) -> int:
+    from .bmbt_hybrid import BMBTHybrid
+    from .evaluate import evaluate
+    corpus = _load_input(args)
+    print(f"loaded {len(corpus)} lines; training BMBTHybrid vocab={args.vocab_size} "
+          f"k_fused={args.k_fused} ...", file=sys.stderr)
+    tok = BMBTHybrid.train(
+        corpus, vocab_size=args.vocab_size,
+        min_atom_freq=args.min_atom_freq, zwnj_policy=args.zwnj, k_fused=args.k_fused,
+    )
+    tok.save(args.out)
+    rep = evaluate(tok, corpus[: min(len(corpus), 2000)])
+    print(json.dumps({"saved": args.out, "config": tok.config, "metrics_on_sample": rep.as_dict()},
+                     ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_hybrid_evaluate(args) -> int:
+    from .bmbt_hybrid import BMBTHybrid
+    from .corpus import load_paths
+    from .evaluate import evaluate
+    tok = BMBTHybrid.load(args.tokenizer)
+    texts = load_paths(args.input)
+    rep = evaluate(tok, texts)
+    print(json.dumps(rep.as_dict(), ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_hybrid_encode(args) -> int:
+    from .bmbt_hybrid import BMBTHybrid
+    tok = BMBTHybrid.load(args.tokenizer)
+    ids = tok.encode(args.text)
+    print(json.dumps({
+        "text": args.text,
+        "n_tokens": len(ids),
+        "ids": ids,
+        "tokens": tok.encode_tokens(args.text),
+        "roundtrip_ok": tok.roundtrip_ok(args.text),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="bntok", description="Project Bornomala Track A Bengali tokenizer.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -252,6 +297,31 @@ def main(argv=None) -> int:
                          help="segment and decompose a string into onset/vowel/modifier features")
     bf.add_argument("--text", required=True)
     bf.set_defaults(func=cmd_bmbt_featurize)
+
+    ht = sub.add_parser("hybrid-train",
+                         help="train BMBTHybrid (frequency-adaptive akshara atoms + safety-net merges)")
+    ht.add_argument("--input", nargs="*", help="text files or glob patterns")
+    ht.add_argument("--wikipedia", help="stream Wikipedia for this language code (e.g. bn)")
+    ht.add_argument("--limit", type=int, default=5000, help="max Wikipedia articles")
+    ht.add_argument("--corpus-config", dest="corpus_config",
+                     help="JSON config with weighted corpus_sources (see configs/bpe-64k.json)")
+    ht.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
+    ht.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
+    ht.add_argument("--zwnj", choices=["preserve", "strip"], default="preserve")
+    ht.add_argument("--k-fused", type=int, default=200, dest="k_fused",
+                     help="top-K most frequent akshara chunks kept fused; rest onset/tail-factored")
+    ht.add_argument("--out", required=True, help="output directory for the tokenizer")
+    ht.set_defaults(func=cmd_hybrid_train)
+
+    he = sub.add_parser("hybrid-evaluate", help="evaluate a saved BMBTHybrid tokenizer")
+    he.add_argument("--tokenizer", required=True, help="tokenizer directory")
+    he.add_argument("--input", nargs="+", required=True, help="held-out text files")
+    he.set_defaults(func=cmd_hybrid_evaluate)
+
+    hc = sub.add_parser("hybrid-encode", help="encode a string with a saved BMBTHybrid tokenizer")
+    hc.add_argument("--tokenizer", required=True)
+    hc.add_argument("--text", required=True)
+    hc.set_defaults(func=cmd_hybrid_encode)
 
     args = p.parse_args(argv)
     try:

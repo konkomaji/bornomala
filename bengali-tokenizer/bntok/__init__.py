@@ -30,6 +30,7 @@ from . import corpus, errors, shaping
 from .akshara import Akshara, aksharas
 from .atoms import AtomMap
 from .bmbt import BMBT, AksharaFeatures, featurize, featurize_akshara
+from .bmbt_hybrid import BMBTHybrid, HybridAtomMap
 from .evaluate import Report, evaluate
 from .graphemes import grapheme_clusters
 from .normalize import normalize
@@ -42,7 +43,9 @@ __all__ = [
     "Akshara",
     "AksharaFeatures",
     "AtomMap",
+    "BMBTHybrid",
     "BengaliTokenizer",
+    "HybridAtomMap",
     "Report",
     "__version__",
     "aksharas",

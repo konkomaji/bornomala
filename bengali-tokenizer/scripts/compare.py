@@ -61,16 +61,33 @@ from bntok.graphemes import grapheme_clusters
 #     fails to load (custom tokenizer class not supported by `transformers`)
 #     and is not verifiably the paper's own artifact, so it is not used as a
 #     stand-in.
+#
+# 2026-08: added India competitor + global frontier rows, verified loadable
+# (or honestly reported unavailable, never faked) directly against
+# transformers.AutoTokenizer before being added here - see
+# docs/known-issues.md for the checked-but-excluded list (Hanooman/SML: no
+# public HF tokenizer repo found as of this check; Gemini: no open tokenizer
+# release, Gemma family used as the closest open proxy but is gated and
+# reports unavailable without a HF auth token, which this repo does not
+# assume the user has configured).
 HF_MODELS = [
     ("Sarvam-1 (Sarvam AI)", "sarvamai/sarvam-1"),
     ("SUTRA (TWO AI)", "TWO/sutra-mlt256-v2"),
     ("Krutrim (Krutrim AI)", "krutrim-ai-labs/Krutrim-2-instruct"),
+    ("Param2-17B (BharatGen)", "bharatgenai/Param2-17B-A2.4B-Thinking"),
     ("IndicBERTv2 (AI4Bharat)", "ai4bharat/IndicBERTv2-MLM-only"),
     ("mBERT (Google)", "google-bert/bert-base-multilingual-cased"),
     ("XLM-RoBERTa (Meta)", "FacebookAI/xlm-roberta-base"),
     ("DeepSeek-V3", "deepseek-ai/DeepSeek-V3"),
+    ("Llama-3.1 (Meta)", "meta-llama/Llama-3.1-8B"),
+    ("Gemma-2 (Google)", "google/gemma-2-9b"),
+    ("Mistral-7B (Mistral AI)", "mistralai/Mistral-7B-v0.3"),
+    ("Qwen2.5 (Alibaba)", "Qwen/Qwen2.5-7B"),
 ]
-TIKTOKEN_MODELS = [("GPT-4o (OpenAI o200k)", "o200k_base")]
+TIKTOKEN_MODELS = [
+    ("GPT-4o (OpenAI o200k)", "o200k_base"),
+    ("GPT-4 (OpenAI cl100k)", "cl100k_base"),
+]
 
 
 def held_out(skip: int, limit: int) -> list[str]:
@@ -304,6 +321,53 @@ def measure_bmbt(directory: str, texts: list[str]) -> dict:
     return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
 
 
+def measure_hybrid(directory: str, texts: list[str]) -> dict:
+    """Measure BMBT-Hybrid (bntok.bmbt_hybrid.BMBTHybrid) the same way
+    measure_bmbt() measures BMBT: a genuine like-for-like row. Structurally
+    identical to measure_bmbt() - see that function's docstring for why
+    offsets (not a pairwise cluster-count heuristic) are the correct way to
+    detect a split conjunct, and why lines that do not cleanly round-trip are
+    skipped for fragmentation specifically (out-of-coverage codepoints).
+    """
+    from bntok.bmbt_hybrid import BMBTHybrid
+    tok = BMBTHybrid.load(directory)
+    n_tok = n_words = n_bytes = single = frag = clusters = 0
+    skipped_for_frag = 0
+    for raw in texts:
+        nfc = normalize(raw)
+        words = nfc.split()
+        n_tok += len(tok.encode(raw))
+        n_words += len(words)
+        n_bytes += len(nfc.encode("utf-8"))
+        for w in words:
+            if len(tok.encode(w)) == 1:
+                single += 1
+        if not tok.roundtrip_ok(raw):
+            skipped_for_frag += 1
+            continue
+        surfaces = tok.encode_tokens(raw)
+        joined = "".join(surfaces)
+        trimmed = joined.lstrip(" ")
+        lead = len(joined) - len(trimmed)
+        assert trimmed == nfc, (
+            f"surface reconstruction mismatch on a round-trippable line: "
+            f"{trimmed!r} != {nfc!r} (this would silently corrupt the fragmentation count)"
+        )
+        offsets = []
+        pos = -lead
+        for s in surfaces:
+            offsets.append((pos, pos + len(s)))
+            pos += len(s)
+        f, c = _frag_from_offsets(nfc, offsets)
+        frag += f
+        clusters += c
+    if skipped_for_frag:
+        print(f"  ({skipped_for_frag}/{len(texts)} lines skipped for fragmentation: "
+              f"out-of-coverage codepoints, see docs/known-issues.md point 4)", file=sys.stderr)
+    name = f"Bornomala BMBT-Hybrid ({tok.config['algo']} {tok.config['actual_vocab_size']})"
+    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
+
+
 def measure_akshara(texts: list[str]) -> dict:
     """Measure the v2 akshara finite-state parser (roadmap step 4).
 
@@ -367,6 +431,8 @@ def main(argv=None) -> int:
     p.add_argument("--out", default="out/comparison.json")
     p.add_argument("--bmbt-tokenizer", dest="bmbt_tokenizer",
                     help="also measure a trained BMBT directory (bntok.bmbt.BMBT) as a normal row")
+    p.add_argument("--hybrid-tokenizer", dest="hybrid_tokenizer",
+                    help="also measure a trained BMBT-Hybrid directory (bntok.bmbt_hybrid.BMBTHybrid) as a normal row")
     args = p.parse_args(argv)
 
     if args.register:
@@ -381,6 +447,9 @@ def main(argv=None) -> int:
     if args.bmbt_tokenizer:
         print("measuring BMBT ...", file=sys.stderr)
         rows.append(measure_bmbt(args.bmbt_tokenizer, texts))
+    if args.hybrid_tokenizer:
+        print("measuring BMBT-Hybrid ...", file=sys.stderr)
+        rows.append(measure_hybrid(args.hybrid_tokenizer, texts))
     for name, repo in HF_MODELS:
         print(f"measuring {name} ...", file=sys.stderr)
         rows.append(measure_hf(name, repo, texts))

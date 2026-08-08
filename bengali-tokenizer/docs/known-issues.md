@@ -330,6 +330,100 @@ Kept as an honest record of what went wrong and how it was resolved.
     genuine training runs completed successfully using it (see the
     "v2 roadmap step 4/5" sections below for the resulting numbers).
 
+16. **Corpus was diluted by Bangladesh-sourced text; no public dataset
+    exists that is labelled "West Bengal (India) Bengali" specifically.**
+    User asked for the training corpus to skew toward Indian, not
+    Bangladeshi, Bengali. Checked directly rather than assumed: written
+    standard Bengali does not split cleanly by border in any public
+    corpus's own metadata, so there is no dataset that filters to
+    "West Bengal only." The real, checkable lever is *pipeline origin*:
+    `contemporary_news` (XL-Sum bn) is BBC Bangla, a Bangladesh-based
+    source, and `cc100`/general web crawls mix both countries' domains
+    with no split given. Added `stream_indiccorp_v2` (`bntok/corpus.py`) -
+    AI4Bharat IndicCorp v2 Bengali, 30.0B tokens (10.6B verified + 13.8B
+    synthetic + 5.6B unverified), the largest published Bengali corpus as
+    of 2026-08 and built by an Indian pipeline (AI4Bharat, IIT Madras) -
+    as a new `indiccorp_v2_bn` source, wired into `configs/bpe-64k.json`
+    at weight 0.10, with `contemporary_news` halved (0.10 -> 0.05) to
+    reduce the Bangladesh-sourced share. Streams the source's single large
+    per-language text file directly over HTTP, stopping early rather than
+    downloading the full multi-GB file, the same line-offset contract as
+    `stream_cc100`. **Honest caveat**: IndicCorp v2's own README does not
+    itself label per-document country provenance, so "India-origin" here
+    means "built by an India-based pipeline for Indian-language NLP," not
+    a verified per-line geographic filter - the same caveat applies to
+    Sangraha, which the corpus already used before this change.
+    Retraining against the updated config had not yet been run as of this
+    entry (see the corpus-mix table below once it lands).
+
+    **Survey of who else builds Indic-language AI and what they train on**
+    (verified via each org's own materials, not assumed), done to inform
+    this decision and to seed the competitor-tokenizer list below:
+    AI4Bharat (IIT Madras) is the shared foundation layer (Sangraha,
+    IndicCorp v2, IndicTrans2) that both Bhashini (govt API/data platform,
+    not itself a model) and BharatGen build on. BharatGen (IIT Bombay-led
+    consortium, Dept. of Science & Technology, Param-1 2.9B -> Param2 17B
+    MoE, 2026) trains on a 5T-token mix (majority English: FineWeb-Edu/
+    DCLM/Common Crawl) whose Indic slice leans on Books-OCR archives,
+    government-funded "Udaan" translations, and Sangraha directly - i.e.
+    a funded, technically strong player still leans on the same public
+    corpus this repo uses. Sarvam AI (govt-backed under IndiaAI Mission,
+    models now at 30B/105B as of 2026) is the one exception: their own
+    materials state Sangraha lacks the "depth, diversity, and quality"
+    needed and describe building a proprietary ~2T-token corpus
+    ("Sarvam-2T") instead, not publicly released. Krutrim (Ola) and
+    Hanooman/SML (BharatGPT ecosystem, up to 40B params) are further
+    Indic players; no public HF tokenizer repo was found for Hanooman
+    (checked, not just assumed absent), so it could not be added to the
+    benchmark table.
+
+17. **Competitor and frontier tokenizers added to `scripts/compare.py`'s
+    `HF_MODELS`/`TIKTOKEN_MODELS`, per user request to also benchmark
+    against India's own funded competitors and the global frontier, not
+    only past baselines.** Every addition was verified loadable via
+    `transformers.AutoTokenizer.from_pretrained` directly against the
+    real Hub repo before being added, not assumed from a model card:
+    added `bharatgenai/Param2-17B-A2.4B-Thinking` (BharatGen, see point 16
+    above), `meta-llama/Llama-3.1-8B` (Meta; the tokenizer files load
+    without a HF auth token even though the model weights are gated -
+    verified directly), `mistralai/Mistral-7B-v0.3`, `Qwen/Qwen2.5-7B`,
+    and a second tiktoken encoding `cl100k_base` (GPT-4/3.5) alongside the
+    existing `o200k_base` (GPT-4o). Also added `google/gemma-2-9b` as the
+    closest available open proxy for Gemini's own tokenizer (Google has
+    not published one): this one **fails to load** in this environment
+    (`403: gated repo`, confirmed by direct load attempt) and will report
+    as `available: false` at measurement time per `measure_hf`'s existing
+    "report unavailable, never estimate" policy - kept in the list rather
+    than removed, since a user who configures a HF token can make it
+    resolve, and the honest-failure path is exactly what this file's own
+    `measure_hf` was built to do.
+
+18. **India-skewed corpus (point 16) measured, not promoted.** Full held-out
+    benchmark run 2026-08-07 against `artifacts/bn-bpe-64k-india` /
+    `artifacts/bmbt-64k-india` on all four registers, alongside the new
+    competitor rows from point 17. Result: a wash-to-slight-regression, not
+    a win.
+
+    | Register | Fertility (old default) | Fertility (India-skewed) |
+    |---|--:|--:|
+    | Wikipedia | 1.524 | 1.527 (worse) |
+    | Literary/formal | 1.320 | 1.327 (worse) |
+    | General web | 1.201 | 1.200 (same) |
+    | News | 1.140 | 1.142 (same) |
+
+    BMBT-india tracks Track-A-india near-identically, the same tie pattern
+    as the non-India comparison above. Halving `contemporary_news`'s weight
+    (Bangladesh-sourced XL-Sum) and adding `indiccorp_v2_bn` did not
+    sharpen fertility on any register and cost a little on two of four.
+    **Decision (user, 2026-08-07): keep as a labeled alternative artifact,
+    do not promote.** `bn-bpe-64k`/`bmbt-64k` remain the recommended
+    default; `*-india` stays available for anyone who wants corpus
+    provenance skewed toward an India-based pipeline regardless of the
+    small fertility cost. Full rows merged into
+    `benchmarks/comparison-{register}.json` alongside this run's new
+    competitor baselines (Param2-17B, Llama-3.1, Gemma-2 [gated, reports
+    unavailable], Mistral-7B, Qwen2.5, GPT-4 cl100k).
+
 ## Roadmap: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
@@ -466,6 +560,25 @@ register CC-100 actually targets). Both effects are in the third decimal
 place, directionally sensible, and together amount to a wash, not a case
 for or against adopting CC-100 in the default weights. `bn-bpe-64k` and
 `bmbt-64k` (no CC-100) remain the recommended artifacts.
+
+**Unigram-vs-BPE algorithm ablation** (`artifacts/bn-bpe-64k-unigram`,
+`artifacts/bmbt-64k-unigram`: same corpus, same atom scheme, same 64k
+vocab budget as the shipped artifacts, only the `tokenizers` trainer
+algorithm swapped from BPE to Unigram): Unigram is worse than BPE on
+every register, for both v1 and BMBT, by a consistent 2.5-5.4%:
+
+| Register | Fertility (BPE) | Fertility (Unigram) | Worse by |
+|---|--:|--:|--:|
+| Wikipedia | 1.524 | 1.562 | 2.5% |
+| Literary/formal | 1.320 | 1.392 | 5.5% |
+| General web | 1.201 | 1.235 | 2.8% |
+| News | 1.140 | 1.175 | 3.1% |
+
+STRR moves the same direction (worse) on every register; conjunct
+fragmentation is unaffected either way (same near-zero band as BPE, the
+atom scheme, not the merge algorithm, is what controls fragmentation).
+`bn-bpe-64k`/`bmbt-64k` (BPE) remain the recommended artifacts; Unigram
+is kept as a measured, negative ablation result, not deleted.
 
 **Still not done**: morphology (root/suffix decomposition, sandhi) -
 BMBT's featural output has no morphological layer yet, so it cannot yet
