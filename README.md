@@ -96,6 +96,17 @@ Full per-register numbers:
 > compression, word preservation, and conjunct fragmentation using a common
 > evaluation pipeline.
 
+**Hard words, not just averages.** A register average can hide how a
+tokenizer treats specific, culturally load-bearing words. We measured a
+fixed list of 13 - deity names, a national poet, well-known West Bengal
+places, all conjunct-dense - on every tokenizer we track. **Ours (v1 and
+BMBT) tokenizes every one of the 13 as exactly one token**, no exception,
+including the triple-conjunct আকাঙ্ক্ষা (aspiration) and রবীন্দ্রনাথ
+(Rabindranath Tagore). IndicBERTv2, the only real rival, averages 1.31
+tokens/word here and still splits 3 of the 13; every other system averages
+3.3-11.1. Full per-word table, every tokenizer, reproduce command:
+[`bengali-tokenizer/benchmarks/hard-words.md`](bengali-tokenizer/benchmarks/hard-words.md).
+
 **An open tool that makes the inequity visible.**
 [MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), a tool
 that grew out of this programme and now has its own repository, lets anyone

@@ -101,6 +101,34 @@ python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer arti
 ```
 <!-- METRICS:END -->
 
+## Hard words: conjuncts and Bengali place names
+
+A register average can hide how a tokenizer treats specific, culturally
+load-bearing words. A fixed list of 13 - deity names, a national poet,
+well-known West Bengal places, all conjunct-dense - measured on every
+tokenizer this repository tracks:
+
+**Ours (v1 and BMBT) tokenizes every one of the 13 words as exactly one
+token.** No exception, including the triple-conjunct আকাঙ্ক্ষা and the
+multi-akshara রবীন্দ্রনাথ.
+
+| Word | Meaning | Ours (v1/BMBT) | IndicBERTv2 (best rival) | GPT-4o |
+|---|---|--:|--:|--:|
+| স্ত্রী | wife/woman | 1 | 1 | 2 |
+| আকাঙ্ক্ষা | aspiration | 1 | 1 | 6 |
+| রবীন্দ্রনাথ | Rabindranath (Tagore) | 1 | 1 | 7 |
+| পশ্চিমবঙ্গ | West Bengal | 1 | 1 | 5 |
+| বিষ্ণুপুর | Bishnupur | 1 | 2 | 5 |
+| শান্তিনিকেতন | Santiniketan | 1 | 3 | 5 |
+
+Average tokens/word over all 13 words, all 16 tokenizers measured (ours,
+IndicBERTv2, SUTRA, Sarvam-1, Param2-17B, XLM-RoBERTa, mBERT, GPT-4o,
+DeepSeek-V3, Krutrim, Qwen2.5, GPT-4 cl100k, Llama-3.1, Mistral-7B; Gemma-2
+gated, reports unavailable): **ours 1.00**, IndicBERTv2 (the only real
+rival) 1.31, the rest 3.31-11.08. IndicBERTv2 still fragments 3 of the 13
+words; ours never does, by construction. Full per-word, per-tokenizer
+table and reproduce command: [`benchmarks/hard-words.md`](benchmarks/hard-words.md).
+
 ## `bn-bpe-64k` (v1, previous, stable, unchanged)
 
 The project's first tokenizer remains fully available and untouched: grapheme-cluster-aware BPE/Unigram, conjunct fragmentation 0 by construction, the artifact behind the published Hugging Face model (`konko/bornomala-bengali-tokenizer`).
@@ -144,7 +172,7 @@ bengali-tokenizer/
 - **[BMBT architecture](docs/bmbt-architecture.md)**: pipeline, featurize(), the isolation-from-v1 design.
 - **[v1 architecture](docs/architecture.md)**: pipeline, diagrams, the integrity proof.
 - **[Known issues and limitations](docs/known-issues.md)**: honest caveats, comparison notes, and the bugs found and fixed during development.
-- **[Benchmark method and results](benchmarks/bengali-comparison.md)**.
+- **[Benchmark method and results](benchmarks/bengali-comparison.md)**, and the [hard-words showcase](benchmarks/hard-words.md) (conjuncts and Bengali place names, every tokenizer tracked).
 - **[Paper](paper/)**: the arXiv preprint source (LaTeX) and submission guide.
 - **v2 design docs:** [Reading Bengali on Its Own Terms](docs/design/reading-bengali-on-its-own-terms.md) (the position paper BMBT implements) and its [formal specification](docs/design/FORMAL_SPEC.md) (losslessness, totality, linear time, constrained optimality as proofs and a fuzzer contract).
 - **[Hugging Face release](huggingface/)**: upload-ready model card and tokenizer files (v1; BMBT not yet published there).
