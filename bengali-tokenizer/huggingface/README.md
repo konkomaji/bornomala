@@ -75,6 +75,35 @@ token are better. Fewer tokens per word means lower cost and more usable context
 Every general tokenizer breaks between 4.4% and 28.5% of Bengali conjuncts on
 this held-out set; this one breaks 0.01%.
 
+## Hard words: conjuncts and Bengali place names
+
+A register average can hide how a tokenizer treats specific, culturally
+load-bearing words. A fixed list of 13 - deity names, the national poet
+Rabindranath Tagore, well-known West Bengal places, all conjunct-dense -
+measured on every tokenizer this project tracks (16 total).
+
+**This model tokenizes every one of the 13 words as exactly one token.**
+No exception, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara
+রবীন্দ্রনাথ.
+
+| Word | Meaning | Ours | IndicBERTv2 (best rival) | GPT-4o |
+|---|---|--:|--:|--:|
+| স্ত্রী | wife/woman | **1** | 1 | 2 |
+| আকাঙ্ক্ষা | aspiration | **1** | 1 | 6 |
+| রবীন্দ্রনাথ | Rabindranath (Tagore) | **1** | 1 | 7 |
+| পশ্চিমবঙ্গ | West Bengal | **1** | 1 | 5 |
+| বিষ্ণুপুর | Bishnupur | **1** | 2 | 5 |
+| শান্তিনিকেতন | Santiniketan | **1** | 3 | 5 |
+
+Average tokens/word over all 13 words, all 16 tokenizers measured: **ours
+1.00**, IndicBERTv2 (the only real rival) 1.31, the rest (SUTRA, Sarvam-1,
+Param2-17B, XLM-RoBERTa, mBERT, GPT-4o, DeepSeek-V3, Krutrim, Qwen2.5,
+GPT-4 cl100k, Llama-3.1, Mistral-7B) 3.31-11.08; Gemma-2 gated, reports
+unavailable. IndicBERTv2 still fragments 3 of the 13 words; this model
+never does, by construction, not luck. Full per-word table and the
+reproduce command:
+[`benchmarks/hard-words.md`](https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md).
+
 ## Usage
 
 The tokenizer uses a grapheme-atom scheme, so encode and decode go through the
