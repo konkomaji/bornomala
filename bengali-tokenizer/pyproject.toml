@@ -27,8 +27,9 @@ dependencies = [
 [project.optional-dependencies]
 shaping = ["uharfbuzz>=0.39.0"]
 corpus = ["datasets>=2.19.0"]
-dev = ["pytest>=8.0", "ruff>=0.6"]
-all = ["uharfbuzz>=0.39.0", "datasets>=2.19.0", "pytest>=8.0", "ruff>=0.6"]
+dedup = ["datasketch>=1.6.0"]
+dev = ["pytest>=8.0", "ruff>=0.6", "datasketch>=1.6.0"]
+all = ["uharfbuzz>=0.39.0", "datasets>=2.19.0", "datasketch>=1.6.0", "pytest>=8.0", "ruff>=0.6"]
 
 [project.urls]
 Homepage = "https://github.com/konkomaji/bornomala/tree/main/bengali-tokenizer"
