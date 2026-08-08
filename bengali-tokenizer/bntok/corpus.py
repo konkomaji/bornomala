@@ -260,7 +260,7 @@ def _split_lines(text: str) -> list[str]:
 _BENGALI_OR_ASCII = re.compile(r"[ঀ-৿ -~]")
 
 
-def _is_clean_bengali_line(line: str, min_ratio: float = 0.75, min_len: int = 4) -> bool:
+def is_clean_bengali_line(line: str, min_ratio: float = 0.75, min_len: int = 4) -> bool:
     """Heuristic OCR-garbage filter for scanned/PDF-sourced text.
 
     Digitised pre-modern Bengali books carry real OCR noise: misrecognised
@@ -305,7 +305,7 @@ def stream_sangraha(
     documents are the closest available proxy for formal/book register, since
     Sangraha does not label pre-1950 public-domain literature separately, and
     tend to carry real OCR noise (`clean=True` applies a coarse Bengali/ASCII
-    character-ratio filter, see `_is_clean_bengali_line`). Downloads only as
+    character-ratio filter, see `is_clean_bengali_line`). Downloads only as
     many parquet shards (`max_files`, scanning up to `max_files_scan` if a
     `doc_type` filter makes shards sparse) as needed to reach `limit_docs`.
     `offset_docs` skips that many matching documents first, so a disjoint
@@ -341,7 +341,7 @@ def stream_sangraha(
                 continue
             lines = _split_lines(text)
             if clean:
-                lines = [ln for ln in lines if _is_clean_bengali_line(ln)]
+                lines = [ln for ln in lines if is_clean_bengali_line(ln)]
             out.extend(lines)
             if docs_matched - offset_docs >= limit_docs:
                 break

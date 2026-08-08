@@ -54,7 +54,7 @@ found and fixed during development. Nothing here is hidden.
    Wikisource Bengali public-domain text exists but is tiny (about 90 lines in
    the current Wikimedia snapshot), so it is combined with Sangraha
    verified/ben pdf-typed documents, OCR-noise-filtered
-   (`_is_clean_bengali_line`), as a formal/book-register proxy. Those PDFs are
+   (`is_clean_bengali_line`), as a formal/book-register proxy. Those PDFs are
    genuinely old-orthography Bengali (spot-checked: 19th/20th-century novel
    prose, a Mahabharata translation) but are not confirmed pre-1950 or public
    domain, only formal/archaic in register. `sangraha_verified_bn` uses
@@ -286,7 +286,7 @@ Kept as an honest record of what went wrong and how it was resolved.
     directly followed by U+093E/U+093F/U+0902 (DEVANAGARI VOWEL SIGN
     AA/I, DEVANAGARI SIGN ANUSVARA) - almost certainly OCR or font-mapping
     noise from scanning old books, given the two closely related Brahmic
-    scripts, and not caught by `_is_clean_bengali_line`'s Bengali/ASCII
+    scripts, and not caught by `is_clean_bengali_line`'s Bengali/ASCII
     ratio filter since only 1-2 stray codepoints appear per otherwise-clean
     line. `\X` clusters these together anyway (Grapheme_Cluster_Break=
     Extend applies to any script's combining marks, not just Bengali's),
@@ -423,6 +423,19 @@ Kept as an honest record of what went wrong and how it was resolved.
     `benchmarks/comparison-{register}.json` alongside this run's new
     competitor baselines (Param2-17B, Llama-3.1, Gemma-2 [gated, reports
     unavailable], Mistral-7B, Qwen2.5, GPT-4 cl100k).
+
+## Track A2: corpus dedup and quality filtering (Gate G3)
+
+`bntok/dedup.py`: exact dedup, MinHash-LSH near dedup (`datasketch`), and a
+rule-based quality filter (`is_clean_bengali_line` plus digit- and
+repeated-character-dominance rejection). No LM-perplexity stage - the
+`kenlm` PyPI wheel is query-only, no `lmplz` trainer, so there is no way to
+train a Bengali ARPA model without building kenlm from source (not
+attempted). Measured on real data (Bengali Wikipedia + raw Sangraha
+web-typed, 245,924 lines pooled) per the spec's own Gate G3 instruction:
+83.5% of lines / 97.9% of words survive. Full writeup, the honest caveats
+on what "raw" means here, and the gate's provisional-pass verdict:
+[`docs/track-a2-corpus-survival.md`](track-a2-corpus-survival.md).
 
 ## Roadmap: a proposed v2
 
