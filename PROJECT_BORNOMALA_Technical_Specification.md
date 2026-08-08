@@ -968,6 +968,8 @@ This is standard practice and is not novel. The novelty is the vocabulary being 
 
 Model on MILU, IndQA, and the TituLLM benchmark suite for format. **Author natively.** Translated benchmarks measure translation, not competence.
 
+**Named candidate for an off-the-shelf comparison point ahead of the natively-authored benchmark above: IndicGenBench** (Google Research, `google-research-datasets/indic-gen-bench`). 29 Indic languages including Bengali, four generation tasks (CrossSum-IN summarisation, Flores-IN translation, XQuAD-IN reading comprehension, XorQA-IN cross-lingual QA), 2.9k-14.5k examples per task, canary-stringed against accidental training-set contamination. It is translated/parallel-constructed, not natively authored, so it does not substitute for the six categories above (idiom, sadhu/chalit discrimination, dialect, native reasoning) - but it is real, immediately usable generation-quality signal for Gate G6's "beat an equal-token web-text control" comparison, available the day a continued-pretrained checkpoint exists, with no authoring lead time. Mixed licensing per task (CC BY-SA 4.0, MIT, CC BY-NC-SA 4.0 - check per task before any redistribution).
+
 ---
 
 ## 14. Evaluation Protocol

@@ -655,7 +655,17 @@ structure - did not materialise here (the tie holds, it did not get
 worse), but that was measured, not assumed, and the deeper claim (a
 featural, eventually morphology-aware tokenizer produces genuinely better
 downstream model quality per token) remains completely unmeasured; this
-project has no downstream task evaluation at all yet.
+project has no downstream task evaluation at all yet. A named candidate
+for when that becomes relevant (Track E, Gate G6): **IndicGenBench**
+(Google Research) - 29 Indic languages including Bengali, four generation
+tasks (CrossSum-IN summarization, Flores-IN translation, XQuAD-IN reading
+comprehension, XorQA-IN cross-lingual QA), canary-stringed against
+accidental training-set contamination. Ready-to-use ahead of the
+natively-authored cultural-register benchmark Track E's own spec calls
+for (section 13.5); ready-made is not a substitute for that, since it is
+translated/parallel-constructed rather than authored Bengali-native, but
+it is a real, immediately available generation-quality signal - not yet
+wired into anything, correctly, since no model exists to run it against.
 
 ## How to report a new issue
 
