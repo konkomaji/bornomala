@@ -16,6 +16,9 @@ tags:
 - bornomala
 datasets:
 - wikimedia/wikipedia
+- wikimedia/wikisource
+- ai4bharat/sangraha
+- csebuetnlp/xlsum
 metrics:
 - name: Fertility (tokens per word, held-out Bengali Wikipedia)
   type: fertility
