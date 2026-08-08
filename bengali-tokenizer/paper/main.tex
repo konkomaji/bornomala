@@ -229,6 +229,54 @@ recognises, and it does so invisibly to codepoint-level metrics. A
 Bengali-first design that treats the grapheme cluster as atomic removes this
 failure mode by construction rather than reducing it by tuning.
 
+\section{Hard Words: Conjuncts and Place Names}
+\label{sec:hardwords}
+A register-level average can hide how a tokenizer treats specific,
+culturally load-bearing words. We measured a fixed list of 13 words: deity
+names, the national poet Rabindranath Tagore, and well-known West Bengal
+place names, all conjunct-dense, on every tokenizer this study tracks (16
+total). Table~\ref{tab:hardwords} reports a representative subset; the full
+13-word, 16-tokenizer table is released with the code
+(\texttt{benchmarks/hard-words.md}). Words are given here in Romanised
+transliteration only, to keep the paper source font-independent (see the
+note on p.~1); tokenization itself was performed on the native Bengali
+script text.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lp{3.3cm}rrr}
+\toprule
+Word (translit.) & Meaning & Ours & IndicBERTv2 & GPT-4o \\
+\midrule
+str\={\i} & wife/woman & \textbf{1} & 1 & 2 \\
+\={a}k\={a}\.nk\d{s}\={a} & aspiration (triple conjunct) & \textbf{1} & 1 & 6 \\
+Rabindran\={a}th & Rabindranath (Tagore) & \textbf{1} & 1 & 7 \\
+Pa\'{s}cimba\.nga & West Bengal & \textbf{1} & 1 & 5 \\
+Bi\d{s}\d{n}upur & Bishnupur & \textbf{1} & 2 & 5 \\
+\'{S}\={a}ntiniketan & Santiniketan & \textbf{1} & 3 & 5 \\
+\bottomrule
+\end{tabular}
+\caption{A subset of the 13-word hard-words showcase. Ours (v1 and BMBT,
+see below) tokenizes every one of the 13 words as exactly one token, no
+exception, including the triple-conjunct \emph{\={a}k\={a}\.nk\d{s}\={a}}.}
+\label{tab:hardwords}
+\end{table}
+
+Averaged over all 13 words and all 16 tokenizers measured, ours attains
+$1.00$ tokens/word (every word, one token). IndicBERTv2, the only real
+rival, averages $1.31$ and still splits 3 of the 13 words. The remaining
+tokenizers (SUTRA, Sarvam-1, Param2-17B, XLM-RoBERTa, mBERT, GPT-4o,
+DeepSeek-V3, Krutrim, Qwen2.5, GPT-4 cl100k, Llama-3.1, Mistral-7B) average
+between $3.31$ and $11.08$; Gemma-2 is gated and reports unavailable rather
+than estimated. A notable pattern, unverified beyond this word list: every
+per-word count for Llama-3.1 is identical to GPT-4's cl100k tokenizer,
+suggesting its vocabulary extends cl100k without adding Bengali coverage.
+This complements the aggregate register results above: even IndicBERTv2,
+the best-funded Indic competitor measured, cannot hold conjunct integrity
+on every word in a small, culturally central list; ours does, by
+construction.
+
 \section{BMBT: A Grammar-First Extension (v2)}
 The tokenizer above (v1) still discovers Bengali's structure statistically:
 byte pair encoding, a compression scheme, is trained over grapheme-cluster
