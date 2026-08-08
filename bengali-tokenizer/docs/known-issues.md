@@ -580,6 +580,59 @@ atom scheme, not the merge algorithm, is what controls fragmentation).
 `bn-bpe-64k`/`bmbt-64k` (BPE) remain the recommended artifacts; Unigram
 is kept as a measured, negative ablation result, not deleted.
 
+**BMBT-Hybrid: frequency-adaptive akshara atoms** (`bntok/bmbt_hybrid.py`,
+artifact `artifacts/bmbt-64k-hybrid-v2`, actual vocab 64,355 - close to but
+not identical to v1/BMBT's 64,000, see below). Splits a rare akshara chunk
+into an onset atom and a tail atom so frequency can accumulate across
+combinations that would otherwise each burn their own opaque atom, fusing
+only the top 200 most frequent chunks (`k_fused`) where splitting is pure
+overhead. Two false starts before this shipped (an unsound merge-order-
+prediction fix, then a working reserved-vocab-id guard) are documented in
+the module's own docstring, not repeated here.
+
+Measured on all four held-out registers, model tag
+`Bornomala BMBT-Hybrid (bpe 64355)` in `benchmarks/comparison-*.json`.
+**One methodological caveat up front**: the Wikipedia row is genuinely
+apples-to-apples with v1/BMBT (same 800-line `held_out(15000, 800)` sample,
+11,316 words for all three models), but the literary_formal/general_web/news
+rows are not - they were measured on the first 800 lines of each register's
+held-out slice (a fair, matched sample *across the four Hybrid rows
+themselves*, the reason that recap was done), while the existing v1/BMBT
+rows in those same three files were measured earlier on the *full*
+held-out slice (932,211 / 305,557 / 485,356 words respectively, 10-30x
+more text). Fertility is a ratio and reasonably robust to this, but the
+fragmented-cluster counts below are not, so rates (not raw counts) are
+what's compared:
+
+| Register | Fertility (v1/BMBT) | Fertility (Hybrid) | Worse by | Frag. rate (v1/BMBT) | Frag. rate (Hybrid) |
+|---|--:|--:|--:|--:|--:|
+| Wikipedia | 1.524 | 1.648 | 8.1% | 0.000075 | 0.00005 |
+| Literary/formal | 1.320 | 1.347 | 2.0% | 0.000104 | 0.000083 |
+| General web | 1.201 | 1.310 | 9.1% | 0.000055 | 0.000011 |
+| News | 1.140 | 1.207 | 5.9% | 0.000025 | 0.0 |
+
+A real trade-off, not a clean win or loss. Fertility is worse by 2-9% on
+every register (STRR moves the same direction, worse) - the opposite of
+what an earlier, preliminary measurement against a larger-effective-vocab
+version of this artifact suggested (see the module's own docstring); that
+comparison did not hold once corrected for vocab size against the fair,
+64,355-vocab `-v2` artifact actually benchmarked here. What does hold
+directionally is fragmentation: the rate is lower on every register,
+including exactly zero on news - but the literary_formal/general_web/news
+Hybrid rates rest on very small absolute counts (8, 1, and 0 fragmented
+clusters out of 31,912/28,558/14,125 words) against an already near-zero
+baseline, so this is suggestive, not as statistically solid as the
+Wikipedia row, which is both apples-to-apples and shows the same direction
+(2 fragmented clusters versus 3, out of 11,316 words).
+
+**Decision: keep as a labeled experimental artifact, do not promote.**
+This project ranks tokenizers by fertility first (fewest tokens per word);
+a 2-9% fertility cost is not worth paying to shrink a fragmentation rate
+that is already near zero for v1/BMBT. `bn-bpe-64k`/`bmbt-64k` remain the
+recommended default; `bmbt-64k-hybrid-v2` stays available, clearly
+labeled, for anyone who weights conjunct-fragmentation headroom above raw
+token count.
+
 **Still not done**: morphology (root/suffix decomposition, sandhi) -
 BMBT's featural output has no morphological layer yet, so it cannot yet
 claim the "quality-per-token" advantage the design doc's own risk section

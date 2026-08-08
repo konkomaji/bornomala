@@ -66,12 +66,23 @@ literary_formal -- the exact same cross-script OCR-noise residual already
 documented for v1/BMBT in `docs/known-issues.md` point 14, not a new
 failure mode), while fertility improved FURTHER versus the unguarded
 hybrid scheme (merging a forced pair back together is a pure token-count
-win): 1.2-3.8% better than v1/BMBT on every register, with equal-or-better
-fragmentation. See `docs/known-issues.md` and
-`benchmarks/bengali-comparison.md` for the full account. A chunk never
-seen during training has no reservation and can, rarely, still show the
-same "unseen cluster decomposes" residual v1/BMBT already accept -- not a
-regression, the same documented limitation extended to a new atom scheme.
+win). A chunk never seen during training has no reservation and can,
+rarely, still show the same "unseen cluster decomposes" residual v1/BMBT
+already accept -- not a regression, the same documented limitation
+extended to a new atom scheme.
+
+The "1.2-3.8% better than v1/BMBT, equal-or-better fragmentation" figure
+above was a preliminary read against an earlier, larger-effective-vocab
+build of this artifact, not the fair comparison. Once vocab-matched at
+64,355 (close to v1/BMBT's 64,000) and benchmarked end to end on all four
+held-out registers (`artifacts/bmbt-64k-hybrid-v2`, model tag
+`Bornomala BMBT-Hybrid (bpe 64355)`), the result reverses on fertility:
+2-9% WORSE than v1/BMBT on every register, not better. Fragmentation rate
+is genuinely lower on every register (zero on news), the one part of the
+preliminary read that held up. Not promoted: `bn-bpe-64k`/`bmbt-64k`
+remain the recommended default. Full numbers, the vocab-size caveat, and
+the promote/keep decision: `docs/known-issues.md`
+("BMBT-Hybrid: frequency-adaptive akshara atoms").
 
 Self-contained the same way bmbt.py is: imports only from akshara.py,
 substrate.py, normalize.py, errors.py, bmbt.py's featural decomposition
