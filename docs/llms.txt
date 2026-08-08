@@ -35,6 +35,12 @@
   common evaluation pipeline.
 - MotherTongueIndex: an open tool measuring the token cost of any language versus
   English across 28 model tokenizers.
+- Hard-words showcase: a fixed set of 13 conjunct-dense, culturally load-bearing
+  words (deity names, the national poet Rabindranath Tagore, West Bengal place
+  names) measured on 16 tokenizers. Ours (v1 and BMBT) tokenizes every one of
+  the 13 as exactly one token, no exception. IndicBERTv2, the closest rival,
+  averages 1.31 tokens/word here and still splits 3 of the 13; every other
+  system averages 3.3 to 11.1 tokens/word.
 
 ## Values
 

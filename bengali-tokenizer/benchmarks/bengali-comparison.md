@@ -133,6 +133,59 @@ python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer arti
 
 **Still not done**: morphology. BMBT's featural output has no morphological layer yet, so it cannot yet claim the "quality-per-token" advantage the design doc's own risk section frames as the actual bet worth making - that claim needs a downstream task evaluation this project does not have at all yet, and remains completely unmeasured.
 
+## Hard words: conjuncts and Bengali place names
+
+The registers above are a corpus average; it can hide how a tokenizer treats
+specific, culturally load-bearing words. A fixed list of 13 - deity names, a
+national poet, well-known West Bengal places, all conjunct-dense - measured
+on every tokenizer this project tracks (`scripts/hard_words.py`, imported
+model list shared with `scripts/compare.py` so it can never drift out of
+sync). Full per-word table and every tokenizer: `benchmarks/hard-words.md`.
+
+**Ours (v1 and BMBT) tokenizes every one of the 13 words as exactly one
+token. No exception, including the triple-conjunct আকাঙ্ক্ষা and the
+multi-akshara রবীন্দ্রনাথ.**
+
+| Word | Meaning | Ours (v1/BMBT) | IndicBERTv2 (best rival) | GPT-4o |
+|---|---|--:|--:|--:|
+| স্ত্রী | wife/woman | 1 | 1 | 2 |
+| আকাঙ্ক্ষা | aspiration | 1 | 1 | 6 |
+| রবীন্দ্রনাথ | Rabindranath (Tagore) | 1 | 1 | 7 |
+| পশ্চিমবঙ্গ | West Bengal | 1 | 1 | 5 |
+| বিষ্ণুপুর | Bishnupur | 1 | 2 | 5 |
+| শান্তিনিকেতন | Santiniketan | 1 | 3 | 5 |
+
+Average tokens/word over all 13 words, every tokenizer measured:
+
+| Tokenizer | Avg tokens/word |
+|---|--:|
+| **Bornomala v1 / BMBT (ours)** | **1.00** |
+| IndicBERTv2 (AI4Bharat) | 1.31 |
+| SUTRA (TWO AI) | 3.31 |
+| Sarvam-1 | 3.46 |
+| Param2-17B (BharatGen) | 3.62 |
+| XLM-RoBERTa (Meta) | 3.69 |
+| mBERT (Google) | 4.38 |
+| GPT-4o (o200k) | 4.46 |
+| DeepSeek-V3 | 4.62 |
+| Krutrim | 4.77 |
+| Qwen2.5 (Alibaba) | 9.15 |
+| GPT-4 (cl100k) | 10.85 |
+| Llama-3.1 (Meta) | 10.85 |
+| Mistral-7B | 11.08 |
+| Gemma-2 (Google) | unavailable, gated repo |
+
+IndicBERTv2 is the only real rival (1.31 avg) but still fragments 3 of 13
+(ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন) - even India's best-funded Indic
+tokenizer cannot hold conjunct integrity on every word here. Ours does, by
+construction, not luck. A striking, unverified-but-notable pattern: every
+single value in Llama-3.1's row is byte-for-byte identical to GPT-4's
+cl100k row - its tokenizer is tiktoken-derived and does not appear to
+extend Bengali coverage at all versus cl100k.
+
+Reproduce: `python scripts/hard_words.py` (from `bengali-tokenizer/`),
+writes `benchmarks/hard-words.md`.
+
 ## Prior result (v0.1, superseded)
 
 The first released version of this tokenizer (BPE, 32,000 vocabulary, trained on 12,000 Wikipedia articles only) measured fertility 1.39 / STRR 0.766 / conjunct fragmentation 0.0006 on its own held-out Wikipedia set (a different held-out slice than the one above, and measured before the bug fix described above, so not directly comparable). It is kept here for the historical record; it is no longer the shipped artifact. Full writeup of why vocabulary size mattered more than corpus mix alone: `docs/known-issues.md` point 7.
