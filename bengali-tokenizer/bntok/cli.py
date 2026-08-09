@@ -47,7 +47,9 @@ def _load_input(args) -> list[str]:
     if args.corpus_config:
         with open(args.corpus_config, encoding="utf-8") as f:
             config = json.load(f)
-        return build_configured_corpus(config, log=lambda msg: print(msg, file=sys.stderr))
+        return build_configured_corpus(
+            config, log=lambda msg: print(msg, file=sys.stderr), dedup=getattr(args, "dedup", False),
+        )
     if args.wikipedia:
         return stream_wikipedia(args.wikipedia, limit=args.limit)
     if args.input:
@@ -249,6 +251,9 @@ def main(argv=None) -> int:
     t.add_argument("--limit", type=int, default=5000, help="max Wikipedia articles")
     t.add_argument("--corpus-config", dest="corpus_config",
                     help="JSON config with weighted corpus_sources (see configs/bpe-64k.json)")
+    t.add_argument("--dedup", action="store_true",
+                    help="run exact+near dedup and quality filtering per source before weighting "
+                         "(see docs/track-a2-corpus-survival.md); adds real time, off by default")
     t.add_argument("--algo", choices=["bpe", "unigram"], default="bpe")
     t.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
     t.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
@@ -276,6 +281,9 @@ def main(argv=None) -> int:
     bt.add_argument("--limit", type=int, default=5000, help="max Wikipedia articles")
     bt.add_argument("--corpus-config", dest="corpus_config",
                      help="JSON config with weighted corpus_sources (see configs/bpe-64k.json)")
+    bt.add_argument("--dedup", action="store_true",
+                     help="run exact+near dedup and quality filtering per source before weighting "
+                          "(see docs/track-a2-corpus-survival.md); adds real time, off by default")
     bt.add_argument("--algo", choices=["bpe", "unigram"], default="bpe")
     bt.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
     bt.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
@@ -305,6 +313,9 @@ def main(argv=None) -> int:
     ht.add_argument("--limit", type=int, default=5000, help="max Wikipedia articles")
     ht.add_argument("--corpus-config", dest="corpus_config",
                      help="JSON config with weighted corpus_sources (see configs/bpe-64k.json)")
+    ht.add_argument("--dedup", action="store_true",
+                     help="run exact+near dedup and quality filtering per source before weighting "
+                          "(see docs/track-a2-corpus-survival.md); adds real time, off by default")
     ht.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
     ht.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
     ht.add_argument("--zwnj", choices=["preserve", "strip"], default="preserve")

@@ -488,8 +488,24 @@ CC100_TRAIN_LINES = 300_000  # bulk general-web supplement; not in the default c
 INDICCORP_V2_TRAIN_LINES = 300_000  # India-origin bulk web supplement (see stream_indiccorp_v2)
 
 
-def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
+def build_configured_corpus(config: dict, log=lambda msg: None, dedup: bool = False) -> list[str]:
     """Build the weighted induction corpus described by a training config dict.
+
+    `dedup=True` runs each loaded source through `bntok.dedup`'s full
+    pipeline (exact dedup, MinHash near dedup, rule-based quality filter -
+    see `docs/track-a2-corpus-survival.md`) before weighting, per-source,
+    NOT on the final weighted output: `weighted_corpus` deliberately
+    cycles a thin source (e.g. Wikisource, ~65 lines) to hit its target
+    share, and deduping the final output would strip out that intentional
+    repetition, defeating the weighting scheme entirely. Default False -
+    this changes what a retrained artifact would contain versus the
+    shipped `bn-bpe-64k`/`bmbt-64k`, so it is opt-in, not a silent
+    behaviour change to the existing default. Near dedup is the slow
+    stage (pure-Python MinHash, roughly 1,800-2,000 lines/sec on the
+    machine this was measured on - see the survival-ratio doc for real
+    wall-clock numbers on sources this size), so turning this on adds
+    real time to a training run; every source's removal counts are
+    logged via `log()`, not hidden.
 
     Reads `corpus_sources` (name -> weight) and `total_lines`, and maps each
     known source name to a real, publicly available loader:
@@ -566,6 +582,24 @@ def build_configured_corpus(config: dict, log=lambda msg: None) -> list[str]:
         log("loading indiccorp_v2_bn: AI4Bharat IndicCorp v2 bn (India-origin, holding out the tail for eval) ...")
         loaders["indiccorp_v2_bn"] = stream_indiccorp_v2("bn", limit_lines=INDICCORP_V2_TRAIN_LINES)
         log(f"  {len(loaders['indiccorp_v2_bn'])} lines")
+
+    if dedup:
+        from .dedup import (  # local: avoids a corpus<->dedup import cycle
+            exact_dedup,
+            near_dedup,
+            quality_filter,
+        )
+
+        for name, lines in loaders.items():
+            before = len(lines)
+            lines, removed_exact = exact_dedup(lines)
+            lines, removed_near = near_dedup(lines)
+            lines, removed_quality = quality_filter(lines)
+            loaders[name] = lines
+            log(
+                f"  dedup {name}: {before} -> {len(lines)} lines "
+                f"(-{removed_exact} exact, -{removed_near} near-dup, -{removed_quality} low-quality)"
+            )
 
     log(f"combining into {total_lines} weighted lines ...")
     return weighted_corpus(loaders, weights, total_lines)

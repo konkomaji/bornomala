@@ -7,6 +7,20 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Track A2: corpus dedup and quality filtering (`bntok/dedup.py`), Gate
+  G3.** Exact dedup, MinHash-LSH near dedup (`datasketch`), and a
+  rule-based quality filter. Measured on real data across four sources
+  (Bengali Wikipedia, Sangraha, AI4Bharat IndicCorp v2 at 2M lines,
+  CC-100 at 1M lines as the genuine raw-web proxy): survival ranges from
+  63.2%/79.6% (CC-100, the real outlier) to 97.9%/99.3% (IndicCorp v2),
+  comfortably clearing Gate G3's threshold on every source measured. Full
+  writeup: `docs/track-a2-corpus-survival.md`. Now wired into
+  `build_configured_corpus` as an opt-in step (`dedup=True`; CLI `--dedup`
+  on `train`/`bmbt-train`/`hybrid-train`), applied per-source before
+  weighting so it does not interfere with `weighted_corpus`'s deliberate
+  cycling of thin sources. Default off - does not change either shipped
+  artifact (`bn-bpe-64k`/`bmbt-64k`), which has not been retrained with
+  it. 18 new tests (`tests/test_dedup.py`).
 - **BMBT (Bornomala's Bengali Tokenizer, v2 roadmap step 5, partial):
   `bntok/bmbt.py`.** The recommended, primary tokenizer as of this
   release. Grammar (the akshara finite-state parser, reused unchanged)
