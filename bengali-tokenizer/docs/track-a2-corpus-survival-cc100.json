@@ -1,0 +1,63 @@
+{
+  "wikipedia": {
+    "raw_lines": 159136,
+    "raw_words": 2718289,
+    "removed_exact_dup": 34238,
+    "removed_near_dup": 2658,
+    "removed_low_quality": 809,
+    "surviving_lines": 121431,
+    "surviving_words": 2633524,
+    "survival_ratio_lines": 0.7630642972049065,
+    "survival_ratio_words": 0.9688167814386182
+  },
+  "sangraha_web_raw": {
+    "raw_lines": 86788,
+    "raw_words": 3084853,
+    "removed_exact_dup": 2789,
+    "removed_near_dup": 52,
+    "removed_low_quality": 93,
+    "surviving_lines": 83854,
+    "surviving_words": 3045866,
+    "survival_ratio_lines": 0.9661934829699959,
+    "survival_ratio_words": 0.9873617964940307
+  },
+  "pooled": {
+    "raw_lines": 245924,
+    "raw_words": 5803142,
+    "removed_exact_dup": 37057,
+    "removed_near_dup": 2730,
+    "removed_low_quality": 894,
+    "surviving_lines": 205243,
+    "surviving_words": 5678983,
+    "survival_ratio_lines": 0.8345789756184837,
+    "survival_ratio_words": 0.9786048661225246
+  },
+  "params": {
+    "wikipedia_limit_articles": 3000,
+    "sangraha_limit_docs": 10000,
+    "cc100_limit_lines": 1000000,
+    "pooled_all_sources": "wikipedia + sangraha + cc100"
+  },
+  "cc100": {
+    "raw_lines": 1000000,
+    "raw_words": 9467566,
+    "removed_exact_dup": 364723,
+    "removed_near_dup": 2302,
+    "removed_low_quality": 1029,
+    "surviving_lines": 631946,
+    "surviving_words": 7539026,
+    "survival_ratio_lines": 0.631946,
+    "survival_ratio_words": 0.7963003373834415
+  },
+  "pooled_all": {
+    "raw_lines": 1245924,
+    "raw_words": 15270708,
+    "removed_exact_dup": 402480,
+    "removed_near_dup": 5669,
+    "removed_low_quality": 1923,
+    "surviving_lines": 835852,
+    "surviving_words": 13211477,
+    "survival_ratio_lines": 0.670869170190156,
+    "survival_ratio_words": 0.8651515699206612
+  }
+}
