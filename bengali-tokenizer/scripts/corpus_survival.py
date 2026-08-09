@@ -10,14 +10,19 @@ Two sources, measured separately and pooled:
     training path which applies is_clean_bengali_line up front) - the
     closer proxy for "raw Bengali web text" Gate G3 actually asks about.
 
-Not a full-corpus run (Sangraha/IndicCorp v2 run into the billions of
-tokens; downloading and near-deduping that locally is a different-scale
-undertaking). This measures the survival RATIO precisely on a real,
-sizeable sample, and is explicit that projecting the ratio onto an
-absolute "5B token" threshold needs the full corpus size, which this
-script does not have - reported as a limitation, not glossed over.
+Not a full-corpus run (IndicCorp v2 alone is a published 30.0B tokens;
+downloading and near-deduping the literal entirety locally, at this
+codebase's pure-Python near_dedup throughput (~1,800 lines/sec measured
+on this machine), would take on the order of a thousand hours - not
+attempted). `--indiccorp-limit` opts into a much larger, still-bounded
+IndicCorp v2 sample (default 0 = skip; the original Wikipedia+Sangraha
+pair remains the default run) to replace the earlier extrapolation with
+a real measurement on IndicCorp v2 itself - the actual bulk, unedited
+web-origin source, not a curated proxy for it. Projecting that measured
+ratio onto the full 30.0B-token corpus is still an extrapolation (a
+bigger sample, not the whole corpus), reported as such.
 
-Usage: python scripts/corpus_survival.py [--wikipedia-limit N] [--sangraha-limit N]
+Usage: python scripts/corpus_survival.py [--wikipedia-limit N] [--sangraha-limit N] [--indiccorp-limit N]
 """
 from __future__ import annotations
 
@@ -28,7 +33,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from bntok.corpus import stream_sangraha, stream_wikipedia
+from bntok.corpus import stream_indiccorp_v2, stream_sangraha, stream_wikipedia
 from bntok.dedup import survival_report
 
 
@@ -36,6 +41,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--wikipedia-limit", type=int, default=3000, help="Wikipedia articles")
     ap.add_argument("--sangraha-limit", type=int, default=10000, help="Sangraha web-typed docs")
+    ap.add_argument("--indiccorp-limit", type=int, default=0, help="IndicCorp v2 lines (0 = skip)")
     ap.add_argument("--out", default="docs/track-a2-corpus-survival.json")
     args = ap.parse_args()
 
@@ -68,6 +74,24 @@ def main() -> None:
             "sangraha_limit_docs": args.sangraha_limit,
         },
     }
+
+    if args.indiccorp_limit > 0:
+        print(f"streaming IndicCorp v2 ({args.indiccorp_limit} lines) ...", file=sys.stderr)
+        indiccorp = stream_indiccorp_v2("bn", limit_lines=args.indiccorp_limit)
+        print(f"  {len(indiccorp)} lines", file=sys.stderr)
+
+        print("running survival pipeline: indiccorp v2 ...", file=sys.stderr)
+        indiccorp_report = survival_report(indiccorp)
+        print(json.dumps(indiccorp_report, indent=2), file=sys.stderr)
+
+        print("running survival pipeline: pooled_all (wikipedia + sangraha + indiccorp v2) ...", file=sys.stderr)
+        pooled_all_report = survival_report(wiki + sangraha + indiccorp)
+        print(json.dumps(pooled_all_report, indent=2), file=sys.stderr)
+
+        result["indiccorp_v2"] = indiccorp_report
+        result["pooled_all"] = pooled_all_report
+        result["params"]["indiccorp_limit_lines"] = args.indiccorp_limit
+
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
     print(f"wrote {args.out}", file=sys.stderr)

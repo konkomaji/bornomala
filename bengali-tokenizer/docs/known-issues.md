@@ -431,10 +431,15 @@ rule-based quality filter (`is_clean_bengali_line` plus digit- and
 repeated-character-dominance rejection). No LM-perplexity stage - the
 `kenlm` PyPI wheel is query-only, no `lmplz` trainer, so there is no way to
 train a Bengali ARPA model without building kenlm from source (not
-attempted). Measured on real data (Bengali Wikipedia + raw Sangraha
-web-typed, 245,924 lines pooled) per the spec's own Gate G3 instruction:
-83.5% of lines / 97.9% of words survive. Full writeup, the honest caveats
-on what "raw" means here, and the gate's provisional-pass verdict:
+attempted). Measured on real data per the spec's own Gate G3 instruction,
+in two passes: Bengali Wikipedia + raw Sangraha web-typed (245,924 lines
+pooled: 83.5% lines / 97.9% words survive), then a large-scale follow-up
+directly against AI4Bharat IndicCorp v2 itself (2,000,000 lines, 90.6M
+words: 97.9% lines / **99.3% words survive**) to replace an extrapolation
+with a real measurement on the actual bulk source the gate's ≥5B-token
+threshold is about. Pooled across all three: 96.1% lines / 99.0% words
+(96.4M raw words). Full writeup, the honest caveats on what "raw" means
+here, and the gate's high-confidence-pass verdict:
 [`docs/track-a2-corpus-survival.md`](track-a2-corpus-survival.md).
 
 ## Roadmap: a proposed v2

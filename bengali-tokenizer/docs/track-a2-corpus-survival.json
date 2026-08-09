@@ -34,6 +34,29 @@
   },
   "params": {
     "wikipedia_limit_articles": 3000,
-    "sangraha_limit_docs": 10000
+    "sangraha_limit_docs": 10000,
+    "indiccorp_limit_lines": 2000000
+  },
+  "indiccorp_v2": {
+    "raw_lines": 2000000,
+    "raw_words": 90590866,
+    "removed_exact_dup": 37211,
+    "removed_near_dup": 2571,
+    "removed_low_quality": 1846,
+    "surviving_lines": 1958372,
+    "surviving_words": 89981866,
+    "survival_ratio_lines": 0.979186,
+    "survival_ratio_words": 0.9932774679513495
+  },
+  "pooled_all": {
+    "raw_lines": 2245924,
+    "raw_words": 96394008,
+    "removed_exact_dup": 78674,
+    "removed_near_dup": 7282,
+    "removed_low_quality": 2730,
+    "surviving_lines": 2157238,
+    "surviving_words": 95387834,
+    "survival_ratio_lines": 0.9605124661386583,
+    "survival_ratio_words": 0.9895618615630133
   }
 }
