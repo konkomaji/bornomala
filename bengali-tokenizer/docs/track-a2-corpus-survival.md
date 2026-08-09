@@ -129,13 +129,17 @@ survival ratio on real data."
 - LM-perplexity filtering remains unavailable without building `kenlm`
   from source (no `lmplz` in the PyPI wheel); not blocking, since the
   rule-based pipeline alone already answers the gate's core question.
-- This pipeline has not yet been wired into `build_configured_corpus`
-  itself - it is a standalone measurement tool (`bntok/dedup.py` +
-  `scripts/corpus_survival.py`), not yet applied to the tokenizer's actual
-  training corpus. Whether to do so is a separate decision: the shipped
-  tokenizer's own corpus already applies `is_clean_bengali_line` at load
-  time for OCR-derived sources, so some of this overlaps existing
-  practice; exact-dedup and near-dedup are the genuinely new capability.
+- **Now wired into `build_configured_corpus` itself, opt-in** (`dedup=True`,
+  CLI `--dedup` on `train`/`bmbt-train`/`hybrid-train`): runs exact dedup,
+  near dedup, and quality filtering on each source's lines before
+  `weighted_corpus` combines them - per-source, not on the final weighted
+  output, since `weighted_corpus` deliberately cycles a thin source (e.g.
+  Wikisource) to hit its target share, and deduping the final output
+  would strip out that intentional repetition. Default `False`: this
+  changes what a retrained artifact would contain versus the shipped
+  `bn-bpe-64k`/`bmbt-64k`, so it does not silently change the existing
+  default. Not yet used to retrain either shipped artifact - that is
+  still a separate decision.
 - No single run pools all four sources together (IndicCorp v2 and CC-100
   were measured in separate invocations to avoid re-running the
   expensive IndicCorp v2 near-dedup); if a single combined-pool number is

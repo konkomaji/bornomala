@@ -443,6 +443,10 @@ projecting well above 5B tokens even at that lower ratio. Full writeup,
 the honest caveats on what "raw" means for each source, and the gate's
 high-confidence-pass verdict, now stress-tested against real raw-web
 data: [`docs/track-a2-corpus-survival.md`](track-a2-corpus-survival.md).
+Now wired into `build_configured_corpus` itself as an opt-in step
+(`dedup=True`; CLI `--dedup` on `train`/`bmbt-train`/`hybrid-train`),
+per-source before weighting, default off - neither shipped artifact has
+been retrained with it yet.
 
 ## Roadmap: a proposed v2
 
