@@ -90,7 +90,15 @@ def stream_wikipedia(lang: str = "bn", limit: int = 5000) -> list[str]:
     return out
 
 
-_CC100_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "bntok", "cc100")
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Project-local by default (not the user's home cache) - large downloaded
+# shards belong next to the repo that uses them, on whichever drive the
+# repo itself lives on, not silently filling the OS drive's user profile.
+# BNTOK_CACHE_DIR overrides this for anyone who wants a shared cache
+# location instead. Already gitignored (see .gitignore's ".cache/" entry).
+_CC100_CACHE_DIR = os.path.join(
+    os.environ.get("BNTOK_CACHE_DIR", os.path.join(_REPO_ROOT, ".cache")), "bntok", "cc100",
+)
 
 
 def _download_cc100_shard(repo_path: str) -> str:
