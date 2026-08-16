@@ -1,6 +1,6 @@
 """Track A2, Gate G3: measure the real dedup+quality-filter survival ratio
 on real Bengali text, per the spec's own "First 30 days" instruction
-(section 16.3): "Download Bengali Wikipedia and a Sangraha Bengali shard.
+(section 15.3): "Download Bengali Wikipedia and a Sangraha Bengali shard.
 Run dedup + quality filtering. Measure the survival ratio on real data."
 
 Two sources, measured separately and pooled:

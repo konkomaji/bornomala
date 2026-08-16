@@ -51,7 +51,7 @@ ruff check bntok scripts tests # lint
 
 Any human-collected data (speech, dialect, annotation) follows the consent,
 compensation, anonymisation, and licensing rules in the parent specification,
-section 17. Do not contribute scraped personal data.
+section 16. Do not contribute scraped personal data.
 
 ## Conduct
 
