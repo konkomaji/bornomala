@@ -33,6 +33,27 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   `kind`/`start`/`end`. 2.0x on the same held-out text; `aksharas()` keeps
   its full object-returning API and both share one `_scan`, so they cannot
   disagree about a boundary.
+- **BrahmicTokenizer-131K added to `scripts/compare.py`, closing a coverage
+  gap in our own benchmark.** It is the third external baseline named in the
+  whitepaper's Gate G2, and unlike IndicSuperTokenizer and BengaliBPE it does
+  have a real public release (`theschoolofai/BrahmicTokenizer-131K`,
+  Apache-2.0, arXiv:2605.29379) - it had simply never been run here. It loads
+  as a `PreTrainedTokenizerFast` with working `offset_mapping`, so it gets a
+  full row including conjunct fragmentation. Recorded as our omission, not as
+  an availability problem on their side: until this change, "outperforms
+  existing public tokenizers on our benchmark" was carrying an untested
+  public tokenizer.
+  Measured on all four held-out registers, it does not change the ranking:
+  fertility 2.620 / 2.449 / 2.267 / 2.184 against our 1.524 / 1.320 / 1.201 /
+  1.140, and conjunct fragmentation 0.1949-0.2378 against our 0.0000-0.0001.
+  Notably it lands within 0.01 of GPT-4o on every register despite being
+  built specifically as an Indic-capable o200k replacement with 131,072
+  tokens to our 64,000 - targeting Indic scripts is not the same as
+  constraining merges to the script's own units. The vocabulary asymmetry is
+  now stated in both directions in `benchmarks/bengali-comparison.md`, along
+  with the general caveat that every external baseline in that table is
+  multilingual. `scripts/hard_words.py` picks the new row up automatically,
+  since it imports `HF_MODELS` from `compare.py`.
 - **Track A2: corpus dedup and quality filtering (`bntok/dedup.py`), Gate
   G3.** Exact dedup, MinHash-LSH near dedup (`datasketch`), and a
   rule-based quality filter. Measured on real data across four sources

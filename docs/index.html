@@ -37,7 +37,7 @@
   "@context": "https://schema.org",
   "@type": "Dataset",
   "name": "Bengali cross-tokenizer comparison",
-  "description": "The first measured, reproducible comparison of how efficiently mainstream tokenizers (Bornomala, AI4Bharat IndicBERTv2, SUTRA, Sarvam-1, XLM-RoBERTa, GPT-4o, mBERT, DeepSeek-V3, Krutrim) encode Bengali, on identical held-out Bengali Wikipedia text.",
+  "description": "The first measured, reproducible comparison of how efficiently mainstream tokenizers (Bornomala, AI4Bharat IndicBERTv2, SUTRA, Sarvam-1, XLM-RoBERTa, GPT-4o, BrahmicTokenizer-131K, mBERT, DeepSeek-V3, Krutrim) encode Bengali, on identical held-out Bengali Wikipedia text.",
   "creator": { "@type": "Person", "name": "Konko Maji" },
   "license": "https://www.apache.org/licenses/LICENSE-2.0",
   "isAccessibleForFree": true,
@@ -179,6 +179,7 @@
           <tr><td>XLM-RoBERTa (Meta)</td><td>2.46</td><td>36%</td><td>7.04</td><td class="bad">10.2%</td></tr>
           <tr><td>Sarvam-1 (Sarvam AI)</td><td>2.59</td><td>42%</td><td>6.69</td><td class="bad">11.9%</td></tr>
           <tr><td>GPT-4o (OpenAI)</td><td>2.61</td><td>11%</td><td>6.65</td><td>not measurable</td></tr>
+          <tr><td>BrahmicTokenizer-131K</td><td>2.62</td><td>15%</td><td>6.62</td><td class="bad">22.1%</td></tr>
           <tr><td>mBERT (Google)</td><td>2.78</td><td>39%</td><td>6.25</td><td class="bad">18.0%</td></tr>
           <tr><td>DeepSeek-V3</td><td>2.99</td><td>9%</td><td>5.79</td><td class="bad">28.5%</td></tr>
           <tr><td>Krutrim (Krutrim AI)</td><td>3.21</td><td>8%</td><td>5.41</td><td class="bad">28.6%</td></tr>
