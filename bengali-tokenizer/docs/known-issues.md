@@ -28,7 +28,7 @@ found and fixed during development. Nothing here is hidden.
    record). Wikipedia is not weighted toward literary and formal register,
    which is where Bengali conjunct density is highest. At matched (32k) vocab
    size, v0.1 measured a sharper fertility than the first literary-weighted
-   attempt on pure Wikipedia text (1.568 vs 1.952) — the same fixed token
+   attempt on pure Wikipedia text (1.568 vs 1.952). The same fixed token
    budget spread across four registers instead of one is sharper nowhere;
    see point 7 for how vocab size resolved this.
 
@@ -66,7 +66,7 @@ found and fixed during development. Nothing here is hidden.
 
 7. **Vocabulary size matters more than corpus mix alone.** At the original 32k
    vocab size, the literary-weighted corpus measured *worse* fertility than the
-   Wikipedia-only v0.1 on Wikipedia held-out text (point 3) — the same 32k
+   Wikipedia-only v0.1 on Wikipedia held-out text (point 3). The same 32k
    token budget spread across four registers instead of one is sharper
    nowhere. An ablation across 32k/48k/64k (BPE, same corpus, same weights)
    showed fertility recovering monotonically with vocab size (in-sample: 1.482
@@ -76,7 +76,7 @@ found and fixed during development. Nothing here is hidden.
    (Wikipedia, literary/formal via Sangraha pdf-typed, general web via
    Sangraha web-typed, and news via XL-Sum): fertility 1.524/1.320/1.201/1.140
    vs IndicBERTv2's 1.652/1.612/1.395/1.312; conjunct fragmentation
-   0.0001/0.0001/0.0001/0.0000 vs IndicBERTv2's 0.0440/0.0562/0.0277/0.0206 —
+   0.0001/0.0001/0.0001/0.0000 vs IndicBERTv2's 0.0440/0.0562/0.0277/0.0206,
    roughly 200x to 560x lower on every register, not just Wikipedia. Full
    tables: `benchmarks/bengali-comparison.md`. An earlier pass through this
    comparison, before the measurement bugs in point 8 were found and fixed,
@@ -169,7 +169,7 @@ Kept as an honest record of what went wrong and how it was resolved.
    and §5.
 
 8. **`scripts/compare.py`'s fragmentation counter for our own tokenizer went
-   through three versions before it was actually correct** — kept in full since
+   through three versions before it was actually correct**, kept in full since
    two of the three bugs briefly produced numbers that were reported (and
    corrected) mid-session, and the point of this document is not to have that
    quietly disappear.
@@ -188,7 +188,7 @@ Kept as an honest record of what went wrong and how it was resolved.
      the normalised text, so every offset after the first token was shifted by
      one, manufacturing thousands of false fragmentation hits; (b)
      `encode_tokens()` is a human-readable debug view, not a guaranteed exact
-     reconstruction — for a codepoint genuinely outside this tokenizer's
+     reconstruction, for a codepoint genuinely outside this tokenizer's
      coverage (Greek, Arabic, and Japanese text quoted inside real Bengali
      Wikipedia/news articles all occur in this corpus), the BPE model emits
      the `<unk>` special token, and `encode_tokens()`'s fallback
@@ -198,11 +198,11 @@ Kept as an honest record of what went wrong and how it was resolved.
    - *v3 (current, verified correct):* trims the leading Metaspace space
      before computing offsets, and skips fragmentation counting (only) on
      lines that do not cleanly round-trip (`tok.roundtrip_ok(raw)` is False,
-     i.e. the out-of-coverage case in point 4 — those lines still count
+     i.e. the out-of-coverage case in point 4, those lines still count
      normally toward fertility/STRR/bytes). A hard assertion checks the
      surface reconstruction matches the normalised text exactly on every line
      that remains, so a similar bug cannot silently corrupt a comparison
-     again — it crashes instead. This version is what produced every number
+     again. It crashes instead. This version is what produced every number
      in `benchmarks/bengali-comparison.md`.
 
 9. **One training run (32k, both the original `bn-bpe-32k-v2` and the later
@@ -648,7 +648,7 @@ nukta, vowel, modifiers, ZWJ/ZWNJ flags - a real, tested output, not an
 embedding-layer afterthought) plus a statistical BPE layer over akshara
 atoms, the same architecture as v1 with the atomic unit swapped from
 grapheme cluster to akshara. **Morphology (root/suffix decomposition,
-sandhi) is explicitly NOT built** - deferred, not abandoned. Full
+sandhi) has since been built; see `docs/bmbt-morphology.md`. Full
 architecture: `docs/bmbt-architecture.md`. `bmbt.py` is deliberately
 self-contained: it imports nothing from `atoms.py` or `tokenizer.py`, so
 v1 (`bn-bpe-64k`) is completely unaffected by anything here - verified by

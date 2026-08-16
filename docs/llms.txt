@@ -25,6 +25,16 @@
   BrahmicTokenizer-131K (2.62), mBERT (2.78), and DeepSeek-V3 (2.99).
 - It keeps 72 percent of words whole and almost never splits a Bengali conjunct
   (0.01 percent), while general tokenizers split between about 4 and 29 percent.
+- Two tokenizers are shipped, not one. v1 finds Bengali's structure by counting;
+  BMBT parses the script's own grammar with a finite-state machine, adds a
+  featural decomposition of every syllable, aligns its token boundaries to
+  Bengali's suffix structure (100 percent of morpheme seams reachable, no
+  conjunct ever severed), and segments at 6.20 M characters per second against
+  the C regex's 2.72 M. They tie exactly on compression, which the project's own
+  formal proof predicts.
+- The fragmentation metric was corrected: it had counted any split written unit
+  rather than only broken conjuncts, and divided by units that cannot be split
+  at all. Both the legacy and corrected figures are published.
 - Method: trained on a literary-weighted corpus including the first 15,000
   Bengali Wikipedia articles; evaluated on 828 held-out lines from later
   articles, plus three further disjoint held-out registers (literary/formal,

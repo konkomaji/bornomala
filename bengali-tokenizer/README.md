@@ -30,14 +30,373 @@ rule, a finite-state machine, not a statistical guess), and only then trains a
 statistical layer on top for what the grammar can't explain (loanwords,
 code-mixing, noise).
 
-> **Two things BMBT is honest about.** Its measured fertility *ties* the
-> previous version, it does not beat it - `docs/design/FORMAL_SPEC.md` proves a
-> grammar-constrained BPE cannot beat an unconstrained one on raw token count,
-> and that held up in practice: see the measured comparison below. What it adds
-> regardless is `featurize()` - a real, tested structural decomposition (onset
-> consonants, vowel, modifiers) as an actual output of the tokenizer, not an
-> embedding-layer afterthought. **Morphology is not built yet** - this is v2
-> roadmap step 5, *partial*.
+## Two tokenizers, two architectures
+
+I ship **two** complete Bengali tokenizers here. They are not a draft and a
+replacement. They are two different answers to the same problem, and I measure
+both on identical held-out text.
+
+| | **v1 `bn-bpe-64k`** | **BMBT `bmbt-64k`** |
+|---|---|---|
+| Atomic unit | UAX #29 grapheme cluster | akshara, parsed by grammar |
+| How structure is found | discovered statistically | parsed from the virama rule |
+| Depends on | `regex`'s `\X` implementation | its own finite-state machine |
+| Fertility (4 registers) | 1.524 / 1.320 / 1.201 / 1.140 | **identical** |
+| Conjunct integrity | absolute | absolute |
+| Structural output | none | `featurize()`: onset, vowel, modifiers |
+| Morphology | none | suffix chain, 100% of seams reachable |
+| Segmentation speed | 2.72 M cp/s (`\X`, C) | **6.20 M cp/s** (vectorized) |
+| Status | shipped, published on Hugging Face | shipped, in this repository |
+
+**They tie on compression, and that is what I expected, not a disappointment.**
+`docs/design/FORMAL_SPEC.md` proves a grammar-constrained BPE cannot beat an
+unconstrained one on raw token count, and akshara boundaries are
+near-isomorphic to grapheme-cluster boundaries on well-formed Bengali, so the
+two atom schemes are close to the same scheme on real text. On Wikipedia
+held-out they match down to the raw integer token count.
+
+What separates them is everything else. BMBT owes nothing to a third-party
+Unicode library for its correctness, it emits a real structural decomposition
+of every akshara, it aligns its token boundaries to Bengali's morpheme
+boundaries, and it now segments faster than the C regex v1 hands the job to.
+
+## The tokenizer tax, and how this design answers it
+
+Srivastava (2026), [*The Tokenizer Tax*](https://arxiv.org/html/2607.24276v1),
+measures word fertility across 10 Indian languages and 6 tokenizers on
+FLORES-200 and reports each language's cost as a multiplier over English. It is the clearest statement of the problem I built this to solve, someone else
+wrote it, and its diagnosis points straight at the mechanism my design removes.
+
+### What the paper found for Bengali
+
+| | Value |
+|---|--:|
+| Tax multiplier, cl100k_base | **6.52x** English |
+| Unmerged single-byte token rate | **37.2%** |
+| Effective context window against an English user | **16.9%** |
+| Bytes per token | 2.19 |
+
+Across tokenizers the Bengali tax is 10.73x (GPT-2), 6.52x (cl100k), 5.65x
+(Qwen), 2.10x (mBERT), 1.91x (o200k), 1.54x (XLM-R). The Gini coefficient
+across languages falls from 0.35 (cl100k) to 0.19 (o200k) to 0.14 (XLM-R),
+which is the paper's core argument: **the tax is a design choice, not a
+property of the scripts.**
+
+### The mechanism it identifies
+
+The dominant cause is **unmerged single-byte tokens**: where a tokenizer's
+vocabulary does not cover a script, its BPE merges fail to combine that span's
+bytes and the text decomposes toward its raw byte length. The single-byte rate
+alone correlates with the tax multiplier at **r = 0.89**. English and European
+languages emit them for under 10% of tokens; high-tax Indic languages for
+27-43%.
+
+The authors' recommendation follows directly: *"Tokenizer vocabulary coverage
+for Indic scripts is a high-leverage, low-cost fairness intervention, and the
+unmerged single-byte rate is a simple diagnostic to monitor."*
+
+### How this design addresses it
+
+**My atom layer makes the mechanism they identify structurally impossible.**
+Before BPE runs I remap every Bengali written unit to a single indivisible
+atom, and the whole Bengali block plus ASCII is forced into
+the base vocabulary via `initial_alphabet`. There is no path by which Bengali
+text can fall back to unmerged bytes, because Bengali bytes are never what the
+subword model sees.
+
+So the diagnostic they recommend monitoring is **zero by construction in both
+my tokenizers, not low by tuning**. That is the difference between covering a
+script adequately and making under-coverage impossible to express.
+
+### What that is worth, in the paper's own units
+
+Assuming English fertility of 1.23 (sourced in `PROJECT_BORNOMALA_STUDY.md`
+section 2.4b, and consistent with the paper's own baseline):
+
+| Register | My fertility | Tax multiplier | Effective context vs English |
+|---|--:|--:|--:|
+| Wikipedia | 1.524 | 1.24x | 80.7% |
+| Literary/formal | 1.320 | 1.07x | 93.2% |
+| General web | 1.201 | 0.98x | 102.4% |
+| News | 1.140 | 0.93x | **107.9%** |
+
+Against their headline for Bengali under cl100k, **16.9%** of an English user's
+effective context, I get back roughly **81% to 108%**. On the news register a
+Bengali user gets *more* usable context than an English user,
+because Bengali words carry more meaning per whitespace-delimited token than
+English ones do once the script is encoded properly.
+
+### Cross-checking their numbers against mine
+
+I converted their tax multipliers back into absolute tokens per word, using the
+same 1.23 English baseline, and compared them with what I measure on my own
+held-out Wikipedia set:
+
+| Tokenizer | Their Bengali tax | Implied tokens/word | What I measure | Gap |
+|---|--:|--:|--:|--:|
+| GPT-4 (cl100k) | 6.52x | 8.02 | **7.794** | -2.8% |
+| GPT-4o (o200k) | 1.91x | 2.35 | **2.608** | +11.0% |
+| XLM-R | 1.54x | 1.89 | **2.464** | +30.1% |
+
+The cl100k agreement is close enough to be striking: two people, two corpora,
+two pipelines, within 3%. I am not going to claim the other two are, because
+they are not. o200k is 11% out and XLM-R is 30% out.
+
+I think the reason is the corpus rather than either measurement being wrong.
+They use FLORES-200, which is professionally translated single sentences, and
+they say themselves it may carry translationese. I use held-out Bengali
+Wikipedia, which is longer, messier, and has more proper nouns and rare
+compounds. Harder text costs more tokens, and it should cost *relatively* more
+on the tokenizers with better Bengali coverage, which is the direction the gaps
+actually go. That is a hypothesis I have not tested, so I am flagging it as one.
+
+Adding FLORES-200 as a fifth register in `scripts/compare.py` would settle it
+and let me report a directly comparable multiplier instead of a cross-walk. It
+is cheap, 997 sentences on CPU, and it is on my list rather than done.
+
+### What this paper does not let me claim
+
+Their downstream analysis cuts against the conclusion I would like to draw, so
+I am putting it here rather than leaving it out. The raw correlation between
+fertility and Belebele reading-comprehension accuracy is **r = -0.61**
+(95% CI [-0.86, -0.03], n=13), but the **partial correlation controlling for
+resource level collapses to r = +0.25**. They read that as a threshold effect
+among non-Latin lower-resource languages rather than a smooth relationship
+between fertility and accuracy.
+
+So fertility does not independently predict downstream quality. Nothing I
+publish should imply that a better tokenizer gives a better model. I do not
+have that evidence and I will not have it until a model exists to test it on.
+
+Their fifth limitation names the missing experiment exactly: establishing
+causality *"requires controlled interventions on the tokenizer, which we leave
+to future work."* The experiment that would settle it is a controlled
+small-model comparison at equal data and parameters, scored in bits per byte so
+the number is tokenizer-independent. It is on my roadmap. It is not done, and I
+am not counting it as done.
+
+## How both work, seen end to end
+
+Both pipelines share one idea: remap each written unit to an indivisible atom
+*before* BPE runs, so a token boundary inside a written unit is not merely
+discouraged but unrepresentable. They differ in how they find those units.
+
+```mermaid
+flowchart TB
+    T["raw text"] --> N["normalize\nNFC + ZWJ/ZWNJ policy"]
+
+    subgraph V1["v1: bn-bpe-64k"]
+        direction TB
+        N --> G["graphemes.py\nUAX #29 via regex \X"]
+        G --> A1["atoms.py\none PUA codepoint per cluster"]
+    end
+
+    subgraph BM["BMBT: bmbt-64k"]
+        direction TB
+        N --> K["akshara.py\nfinite-state virama grammar"]
+        K --> MO["morphology.py\nsuffix chain (optional)"]
+        MO --> A2["bmbt.py\none PUA codepoint per chunk,\nfactored at morpheme seams"]
+        K -.-> F["featurize()\nonset / vowel / modifiers"]
+    end
+
+    A1 --> B["Hugging Face BPE\nmerges atoms only"]
+    A2 --> B
+    B --> ID["token ids"]
+    ID --> D["decode\natoms back to text, exact round-trip"]
+```
+
+### The same word through both, step by step
+
+`বিশ্বের` ("of the world"), seven codepoints. This single word shows the whole
+design, because its morpheme boundary and its orthographic boundary disagree.
+
+```
+codepoints     ব    ি    শ    ্    ব    ে    র
+               U+09AC U+09BF U+09B6 U+09CD U+09AC U+09C7 U+09B0
+offset         0    1    2    3    4    5    6
+
+v1   \X        │ বি      │ শ্বে              │ র      │
+BMBT aksharas  │ বি      │ শ্বে              │ র      │      <- identical
+morphology       বিশ্ব[stem]              │ ের[case]
+                                          ^
+                                   seam at offset 5
+
+BMBT +morph    │ বি      │ শ্ব       │ ে    │ র      │
+```
+
+Three things are visible at once:
+
+1. **v1 and BMBT segment identically.** `\X` and the akshara grammar produce
+   the same three units. This is why they tie on fertility: the two atom
+   schemes are near-isomorphic on well-formed Bengali.
+2. **The morpheme seam falls at offset 5, inside the akshara `শ্বে`.** The
+   matra `ে` is bound orthographically to `শ্ব` but belongs morphologically to
+   the suffix `ের`. This happens at **37.6%** of Bengali morpheme boundaries.
+3. **Factoring splits `শ্বে` into `শ্ব` + `ে`, and severs no conjunct.** The
+   conjunct is `শ্ব` and it stays whole. Only the matra is parted off.
+
+### The other two cases
+
+```
+ছেলেরা  ("boys")            aksharas  │ ছে │ লে │ রা │
+                            morphology  ছেলে[stem] + রা[plural]
+                            seam at 4, which IS an akshara boundary
+                            +morph    │ ছে │ লে │ রা │   <- no factoring needed
+
+ক্ষুদ্র ("tiny")             aksharas  │ ক্ষু │ দ্র │
+                            morphology  ক্ষুদ্র[stem]  - no suffix
+                            +morph    │ ক্ষু │ দ্র │   <- conjuncts untouched
+```
+
+### What a split costs, graded
+
+Not every cut into a written unit does the same damage, and the original metric
+treated them as if it did.
+
+```mermaid
+flowchart LR
+    S["token boundary\ninside a written unit"] --> Q1{"virama stranded,\nor nukta detached?"}
+    Q1 -- yes --> DES["DESTRUCTIVE\nক্ষ -> ক্ + ষ\nfragment occurs nowhere\nড + ় is a different letter"]
+    Q1 -- no --> Q2{"trailing modifier\ndetached?"}
+    Q2 -- yes --> MOD["MODIFIER\nক + ং\nseparate phoneme"]
+    Q2 -- no --> ONS["ONSET_RIME\nশ্বে -> শ্ব + ে\nboth pieces are real units"]
+```
+
+Only `DESTRUCTIVE` is the failure this project exists to prevent, and it is
+what `destructive_rate` reports. Both tokenizers hold it at zero.
+
+## How both work, and why they are built that way
+
+I made every decision below for a reason, and I made several of them twice
+because the first reason turned out to be wrong. I have kept the wrong ones
+written down.
+
+### Why an atom layer at all, instead of BPE over characters
+
+A byte-level or character-level BPE can place a token boundary anywhere,
+including inside a written unit. Splitting `ক্ষ` into `ক্` + `ষ` yields a
+consonant with a dangling hasanta, which occurs nowhere in Bengali text and
+corresponds to nothing a reader recognises.
+
+Rather than train BPE and hope it avoids those cuts, I made them
+**unrepresentable** in both tokenizers. Each written unit is remapped to a single Private Use Area
+codepoint (an "atom") before BPE ever runs. BPE then merges atoms. Since an
+atom is indivisible, a learned token is always a whole number of written units,
+and fragmentation is zero by construction rather than by tuning. This is the
+one idea both architectures share.
+
+PUA specifically because it is guaranteed never to collide with real text, and
+the two tokenizers use disjoint UNK atoms so their atom spaces are provably
+non-overlapping rather than merely kept in separate files.
+
+### Why two-tier coverage
+
+Every *frequent* chunk gets its own atom, and **every codepoint also gets one**.
+Without the second tier, a rare or unseen cluster becomes `<unk>` and the text
+is unrecoverable. With it, an unseen cluster decomposes into its codepoints and
+still round-trips exactly. The whole Bengali block and ASCII are forced into the
+base vocabulary, so round-trip is guaranteed for that character set rather than
+merely likely.
+
+### Why v1 uses grapheme clusters, and why that was not enough
+
+UAX #29 `\X` is correct, fast, and already implemented. For v1 I think that is the right
+trade: hand segmentation to a maintained C implementation and spend the effort
+elsewhere.
+
+The cost is that correctness is *inherited*. If `regex`'s `\X` is wrong about
+Bengali, v1 is wrong and cannot tell. `\X` also knows nothing about Bengali
+specifically: it is a generic Unicode algorithm that happens to handle the
+script acceptably.
+
+### Why BMBT parses the grammar instead
+
+The akshara grammar is small and regular:
+
+```
+Akshara := Consonant Tail | Vowel Tail
+Tail    := a mixed run of {Virama, Nukta, Matra, Modifier, ZWJ, ZWNJ}
+           in any order; if that run held a virama, no blocker, started from
+           a Consonant, and a Consonant follows, consume it and repeat
+```
+
+Regular means no recursion, which means a single left-to-right scan with no
+backtracking, O(n). Writing it out myself makes the tokenizer's correctness depend on a stated
+grammar someone can argue with, rather than on a library's judgement.
+
+**It also found real bugs that `\X`-delegation would have hidden.** Running the
+parser against actual Wikipedia rather than synthetic tests surfaced three:
+an independent vowel followed by a virama does not chain the way a consonant
+does (Unicode's `Indic_Conjunct_Break` requires `InCB=Consonant` on both sides);
+a Modifier blocks chain continuation although Matra and Nukta do not; and
+ZWJ/ZWNJ are not positionally fixed relative to the virama. Hence the
+order-agnostic mixed-run design, which tracks only *whether* a virama and a
+blocker occurred, never where.
+
+### Why morphology is rule-based rather than learned
+
+Morfessor would have been less work. I rejected it because BMBT's whole claim
+is that it reads Bengali by the language's own rules instead of inferring them
+from counts, and a frequency-learned morphology layer gives that claim up at
+exactly the point where it matters most. The suffix inventory is inspectable,
+arguable, and testable; a learned segmentation is none of those.
+
+Two bugs came out of running it on real words, and the second one is the
+interesting one:
+
+- A two-akshara minimum stem looked safe and was wrong: `কর` is two aksharas
+  but `যা` and `দে` are **one**, so the floor produced `যাব` + `েন` instead of
+  `যা` + `বেন`.
+- Lowering the floor then broke `ছেলেরা` into `ছে` + `লে`[verb] + `রা`[plural].
+  `লে` really is a past-tense ending and `ছেলে` really does end with those
+  codepoints, so **no length threshold can separate them**. The fix is
+  grammatical: suffix ranks run outermost to innermost and never decrease, and
+  a verb ending admits nothing nominal outside it, because a finite verb cannot
+  be pluralised.
+
+Reaching for a grammar rule instead of a tuned constant is the pattern I keep
+coming back to.
+
+### Why conjunct integrity and akshara atomicity are separated
+
+See [`docs/bmbt-architecture.md`](docs/bmbt-architecture.md). Briefly: never
+severing a conjunct is the guarantee that matters; never parting a cluster from
+its matra is a stronger implementation choice that was costing 30.4% of Bengali
+morpheme boundaries. `শ্ব` + `ে` gives two units Bengali literacy names;
+`ক্` + `ষ` gives a fragment. Only the second is the failure worth preventing.
+
+### Why unreachable morpheme seams are skipped, not snapped
+
+A seam that cannot be placed exactly could be moved to the nearest akshara
+boundary instead. I do not do that, because a boundary one codepoint away from the real one
+asserts a morpheme that is not there. A missing boundary is an omission; a
+wrong one is a false claim, and false claims are worse for both the model and
+for alignment scoring.
+
+### Why the vectorized segmenter uses segmented reductions, not a prefix scan
+
+The obvious way to parallelise a DFA is a prefix scan over the transition
+monoid: each character induces a state-to-state function, composition is
+associative, so the state at every position is a prefix composition. I wrote
+that first. It is textbook-correct and I measured it at **only 1.33x**, because
+it is O(n log n) in fancy-index gathers and gathers are not SIMD-friendly.
+
+The formulation that actually worked avoids composition entirely. The parse
+state is recoverable from two *segmented reductions*: a running maximum
+locating where the current run began, and two prefix-sum differences for the
+virama and blocker flags. Both are O(n) over contiguous memory. That measured
+19 to 23x.
+
+The lesson generalises. A parallel prefix scan only pays when the sequential
+step is expensive. Here it was not, and the log factor ate the win.
+
+### Why fragmentation is graded rather than weighted
+
+Weighting split types by severity would collapse the three counts into one
+number, and a weight is a judgement dressed up as a measurement. My own rule E4
+forbids exactly that. So I classify each split by an objective structural test
+and report all three counts, and a reader can apply their own judgement to
+numbers that are all real.
 
 ## Install and use
 

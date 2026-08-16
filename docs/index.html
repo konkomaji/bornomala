@@ -167,7 +167,7 @@
     <p class="eyebrow">What we have achieved, measured and transparent</p>
     <h2>A Bengali tokenizer that outperforms existing public tokenizers on our benchmark</h2>
     <div class="matra"></div>
-    <p class="lede">Our first result: a Bengali tokenizer that needs fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and that almost never breaks a conjunct while they break many &mdash; and this holds not just on Wikipedia, but on literary/formal, general web, and news text too.</p>
+    <p class="lede">Our first result: a Bengali tokenizer that needs fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and that almost never breaks a conjunct while they break many, and this holds not just on Wikipedia, but on literary/formal, general web, and news text too.</p>
 
     <div class="table-wrap" style="margin-top:22px">
       <table>
@@ -201,9 +201,9 @@
 <section class="section" id="hardwords">
   <div class="container">
     <p class="eyebrow">Not just an average</p>
-    <h2>Deity names, a national poet, West Bengal places &mdash; one token, every time</h2>
+    <h2>Deity names, a national poet, West Bengal places: one token, every time</h2>
     <div class="matra"></div>
-    <p class="lede">A register average can hide how a tokenizer treats specific, culturally load-bearing words. We measured a fixed list of 13: deity names, a national poet, well-known West Bengal places, all conjunct-dense, on every tokenizer we track &mdash; 14 external systems plus our own.</p>
+    <p class="lede">A register average can hide how a tokenizer treats specific, culturally load-bearing words. We measured a fixed list of 13: deity names, a national poet, well-known West Bengal places, all conjunct-dense, on every tokenizer we track, 14 external systems plus our own.</p>
 
     <div class="table-wrap" style="margin-top:22px">
       <table>
@@ -245,7 +245,7 @@
     </div>
 
     <div class="note" style="margin-top:16px">
-      IndicBERTv2, the only real rival at 1.31 average, still splits 3 of the 13 words (ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন) &mdash; even India's best-funded Indic tokenizer cannot hold conjunct integrity on every word here. Ours does, by construction, not luck. A notable pattern, unverified beyond this word list: every single value in Llama-3.1's row is byte-for-byte identical to GPT-4's cl100k row &mdash; its tokenizer is tiktoken-derived and does not appear to extend Bengali coverage at all. Full per-word table, every tokenizer, and the reproduce command: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md">benchmarks/hard-words.md</a>.
+      IndicBERTv2, the only real rival at 1.31 average, still splits 3 of the 13 words (ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন), even India's best-funded Indic tokenizer cannot hold conjunct integrity on every word here. Ours does, by construction, not luck. A notable pattern, unverified beyond this word list: every single value in Llama-3.1's row is byte-for-byte identical to GPT-4's cl100k row, its tokenizer is tiktoken-derived and does not appear to extend Bengali coverage at all. Full per-word table, every tokenizer, and the reproduce command: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md">benchmarks/hard-words.md</a>.
     </div>
   </div>
 </section>
@@ -259,11 +259,15 @@
     <p class="lede">The tokenizer above achieved that result the way almost every serious tokenizer does today: it retrains BPE, a statistical compressor, on Bengali data. That fixes the vocabulary while keeping the frame, and we thought the frame was the actual problem. Bengali is not a language whose structure needs discovering by counting bytes. It is an abugida, a generative system with explicit, Unicode-standardized rules for how a written syllable (an akshara) is built from a consonant, its conjuncts, and its vowel signs. So we built <b>BMBT, Bornomala's Bengali Tokenizer</b>: it reads the script by its own grammar first, a finite-state machine, and falls back to statistics only for what the grammar cannot explain: loanwords, code-mixing, noise.</p>
     <div class="cards" style="margin-top:26px">
       <div class="card warm"><div class="ic">📐</div><h3>Grammar first, statistics as fallback</h3><p>A finite-state parser for the akshara grammar (the virama rule, matra reordering, unbounded conjuncts) runs before any learned merge. Bengali BPE only ever tuned the frame; this replaces it.</p></div>
-      <div class="card warm"><div class="ic">🧬</div><h3>Featural tokens, not opaque IDs</h3><p>Each akshara decomposes into its own structure &mdash; onset, vowel, modifiers &mdash; via <code>featurize()</code>, a real, tested output, so a model can see for free that related syllables share an onset, instead of learning every combination as an unrelated integer.</p></div>
+      <div class="card warm"><div class="ic">🧬</div><h3>Featural tokens, not opaque IDs</h3><p>Each akshara decomposes into its own structure, onset, vowel, modifiers, via <code>featurize()</code>, a real, tested output, so a model can see for free that related syllables share an onset, instead of learning every combination as an unrelated integer.</p></div>
       <div class="card warm"><div class="ic">🔁</div><h3>Lossless by construction, proven not assumed</h3><p>A formal specification states losslessness, totality, linear time, and constrained optimality as predicates, proves three of the four by construction, and pins the fourth to a property-based fuzzer contract in CI.</p></div>
-      <div class="card warm"><div class="ic">⚖️</div><h3>An honest result: a tie, not a win</h3><p>Measured against the original tokenizer on identical held-out text, BMBT ties it &mdash; on Wikipedia, identical down to the raw token count &mdash; rather than beating it. The formal spec itself proves a grammar-constrained BPE cannot beat an unconstrained one on raw token count; this is that prediction, confirmed in practice, not a disappointment hidden.</p></div>
+      <div class="card warm"><div class="ic">⚖️</div><h3>An honest result: a tie on compression, not a win</h3><p>Measured against the original tokenizer on identical held-out text, BMBT ties it, on Wikipedia identical down to the raw token count, rather than beating it. The formal spec itself proves a grammar-constrained BPE cannot beat an unconstrained one on raw token count. This is that prediction confirmed in practice, not a disappointment hidden.</p></div>
     </div>
-    <p style="margin-top:22px">Morphology (root/suffix decomposition) is not built yet &mdash; deferred, not abandoned. The tokenizer above still outperforms every external baseline tested, by a wide margin, on every held-out register; BMBT ties it there too, while adding the featural structure at no fertility cost. Full numbers: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/bengali-comparison.md">the benchmark doc</a>.</p>
+    <p style="margin-top:22px"><b>Morphology is now built too.</b> BMBT aligns its token boundaries to Bengali's suffix structure. Getting there meant separating two things we had been treating as one guarantee: never severing a conjunct, and never splitting a written syllable. Only the first is what a Bengali tokenizer exists to protect. Splitting the syllable <i>shbe</i> into its consonant cluster and its vowel sign leaves two units any Bengali reader names; severing the cluster itself leaves a fragment that means nothing. Holding the stronger rule was costing us a third of all Bengali morpheme boundaries, because a vowel sign attaches to the consonant before it while belonging to the suffix after it. Relaxing it only at morpheme seams took reachable boundaries from 62% to <b>100%</b>, with not one conjunct severed, checked across 1.47 million characters.</p>
+
+    <p style="margin-top:14px">The same work made us correct our own measurement. Our conjunct-fragmentation figure counted any split written unit rather than only broken conjuncts, and divided by every unit including the 61% that consist of a single character and cannot be split by anyone. That made every number, ours and everyone else's, look about twice as good as it was. Corrected, the ranking of the other tokenizers changes: multilingual BERT, not DeepSeek-V3, does the most real damage to Bengali. We kept the old figure alongside the new one so nothing already published becomes uncheckable.</p>
+
+    <p style="margin-top:14px">The tokenizer above still outperforms every external baseline tested, by a wide margin, on every held-out register, and BMBT ties it there too. Full numbers: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/bengali-comparison.md">the benchmark doc</a>.</p>
     <p style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap">
       <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/design/reading-bengali-on-its-own-terms.md">Read the position paper</a>
       <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/design/FORMAL_SPEC.md">Read the formal spec</a>

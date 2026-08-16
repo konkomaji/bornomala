@@ -126,19 +126,38 @@ first (a finite-state machine, not a statistical guess) and falls back to
 statistics only for what the grammar cannot explain (loanwords, code-mixing,
 noise), plus a real featural decomposition (onset consonants, vowel,
 modifiers) as an actual output of the tokenizer, not an embedding-layer
-afterthought. Morphology (root/suffix decomposition) is not built yet -
-deferred, not abandoned.
+afterthought. It also carries a morphology layer that aligns its token
+boundaries to Bengali's suffix structure.
+
+Both tokenizers are finished, both are measured on identical held-out text, and
+both are worth using. They are two answers to the same problem, not a draft and
+its replacement:
+
+| | **v1 `bn-bpe-64k`** | **BMBT `bmbt-64k`** |
+|---|---|---|
+| Finds structure by | counting | parsing the script's grammar |
+| Depends on | a third-party Unicode library | its own finite-state machine |
+| Tokens per word | 1.524 / 1.320 / 1.201 / 1.140 | **identical** |
+| Never breaks a conjunct | yes | yes |
+| Structural output per syllable | none | onset, vowel, modifiers |
+| Morpheme-aligned boundaries | none | **100% of seams reachable** |
+| Segmentation speed | 2.72 M chars/sec | **6.20 M chars/sec** |
 
 **Measured, reported honestly, not the outcome we assumed going in: BMBT ties
-v1, it does not beat it.** On Wikipedia held-out the two are identical down to
-the raw token count; on the other three registers, tiny real differences
-appear in both directions (BMBT needs marginally fewer tokens, has marginally
-more fragmented clusters), neither large enough to call a win. This matches
-the formal spec's own proof that a grammar-constrained BPE cannot beat an
-unconstrained one on raw token count - what BMBT adds is the featural
-structure, at no fertility cost, not a fertility win. Full account:
-[`bengali-tokenizer/docs/known-issues.md`](bengali-tokenizer/docs/known-issues.md)
-and [`bengali-tokenizer/benchmarks/bengali-comparison.md`](bengali-tokenizer/benchmarks/bengali-comparison.md).
+v1 on compression, it does not beat it.** On Wikipedia held-out the two are
+identical down to the raw token count. That matches the formal spec's own proof
+that a grammar-constrained BPE cannot beat an unconstrained one on raw token
+count, so the tie was predicted rather than disappointing. What BMBT adds is
+everything the count cannot see: a grammar you can argue with instead of a
+library you must trust, a real structural decomposition of every syllable,
+boundaries that fall where Bengali's morphemes fall, and, since the segmenter
+was rewritten to work on arrays instead of characters, more than twice the
+throughput of the C regex v1 delegates to.
+
+Full account:
+[`bengali-tokenizer/docs/known-issues.md`](bengali-tokenizer/docs/known-issues.md),
+[`bengali-tokenizer/benchmarks/bengali-comparison.md`](bengali-tokenizer/benchmarks/bengali-comparison.md),
+and [`bengali-tokenizer/docs/bmbt-morphology.md`](bengali-tokenizer/docs/bmbt-morphology.md).
 
 The design and its formal contract:
 [Reading Bengali on Its Own Terms](bengali-tokenizer/docs/design/reading-bengali-on-its-own-terms.md)

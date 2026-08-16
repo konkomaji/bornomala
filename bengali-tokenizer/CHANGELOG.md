@@ -75,7 +75,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   which carry a nukta, vowel, modifiers, ZWJ/ZWNJ flags) plus a
   statistical BPE layer over akshara atoms - the same architecture as v1
   with the atomic unit swapped from grapheme cluster to akshara.
-  **Morphology is explicitly not built** - deferred, not abandoned.
+  Morphology has since been built as well; see the entry above.
   `bmbt.py` is fully self-contained: it imports nothing from `atoms.py` or
   `tokenizer.py`, so v1 (`bn-bpe-64k`) is completely unaffected -
   `tests/test_tokenizer.py` passes unmodified. New CLI: `bmbt-train`,
@@ -244,7 +244,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   which were previously covered only by corpus frequency, not by guarantee.
 - `normalize.py`: re-composes RRA/RHA/YYA (ড়/ঢ়/য়) to their single dedicated
   codepoint after NFC, a minor efficiency improvement (NFC already unified both
-  spellings, just onto the decomposed form — see `docs/known-issues.md`
+  spellings, just onto the decomposed form. See `docs/known-issues.md`
   point 7 and `docs/bengali-script-reference.md` §3 for what this does and does
   not fix).
 
