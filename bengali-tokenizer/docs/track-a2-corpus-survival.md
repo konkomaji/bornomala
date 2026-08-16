@@ -1,8 +1,8 @@
 # Track A2: corpus dedup + quality-filter survival ratio (Gate G3)
 
-Spec section 16.2, Gate G3, month 6: "After dedup and quality filtering, what
+Spec section 15.2, Gate G3, month 6: "After dedup and quality filtering, what
 fraction of raw Bengali web text survives? Is the surviving corpus ≥5B clean
-tokens?" Section 16.3's "First 30 days" plan says exactly how to answer it:
+tokens?" Section 15.3's "First 30 days" plan says exactly how to answer it:
 "Download Bengali Wikipedia and a Sangraha Bengali shard. Run dedup + quality
 filtering. Measure the survival ratio on real data." This is that measurement.
 
