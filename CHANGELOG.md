@@ -14,7 +14,8 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   the recommended/primary tokenizer of the project. Parses Bengali's akshara
   grammar directly (a finite-state machine) instead of discovering structure
   statistically, and adds a real featural decomposition (`featurize()`) as
-  an actual tokenizer output. Morphology is not built yet. Measured against
+  an actual tokenizer output, plus a morphology layer that aligns token
+  boundaries to Bengali's suffix structure. Measured against
   the original tokenizer (`bn-bpe-64k`) on identical held-out text: an
   honest tie, not a win - reported exactly as measured, matching the design's
   own formal proof that a grammar-constrained BPE cannot beat an

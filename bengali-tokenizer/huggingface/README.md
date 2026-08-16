@@ -70,6 +70,7 @@ evaluation pipeline.
 | XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.1019 |
 | Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.1191 |
 | GPT-4o (OpenAI o200k) | 2.608 | 0.111 | 6.65 | n/a |
+| BrahmicTokenizer-131K (TSAI) | 2.620 | 0.154 | 6.62 | 0.2209 |
 | mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1800 |
 | DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
 
@@ -138,7 +139,7 @@ input; the `bntok` wrapper is the supported path.
 ## Training details
 
 - Algorithm: BPE, vocabulary 64,000.
-- Corpus: literary-weighted, 1.5M lines — Wikisource Bengali public-domain text,
+- Corpus: literary-weighted, 1.5M lines: Wikisource Bengali public-domain text,
   AI4Bharat Sangraha verified/ben (pdf-typed as a formal/literary proxy,
   OCR-noise-filtered, and web-typed for general register), the first 15,000
   articles of `wikimedia/wikipedia` config `20231101.bn`, and XL-Sum Bengali
@@ -168,7 +169,10 @@ adds a real featural decomposition (`featurize()`) as an output of the
 tokenizer itself. Measured against this model on identical held-out text,
 BMBT ties it rather than beating it - reported honestly, matching the
 design's own formal proof that a grammar-constrained subword model cannot
-beat an unconstrained one on raw token count. Morphology is not built yet.
+beat an unconstrained one on raw token count. BMBT also carries a morphology
+layer that aligns its token boundaries to Bengali's suffix structure, and a
+vectorized segmenter that runs at more than twice the throughput of the C
+regex this model delegates to.
 This Hugging Face listing still serves the model above (v1, unchanged);
 BMBT has not been published as a separate Hugging Face model yet. See
 [the GitHub repository](https://github.com/konkomaji/bornomala/tree/main/bengali-tokenizer)

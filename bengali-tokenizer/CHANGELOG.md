@@ -7,6 +7,53 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Vectorized akshara segmentation (`bntok/akshara_vec.py`), optional via
+  `pip install "bntok[speed]"`.** The akshara grammar is regular, so the
+  parse state at any position is determined by two segmented reductions (a
+  running maximum locating each run's start, and two prefix-sum differences
+  for the virama/blocker flags) rather than a character-by-character
+  recurrence. New `akshara_bounds_batch()` segments a whole block that way,
+  measured **12x `aksharas()`, 4.9x the scalar bounds scan, and 2.3x the
+  `regex` `\X` C implementation** on 6,000 held-out Wikipedia lines
+  (1.08M codepoints), at 100% identical boundaries.
+  A conservative guard admits only the subset where the array model is
+  provably equivalent to `\X` (99.4% of measured lines); anything else -
+  another script's conjuncts, emoji ZWJ sequences, Hangul, CRLF - is
+  partitioned out and answered by the proven scalar scan, so correctness
+  rests on the guard being conservative rather than on this backend
+  covering all of Unicode. Absent numpy, everything falls back silently.
+  Two failed designs are recorded in the module docstring rather than
+  discarded: a parallel prefix scan over the transition monoid (correct,
+  but O(n log n) in gathers, measured only 1.33x), and an all-or-nothing
+  batch guard (correct, but zero of the real 4096-line batches qualified,
+  so it never once took the fast path).
+- **`akshara_bounds()` (`bntok/akshara.py`)**, the boundary offsets without
+  an `Akshara` object per chunk. Profiling put frozen-dataclass construction
+  at 38% of `aksharas()`' total cost, and `BMBT.encode`/`train` never read
+  `kind`/`start`/`end`. 2.0x on the same held-out text; `aksharas()` keeps
+  its full object-returning API and both share one `_scan`, so they cannot
+  disagree about a boundary.
+- **BrahmicTokenizer-131K added to `scripts/compare.py`, closing a coverage
+  gap in our own benchmark.** It is the third external baseline named in the
+  whitepaper's Gate G2, and unlike IndicSuperTokenizer and BengaliBPE it does
+  have a real public release (`theschoolofai/BrahmicTokenizer-131K`,
+  Apache-2.0, arXiv:2605.29379) - it had simply never been run here. It loads
+  as a `PreTrainedTokenizerFast` with working `offset_mapping`, so it gets a
+  full row including conjunct fragmentation. Recorded as our omission, not as
+  an availability problem on their side: until this change, "outperforms
+  existing public tokenizers on our benchmark" was carrying an untested
+  public tokenizer.
+  Measured on all four held-out registers, it does not change the ranking:
+  fertility 2.620 / 2.449 / 2.267 / 2.184 against our 1.524 / 1.320 / 1.201 /
+  1.140, and conjunct fragmentation 0.1949-0.2378 against our 0.0000-0.0001.
+  Notably it lands within 0.01 of GPT-4o on every register despite being
+  built specifically as an Indic-capable o200k replacement with 131,072
+  tokens to our 64,000 - targeting Indic scripts is not the same as
+  constraining merges to the script's own units. The vocabulary asymmetry is
+  now stated in both directions in `benchmarks/bengali-comparison.md`, along
+  with the general caveat that every external baseline in that table is
+  multilingual. `scripts/hard_words.py` picks the new row up automatically,
+  since it imports `HF_MODELS` from `compare.py`.
 - **Track A2: corpus dedup and quality filtering (`bntok/dedup.py`), Gate
   G3.** Exact dedup, MinHash-LSH near dedup (`datasketch`), and a
   rule-based quality filter. Measured on real data across four sources
@@ -28,7 +75,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   which carry a nukta, vowel, modifiers, ZWJ/ZWNJ flags) plus a
   statistical BPE layer over akshara atoms - the same architecture as v1
   with the atomic unit swapped from grapheme cluster to akshara.
-  **Morphology is explicitly not built** - deferred, not abandoned.
+  Morphology has since been built as well; see the entry above.
   `bmbt.py` is fully self-contained: it imports nothing from `atoms.py` or
   `tokenizer.py`, so v1 (`bn-bpe-64k`) is completely unaffected -
   `tests/test_tokenizer.py` passes unmodified. New CLI: `bmbt-train`,
@@ -197,7 +244,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   which were previously covered only by corpus frequency, not by guarantee.
 - `normalize.py`: re-composes RRA/RHA/YYA (ড়/ঢ়/য়) to their single dedicated
   codepoint after NFC, a minor efficiency improvement (NFC already unified both
-  spellings, just onto the decomposed form — see `docs/known-issues.md`
+  spellings, just onto the decomposed form. See `docs/known-issues.md`
   point 7 and `docs/bengali-script-reference.md` §3 for what this does and does
   not fix).
 

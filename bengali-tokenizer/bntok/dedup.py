@@ -1,5 +1,5 @@
 r"""
-Corpus dedup and quality filtering (Track A2, spec section 16.2 Gate G3).
+Corpus dedup and quality filtering (Track A2, spec section 15.2 Gate G3).
 
 Gate G3 asks one question with a real number as the answer: after dedup and
 quality filtering, what fraction of raw Bengali text survives, and does the

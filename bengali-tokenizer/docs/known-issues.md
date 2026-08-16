@@ -28,7 +28,7 @@ found and fixed during development. Nothing here is hidden.
    record). Wikipedia is not weighted toward literary and formal register,
    which is where Bengali conjunct density is highest. At matched (32k) vocab
    size, v0.1 measured a sharper fertility than the first literary-weighted
-   attempt on pure Wikipedia text (1.568 vs 1.952) — the same fixed token
+   attempt on pure Wikipedia text (1.568 vs 1.952). The same fixed token
    budget spread across four registers instead of one is sharper nowhere;
    see point 7 for how vocab size resolved this.
 
@@ -66,7 +66,7 @@ found and fixed during development. Nothing here is hidden.
 
 7. **Vocabulary size matters more than corpus mix alone.** At the original 32k
    vocab size, the literary-weighted corpus measured *worse* fertility than the
-   Wikipedia-only v0.1 on Wikipedia held-out text (point 3) — the same 32k
+   Wikipedia-only v0.1 on Wikipedia held-out text (point 3). The same 32k
    token budget spread across four registers instead of one is sharper
    nowhere. An ablation across 32k/48k/64k (BPE, same corpus, same weights)
    showed fertility recovering monotonically with vocab size (in-sample: 1.482
@@ -76,7 +76,7 @@ found and fixed during development. Nothing here is hidden.
    (Wikipedia, literary/formal via Sangraha pdf-typed, general web via
    Sangraha web-typed, and news via XL-Sum): fertility 1.524/1.320/1.201/1.140
    vs IndicBERTv2's 1.652/1.612/1.395/1.312; conjunct fragmentation
-   0.0001/0.0001/0.0001/0.0000 vs IndicBERTv2's 0.0440/0.0562/0.0277/0.0206 —
+   0.0001/0.0001/0.0001/0.0000 vs IndicBERTv2's 0.0440/0.0562/0.0277/0.0206,
    roughly 200x to 560x lower on every register, not just Wikipedia. Full
    tables: `benchmarks/bengali-comparison.md`. An earlier pass through this
    comparison, before the measurement bugs in point 8 were found and fixed,
@@ -169,7 +169,7 @@ Kept as an honest record of what went wrong and how it was resolved.
    and §5.
 
 8. **`scripts/compare.py`'s fragmentation counter for our own tokenizer went
-   through three versions before it was actually correct** — kept in full since
+   through three versions before it was actually correct**, kept in full since
    two of the three bugs briefly produced numbers that were reported (and
    corrected) mid-session, and the point of this document is not to have that
    quietly disappear.
@@ -188,7 +188,7 @@ Kept as an honest record of what went wrong and how it was resolved.
      the normalised text, so every offset after the first token was shifted by
      one, manufacturing thousands of false fragmentation hits; (b)
      `encode_tokens()` is a human-readable debug view, not a guaranteed exact
-     reconstruction — for a codepoint genuinely outside this tokenizer's
+     reconstruction, for a codepoint genuinely outside this tokenizer's
      coverage (Greek, Arabic, and Japanese text quoted inside real Bengali
      Wikipedia/news articles all occur in this corpus), the BPE model emits
      the `<unk>` special token, and `encode_tokens()`'s fallback
@@ -198,11 +198,11 @@ Kept as an honest record of what went wrong and how it was resolved.
    - *v3 (current, verified correct):* trims the leading Metaspace space
      before computing offsets, and skips fragmentation counting (only) on
      lines that do not cleanly round-trip (`tok.roundtrip_ok(raw)` is False,
-     i.e. the out-of-coverage case in point 4 — those lines still count
+     i.e. the out-of-coverage case in point 4, those lines still count
      normally toward fertility/STRR/bytes). A hard assertion checks the
      surface reconstruction matches the normalised text exactly on every line
      that remains, so a similar bug cannot silently corrupt a comparison
-     again — it crashes instead. This version is what produced every number
+     again. It crashes instead. This version is what produced every number
      in `benchmarks/bengali-comparison.md`.
 
 9. **One training run (32k, both the original `bn-bpe-32k-v2` and the later
@@ -424,6 +424,126 @@ Kept as an honest record of what went wrong and how it was resolved.
     competitor baselines (Param2-17B, Llama-3.1, Gemma-2 [gated, reports
     unavailable], Mistral-7B, Qwen2.5, GPT-4 cl100k).
 
+19. **A coverage gap in our own benchmark, found and closed: the third
+    Gate G2 baseline had a public release all along and had never been
+    run.** The whitepaper's Gate G2 names three external baselines. Two of
+    them, IndicSuperTokenizer (arXiv:2511.03237) and BengaliBPE
+    (arXiv:2511.05324), were checked directly and honestly reported as
+    having no usable public artifact (point 17 and `scripts/compare.py`'s
+    header comment). The third, **BrahmicTokenizer-131K**
+    (`theschoolofai/BrahmicTokenizer-131K`, Apache-2.0, arXiv:2605.29379),
+    was never checked at all - it was simply never attempted. It does have
+    a real release: it loads as a `PreTrainedTokenizerFast` with working
+    `offset_mapping`, needs no auth token and no `trust_remote_code`, and
+    therefore gets a **full** row here including the conjunct-fragmentation
+    column, not a partial one.
+
+    This is recorded as our own omission, not as an availability problem on
+    their side. Until 2026-08-16 the claim "outperforms existing public
+    tokenizers on our benchmark" was carrying an untested public tokenizer,
+    which is exactly the kind of gap this file exists to record.
+
+    **Measured result (Wikipedia held-out, same 828 lines as every other
+    row): fertility 2.620, STRR 0.154, 6.62 bytes/token, conjunct
+    fragmentation 0.2209.** It does not change the ranking - it lands 8th,
+    a hair behind GPT-4o (2.608) and ahead of mBERT (2.777).
+
+    **The interesting part is that it is Indic-targeted and still lands
+    there.** BrahmicTokenizer is built specifically as an Indic-capable
+    drop-in replacement for OpenAI's o200k, and it carries 131,072 tokens
+    against our 64,000 - more than twice the vocabulary budget. It still
+    fragments 22.1% of Bengali conjuncts, worse than script-blind mBERT's
+    18.0%, because it is still a byte-level BPE with no notion of a
+    grapheme cluster. Targeting Indic scripts in the training mix is not
+    the same as constraining the merge space to the script's own units.
+
+    **The vocabulary asymmetry is stated in both directions, because it
+    cuts both ways.** BrahmicTokenizer has roughly twice our raw budget,
+    which favours it; but it spreads that budget across 12 Brahmic-script
+    languages (~11k effective per language) where ours is spent entirely
+    on Bengali, which favours us. Neither framing alone is honest. The
+    general caveat stands for this whole comparison table: every external
+    baseline in it is multilingual, and a monolingual Bengali tokenizer
+    beating multilingual ones on Bengali is an expected consequence of
+    that design choice, not a surprising discovery. The comparison is
+    still worth making, because these are the tokenizers Bengali text
+    actually gets encoded by in practice.
+
+## BMBT-Hybrid: a failed experiment, removed
+
+BMBT-Hybrid was an attempt to improve fertility by changing WHAT the atomic
+unit is, rather than how BPE merges it. It has been **removed from the
+codebase**: the module, its tests, its three artifacts, its three CLI
+subcommands and its row in `scripts/compare.py` are all gone. It is recorded
+here because the reason it failed is structural and worth not rediscovering.
+
+### The idea, which was sound
+
+A rare akshara spends its whole corpus frequency on one opaque atom. Factoring
+it into an onset atom (the consonant chain) and a tail atom (matra plus
+modifiers) lets the onset accumulate frequency across every vowel it occurs
+with, and the tail across every onset it attaches to. v1 cannot do this at all:
+its atoms are opaque grapheme-cluster strings with no internal boundary to
+split on. Only the akshara grammar knows where to cut. Factoring the very
+highest-frequency syllables is pure overhead, so only the long tail was
+factored and the top `k_fused` were left whole.
+
+At small scale it looked right: 8k vocab on 3,000 Wikipedia articles gave
+fused-only 1.9587, always-factored 1.8700, hybrid k=200 1.8454.
+
+### Why it failed, in four stages
+
+1. **Factoring breaks the conjunct guarantee.** At production scale fertility
+   did improve 1.2-3.8%, but conjunct fragmentation got 20-70x worse
+   (0.18-0.70% against a flat 0.01%). Factoring creates a cut point and BPE is
+   under no obligation to heal it: wherever the learned merges did not happen
+   to re-fuse an onset+tail pair, the boundary survived as a real split.
+
+2. **The obvious fix was unsound.** Baking low-priority merge rules to force
+   re-fusion required predicting the intermediate symbols a left-to-right fold
+   would produce. Real BPE applies whichever adjacent pair has the globally
+   lowest rank first, not left to right, so a high-priority learned merge can
+   fuse a middle pair before the predicted chain reaches it. Caught on a real
+   case, `ঙ্ক্ষ` partially merging to `ঙ্` + `ক্` + `ষ`, before shipping.
+
+3. **The working fix spent the vocabulary the factoring saved.**
+   `_reserve_guaranteed_chunk_vocab` sidestepped merge-order prediction by
+   reserving a dedicated id for every multi-atom chunk's full span, plus an
+   encode-time guard. Fragmentation went to zero, and the first build ballooned
+   to 90,433 effective ids against a requested 64,000.
+
+4. **The fair rerun reversed the result.** Vocab-matched at 64,355 and
+   benchmarked across all four held-out registers, BMBT-Hybrid came out
+   **2-9% WORSE on fertility than v1/BMBT on every register**. The original
+   "1.2-3.8% better" had been measured against the inflated-vocab build.
+
+### Why this is structural, not a tuning failure
+
+Factoring buys compression by sharing sub-akshara pieces. Preserving the
+conjunct guarantee forces a reserved whole-span id for every multi-atom chunk,
+which re-spends exactly what the sharing saved. The two goals are in direct
+tension and the guarantee wins. No value of `k_fused` changes that.
+
+One result survived: fragmentation was genuinely lower than v1/BMBT on every
+register, zero on news.
+
+### What replaced it
+
+The morphology layer reaches the same underlying goal by a different route.
+Instead of factoring aksharas by FREQUENCY and then trying to re-fuse them, it
+factors them only at MORPHEME seams, where the split is linguistically real and
+no re-fusion is wanted. That needs no reservation mechanism, so it does not
+spend the vocabulary, and it keeps conjunct integrity absolute. See
+[`docs/bmbt-morphology.md`](bmbt-morphology.md).
+
+### Housekeeping this closes
+
+`artifacts/bmbt-64k-hybrid` and `artifacts/bmbt-64k-hybrid-fixed` had been
+byte-identical since they were committed: the docstring described a real fix
+between them that was never baked into a regenerated artifact. Both, and
+`bmbt-64k-hybrid-v2`, are now deleted. The long-standing duplicate-artifact
+item is closed by removal rather than by choosing between them.
+
 ## Track A2: corpus dedup and quality filtering (Gate G3)
 
 `bntok/dedup.py`: exact dedup, MinHash-LSH near dedup (`datasketch`), and a
@@ -528,7 +648,7 @@ nukta, vowel, modifiers, ZWJ/ZWNJ flags - a real, tested output, not an
 embedding-layer afterthought) plus a statistical BPE layer over akshara
 atoms, the same architecture as v1 with the atomic unit swapped from
 grapheme cluster to akshara. **Morphology (root/suffix decomposition,
-sandhi) is explicitly NOT built** - deferred, not abandoned. Full
+sandhi) has since been built; see `docs/bmbt-morphology.md`. Full
 architecture: `docs/bmbt-architecture.md`. `bmbt.py` is deliberately
 self-contained: it imports nothing from `atoms.py` or `tokenizer.py`, so
 v1 (`bn-bpe-64k`) is completely unaffected by anything here - verified by

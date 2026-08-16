@@ -97,13 +97,14 @@ from dataclasses import dataclass
 
 import regex as _re
 
+from . import akshara_vec as _akshara_vec
 from . import substrate
 from .errors import NormalizationError
 
 _GRAPHEME = _re.compile(r"\X")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Akshara:
     """One segmented chunk: an akshara, or one grapheme cluster of anything else.
 
@@ -130,27 +131,107 @@ def aksharas(text: str) -> list[Akshara]:
     if not isinstance(text, str):
         raise NormalizationError(f"expected str, got {type(text).__name__}")
 
-    n = len(text)
+    bounds, is_akshara = _scan(text)
     out: list[Akshara] = []
+    start = 0
+    for end, akshara in zip(bounds, is_akshara):
+        out.append(Akshara(text[start:end], "akshara" if akshara else "other", start, end))
+        start = end
+    return out
+
+
+def akshara_bounds(text: str) -> list[int]:
+    """End offsets of each chunk `aksharas` would return, and nothing else.
+
+    Chunk `i` spans `text[bounds[i - 1]:bounds[i]]` (with an implicit 0 before
+    the first). Same scan, same grammar, same boundaries - it just skips
+    building an `Akshara` object per chunk, which profiling showed to be ~38%
+    of `aksharas`' total cost on real Bengali. For callers that only need the
+    surface substrings (BMBT's `encode`, which never reads `kind`/`start`/
+    `end`), this is the cheaper entry point; `aksharas` remains the full,
+    object-returning API and is defined in terms of the same `_scan`, so the
+    two can never disagree about where a boundary is.
+
+    Raises:
+      NormalizationError: if `text` is not a `str`. Never raises otherwise.
+    """
+    if not isinstance(text, str):
+        raise NormalizationError(f"expected str, got {type(text).__name__}")
+    return _scan(text)[0]
+
+
+def akshara_bounds_batch(texts: list[str]) -> list[list[int]]:
+    """`akshara_bounds` over many strings at once, vectorized where possible.
+
+    Returns one list of end offsets per input string, always identical to
+    `[akshara_bounds(t) for t in texts]`. The difference is only speed: when
+    numpy is installed (`pip install "bntok[speed]"`) and every string falls
+    inside the subset `akshara_vec` can prove equivalent to `\\X`, the whole
+    batch is segmented with array operations instead of the per-character
+    Python scan.
+
+    Falls back silently and completely to the scalar scan when numpy is
+    absent, or when the batch contains anything the vectorized model does not
+    handle (other scripts' conjuncts, emoji ZWJ sequences, Hangul, CRLF).
+    The fallback is correctness-preserving by construction: the guard is
+    conservative, so an ineligible batch is never segmented by the fast path.
+
+    Raises:
+      NormalizationError: if any element is not a `str`.
+    """
+    for text in texts:
+        if not isinstance(text, str):
+            raise NormalizationError(f"expected str, got {type(text).__name__}")
+
+    fast = _akshara_vec.bounds_batch(texts)
+    if fast is None:  # numpy absent: whole batch takes the scalar scan
+        return [_scan(text)[0] for text in texts]
+    # Otherwise the batch was partitioned: `None` marks a string the fast path
+    # declined, which the proven scalar scan answers instead.
+    return [
+        _scan(text)[0] if bounds is None else bounds
+        for text, bounds in zip(texts, fast)
+    ]
+
+
+def _scan(text: str) -> tuple[list[int], list[bool]]:
+    """The single left-to-right scan both public entry points share.
+
+    Returns each chunk's end offset and whether it took an akshara branch
+    (Consonant/Vowel) rather than the one-grapheme-cluster fallback. Locals
+    are hoisted out of the loop deliberately: at one iteration per chunk over
+    corpus-scale text, the module-attribute lookups these replace were
+    measurable.
+    """
+    n = len(text)
+    bounds: list[int] = []
+    kinds: list[bool] = []
+    push_bound = bounds.append
+    push_kind = kinds.append
+    consonants = substrate.CONSONANTS
+    vowels = substrate.VOWELS
+    grapheme_match = _GRAPHEME.match
+    scan_tail = _scan_tail
     pos = 0
+
     while pos < n:
-        start = pos
         ch = text[pos]
 
-        if ch in substrate.CONSONANTS:
-            pos = _scan_tail(text, pos + 1, n, may_chain=True)
-            out.append(Akshara(text[start:pos], "akshara", start, pos))
+        if ch in consonants:
+            pos = scan_tail(text, pos + 1, n, True)
+            push_kind(True)
 
-        elif ch in substrate.VOWELS:
-            pos = _scan_tail(text, pos + 1, n, may_chain=False)
-            out.append(Akshara(text[start:pos], "akshara", start, pos))
+        elif ch in vowels:
+            pos = scan_tail(text, pos + 1, n, False)
+            push_kind(True)
 
         else:
-            end = _GRAPHEME.match(text, pos).end()
-            out.append(Akshara(text[start:end], "other", start, end))
-            pos = end
+            pos = grapheme_match(text, pos).end()
+            push_kind(False)
 
-    return out
+        push_bound(pos)
+
+    return bounds, kinds
 
 
 # Characters absorbable into the current chunk purely as decoration, plus
@@ -184,17 +265,31 @@ def _scan_tail(text: str, pos: int, n: int, may_chain: bool) -> int:
     loop tries once more for further trailing decoration. Stops the moment
     an iteration makes no progress.
     """
+    # Hoisted out of the loop: these are module/global lookups otherwise
+    # repeated on every absorbed codepoint. Each `text[pos]` is also read
+    # once into a local rather than re-indexed per test - indexing a
+    # non-Latin-1 character allocates a fresh 1-character str in CPython,
+    # so the repeated reads were real allocations, not just lookups.
+    virama = substrate.VIRAMA
+    link_chars = _LINK_CHARS
+    chain_blockers = _CHAIN_BLOCKERS
+    consonants = substrate.CONSONANTS
+
     while True:
         before = pos
         saw_virama = saw_blocker = False
-        while pos < n and (text[pos] == substrate.VIRAMA or text[pos] in _LINK_CHARS):
-            if text[pos] == substrate.VIRAMA:
+        while pos < n:
+            ch = text[pos]
+            if ch == virama:
                 saw_virama = True
-            elif text[pos] in _CHAIN_BLOCKERS:
-                saw_blocker = True
+            elif ch in link_chars:
+                if ch in chain_blockers:
+                    saw_blocker = True
+            else:
+                break
             pos += 1
 
-        if may_chain and saw_virama and not saw_blocker and pos < n and text[pos] in substrate.CONSONANTS:
+        if may_chain and saw_virama and not saw_blocker and pos < n and text[pos] in consonants:
             pos += 1  # consume the chaining consonant; loop back for its own tail
 
         if pos == before:

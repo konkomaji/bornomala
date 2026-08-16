@@ -14,18 +14,6 @@
       "n_clusters": 39963
     },
     {
-      "model": "Bornomala BMBT (bpe 64000)",
-      "available": true,
-      "tokens": 17245,
-      "words": 11316,
-      "fertility": 1.524,
-      "strr": 0.722,
-      "bytes_per_token": 11.38,
-      "conjunct_fragmentation": 7.5e-05,
-      "n_fragmented": 3,
-      "n_clusters": 39963
-    },
-    {
       "model": "Sarvam-1 (Sarvam AI)",
       "available": true,
       "tokens": 29342,
@@ -50,6 +38,18 @@
       "n_clusters": 40690
     },
     {
+      "model": "BrahmicTokenizer-131K (TSAI)",
+      "available": true,
+      "tokens": 29653,
+      "words": 11316,
+      "fertility": 2.62,
+      "strr": 0.154,
+      "bytes_per_token": 6.62,
+      "conjunct_fragmentation": 0.220865,
+      "n_fragmented": 8987,
+      "n_clusters": 40690
+    },
+    {
       "model": "Krutrim (Krutrim AI)",
       "available": true,
       "tokens": 36291,
@@ -59,6 +59,18 @@
       "bytes_per_token": 5.41,
       "conjunct_fragmentation": 0.285869,
       "n_fragmented": 11632,
+      "n_clusters": 40690
+    },
+    {
+      "model": "Param2-17B (BharatGen)",
+      "available": true,
+      "tokens": 28477,
+      "words": 11316,
+      "fertility": 2.517,
+      "strr": 0.131,
+      "bytes_per_token": 6.89,
+      "conjunct_fragmentation": 0.177341,
+      "n_fragmented": 7216,
       "n_clusters": 40690
     },
     {
@@ -110,93 +122,14 @@
       "n_clusters": 40690
     },
     {
-      "model": "GPT-4o (OpenAI o200k)",
-      "available": true,
-      "tokens": 29514,
-      "words": 11316,
-      "fertility": 2.608,
-      "strr": 0.111,
-      "bytes_per_token": 6.65,
-      "conjunct_fragmentation": null,
-      "n_fragmented": null,
-      "n_clusters": null
-    },
-    {
-      "model": "Bornomala Track A (unigram 64000)",
-      "available": true,
-      "tokens": 17675,
-      "words": 11316,
-      "fertility": 1.562,
-      "strr": 0.702,
-      "bytes_per_token": 11.11,
-      "conjunct_fragmentation": 7.5e-05,
-      "n_fragmented": 3,
-      "n_clusters": 39963
-    },
-    {
-      "model": "Bornomala BMBT (unigram 64000)",
-      "available": true,
-      "tokens": 17675,
-      "words": 11316,
-      "fertility": 1.562,
-      "strr": 0.702,
-      "bytes_per_token": 11.11,
-      "conjunct_fragmentation": 7.5e-05,
-      "n_fragmented": 3,
-      "n_clusters": 39963
-    },
-    {
-      "model": "Bornomala Track A (bpe 64000, India-skewed corpus)",
-      "available": true,
-      "tokens": 17274,
-      "words": 11316,
-      "fertility": 1.527,
-      "strr": 0.719,
-      "bytes_per_token": 11.36,
-      "conjunct_fragmentation": 7.5e-05,
-      "n_fragmented": 3,
-      "n_clusters": 40244
-    },
-    {
-      "model": "Bornomala BMBT (bpe 64000, India-skewed corpus)",
-      "available": true,
-      "tokens": 17271,
-      "words": 11316,
-      "fertility": 1.526,
-      "strr": 0.719,
-      "bytes_per_token": 11.37,
-      "conjunct_fragmentation": 7.5e-05,
-      "n_fragmented": 3,
-      "n_clusters": 40244
-    },
-    {
-      "model": "Param2-17B (BharatGen)",
-      "available": true,
-      "tokens": 28477,
-      "words": 11316,
-      "fertility": 2.517,
-      "strr": 0.131,
-      "bytes_per_token": 6.89,
-      "conjunct_fragmentation": 0.177341,
-      "n_fragmented": 7216,
-      "n_clusters": 40690
-    },
-    {
       "model": "Llama-3.1 (Meta)",
-      "available": true,
-      "tokens": 87409,
-      "words": 11316,
-      "fertility": 7.724,
-      "strr": 0.043,
-      "bytes_per_token": 2.25,
-      "conjunct_fragmentation": 0.456992,
-      "n_fragmented": 18595,
-      "n_clusters": 40690
+      "available": false,
+      "error": "OSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/meta-llama/Llama-3.1-8B.\n401 Client Error. (Request ID: Root=1-6a820fba-3076ff3743b6d66c3df0e2cd;9df24dab-01f2-4139-95db-42e2be4aa00b)\n\nCannot access gated repo for url https://huggingface.co/meta-llama/Llama-3.1-8B/resolve/main/config.json.\nAccess to model meta-llama/Llama-3.1-8B is restricted. You must have access to it and be authenticated to access it. Please log in."
     },
     {
       "model": "Gemma-2 (Google)",
       "available": false,
-      "error": "OSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/google/gemma-2-9b.\n403 Client Error. (Request ID: Root=1-6a74fc4c-79901bb602f86ff33612b3d5;0e590390-a20f-4f1f-a4c2-83fd42559ed0)\n\nCannot access gated repo for url https://huggingface.co/google/gemma-2-9b/resolve/main/config.json.\nAccess to model google/gemma-2-9b is restricted and you are not in the authorized list. Visit https://huggingface.co/google/gemma-2-9b to ask for access."
+      "error": "OSError: You are trying to access a gated repo.\nMake sure to have access to it at https://huggingface.co/google/gemma-2-9b.\n401 Client Error. (Request ID: Root=1-6a820fbb-11282d5846a6a6d416736794;bab9f3e6-ced8-4fad-a2f3-beded1c6e72b)\n\nCannot access gated repo for url https://huggingface.co/google/gemma-2-9b/resolve/main/config.json.\nAccess to model google/gemma-2-9b is restricted. You must have access to it and be authenticated to access it. Please log in."
     },
     {
       "model": "Mistral-7B (Mistral AI)",
@@ -223,6 +156,18 @@
       "n_clusters": 40690
     },
     {
+      "model": "GPT-4o (OpenAI o200k)",
+      "available": true,
+      "tokens": 29514,
+      "words": 11316,
+      "fertility": 2.608,
+      "strr": 0.111,
+      "bytes_per_token": 6.65,
+      "conjunct_fragmentation": null,
+      "n_fragmented": null,
+      "n_clusters": null
+    },
+    {
       "model": "GPT-4 (OpenAI cl100k)",
       "available": true,
       "tokens": 88195,
@@ -233,18 +178,6 @@
       "conjunct_fragmentation": null,
       "n_fragmented": null,
       "n_clusters": null
-    },
-    {
-      "model": "Bornomala BMBT-Hybrid (bpe 64355)",
-      "available": true,
-      "tokens": 18649,
-      "words": 11316,
-      "fertility": 1.648,
-      "strr": 0.679,
-      "bytes_per_token": 10.53,
-      "conjunct_fragmentation": 5e-05,
-      "n_fragmented": 2,
-      "n_clusters": 39963
     }
   ],
   "akshara_v2": {

@@ -41,9 +41,9 @@ on a literary-weighted corpus (Wikisource, Sangraha, Wikipedia, XL-Sum news) at
 a $64{,}000$-token vocabulary, our tokenizer attains a token fertility of
 $1.524$ tokens per word on held-out Bengali Wikipedia text, ahead of AI4Bharat
 IndicBERTv2 ($1.652$), XLM-RoBERTa ($2.464$), Sarvam-1 ($2.593$), GPT-4o
-($2.608$), multilingual BERT ($2.777$), and DeepSeek-V3 ($2.994$), while
-fragmenting only $0.01\%$ of grapheme clusters against $4.4\%$ to $28.5\%$ for
-the baselines. The same ordering holds on three further, disjoint held-out
+($2.608$), BrahmicTokenizer-131K ($2.620$), multilingual BERT ($2.777$), and
+DeepSeek-V3 ($2.994$), while fragmenting only $0.01\%$ of grapheme clusters
+against $4.4\%$ to $28.5\%$ for the baselines. The same ordering holds on three further, disjoint held-out
 registers (literary/formal, general web, and news), not only Wikipedia. Training
 is CPU-only. The tokenizer, the evaluation code, and the raw numbers are
 released under Apache~2.0, and the comparison reproduces with a single command.
@@ -53,7 +53,16 @@ against three real discrepancies found and fixed, rather than discovering
 structure statistically; trained and measured identically to the first, it
 ties rather than beats it, exactly as our own formal analysis of
 constrained byte pair encoding predicts, while additionally exposing a
-tested featural decomposition of every akshara as a first-class output.
+tested featural decomposition of every akshara as a first-class output and a
+morphological layer that aligns token boundaries to Bengali's suffix
+structure. Building that layer required separating two guarantees usually
+treated as one: only $62.4\%$ of Bengali morpheme boundaries coincide with an
+orthographic syllable boundary, because a vowel sign binds to the consonant
+before it while belonging to the suffix after it. Distinguishing conjunct
+integrity from syllable atomicity, and relaxing only the latter at morpheme
+seams, raises reachable boundaries to $100\%$ with no conjunct severed. The
+same work corrected our own fragmentation metric, whose denominator had
+included the $61.0\%$ of grapheme clusters that no tokenizer can divide.
 \end{abstract}
 
 \section{Introduction}
@@ -313,9 +322,10 @@ not the grapheme cluster \texttt{regex} finds. It additionally exposes a
 featural decomposition, \texttt{featurize()}, that resolves every akshara
 into its onset consonants, which of them carry a nukta, its vowel, and its
 trailing modifiers -- a real, tested output of the tokenizer itself, not a
-representation learned later at the embedding layer. Morphology (root and
-suffix decomposition) is not built; this is a partial realisation of the
-v2 design, not the complete one.
+representation learned later at the embedding layer. BMBT additionally
+carries a rule-based morphological layer that finds each word's suffix chain
+and constrains the subword model so that no learned token spans a morpheme
+seam; Section~\ref{sec:morphology} reports the measurement that shaped it.
 
 \paragraph{Measured result: a tie, not an improvement.} We trained BMBT on
 the identical corpus and vocabulary size as v1 and measured it the same
@@ -342,6 +352,80 @@ fertility cost, not a fertility improvement, and we are explicit that we
 have not measured whether that featural structure improves a downstream
 language model's quality per token -- the actual claim the wider design
 proposes and the one still open.
+
+\subsection{Morphological alignment, and an orthographic obstacle}
+\label{sec:morphology}
+
+Bengali inflection is overwhelmingly suffixal, so BMBT's morphological layer
+strips a word's suffix chain right to left with a rule-based inventory
+covering case, plural, classifiers, verb conjugation, derivational suffixes
+and clitics. Each seam becomes a barrier the subword model may not merge
+across. We state in advance that this is expected to make fertility slightly
+\emph{worse}, since morpheme boundaries are a further constraint and the
+argument above applies to any constraint; what it is meant to buy is
+boundaries that fall where Bengali's morphemes fall, which fertility cannot
+see.
+
+Building it surfaced an obstacle we have not seen quantified elsewhere. A
+tokenizer that never splits an orthographic syllable cannot place a boundary
+inside one, and in Bengali a large fraction of morpheme boundaries fall
+exactly there. Measured over $80{,}000$ held-out Wikipedia words and
+$39{,}928$ morpheme boundaries, only $62.4\%$ coincide with an akshara
+boundary. The cause is a single orthographic fact: a matra binds
+orthographically to the consonant preceding it while belonging
+morphologically to the suffix following it, so \emph{bishwer} divides
+morphologically after the consonant cluster but orthographically after the
+cluster \emph{plus} its vowel sign. Case markers, the most frequent suffix
+class in Bengali, are worst affected at $48.8\%$.
+
+Classifying the unreachable boundaries by the kind of split each would
+require separates them into two unequal groups. Roughly a fifth would fall
+inside a virama-joined consonant cluster, and on inspection every one of
+these was the analyser over-stripping rather than a boundary it could not
+reach: a Bengali morpheme does not begin inside a conjunct. Refusing such
+analyses removed $2{,}288$ proposed boundaries, all false positives, which
+raises precision and empties that category. The remaining four fifths fall
+at the seam between a consonant cluster and its matra.
+
+That seam invites a distinction we had previously elided. Never severing a
+conjunct and never splitting an orthographic syllable are different
+guarantees, and the second is strictly stronger. Dividing a cluster from its
+matra leaves a valid consonant cluster and a valid vowel sign, both units
+Bengali literacy names; severing the cluster leaves a consonant with a
+dangling virama, which occurs nowhere in the language. Only the second is
+the failure a conjunct-aware tokenizer exists to prevent. Relaxing the
+stronger constraint exactly at morpheme seams raises reachable boundaries
+from $62.4\%$ to $100\%$ with no conjunct severed, verified over $1{,}468{,}236$
+codepoints: $99{,}945$ seams forced, zero violations. The cost, reported
+rather than absorbed, is that a morphology-enabled artifact divides $3.349\%$
+of grapheme clusters by design, entirely at morpheme seams.
+
+\subsection{A correction to our own fragmentation metric}
+
+This work also forced us to correct the metric used throughout this paper's
+earlier sections and in our published benchmark. Our conjunct fragmentation
+rate counts any divided grapheme cluster rather than only severed conjuncts,
+and it divides by \emph{all} clusters, including the $61.0\%$ that consist of
+a single codepoint and cannot be divided by any tokenizer. The second defect
+inflates every reported figure: by $2.56\times$ over all clusters and
+$1.79\times$ over Bengali ones. AI4Bharat IndicBERTv2's $4.40\%$ on Wikipedia
+is $7.88\%$ of the clusters it could actually have broken.
+
+We now grade each division by an objective structural test rather than
+weighting types by severity, since a weight is a judgement presented as a
+measurement. A division is \emph{destructive} when it strands a virama or
+detaches a nukta, the latter changing letter identity rather than damaging a
+cluster; \emph{modifier} when it detaches a trailing anusvara, visarga or
+chandrabindu; and \emph{onset-rime} when it parts a consonant cluster from
+its matra. The headline figure is destructive divisions over divisible
+clusters.
+
+The correction reorders the field. Under the legacy metric DeepSeek-V3 is the
+worst of the baselines at $24.09\%$ and multilingual BERT is fourth; by
+destructive damage multilingual BERT is worst at $15.45\%$ and DeepSeek-V3
+second at $10.16\%$, because $56.33\%$ of DeepSeek-V3's apparent fragmentation
+is onset-rime and destroys nothing. We retain the legacy field unchanged so
+that previously published numbers remain comparable.
 
 We additionally trained both architectures on the same corpus augmented
 with a large, general-web supplement (CC-100 Bengali), as an ablation. The

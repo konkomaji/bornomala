@@ -33,16 +33,15 @@
 12. [Track D: Speech](#12-track-d-speech)
 13. [Track E: Foundation Model](#13-track-e-foundation-model)
 14. [Evaluation Protocol](#14-evaluation-protocol)
-15. [Infrastructure](#15-infrastructure)
-16. [Roadmap and Phase Gates](#16-roadmap-and-phase-gates)
-17. [Data Ethics, Consent, and Licensing](#17-data-ethics-consent-and-licensing)
-18. [Risk Register](#18-risk-register)
-19. [Publication and Partnership Strategy](#19-publication-and-partnership-strategy)
-20. [Appendix A: Literature](#appendix-a-literature)
-21. [Appendix B: Datasets and Access](#appendix-b-datasets-and-access)
-22. [Appendix C: Tooling](#appendix-c-tooling)
-23. [Appendix D: Organisational Landscape](#appendix-d-organisational-landscape)
-24. [Appendix E: Notation and Glossary](#appendix-e-notation-and-glossary)
+15. [Roadmap and Phase Gates](#15-roadmap-and-phase-gates)
+16. [Data Ethics, Consent, and Licensing](#16-data-ethics-consent-and-licensing)
+17. [Risk Register](#17-risk-register)
+18. [Publication and Partnership Strategy](#18-publication-and-partnership-strategy)
+19. [Appendix A: Literature](#appendix-a-literature)
+20. [Appendix B: Datasets and Access](#appendix-b-datasets-and-access)
+21. [Appendix C: Tooling](#appendix-c-tooling)
+22. [Appendix D: Organisational Landscape](#appendix-d-organisational-landscape)
+23. [Appendix E: Notation and Glossary](#appendix-e-notation-and-glossary)
 
 ---
 
@@ -598,7 +597,7 @@ Also report:
 
 > **Requirement A-1.** Validate glyph shaping by rendering with HarfBuzz and reading the grapheme clusters back. Assert `𝒢(render_and_read(s)) == 𝒢(NFC(s))` for a large sample.
 
-Naive rendering produces incorrect conjuncts. An incorrectly shaped induction corpus silently poisons the vocabulary and every downstream model. This is the **most common failure mode in Indic tokenizer and synthetic-data pipelines** and it is Gate G1 in §16.
+Naive rendering produces incorrect conjuncts. An incorrectly shaped induction corpus silently poisons the vocabulary and every downstream model. This is the **most common failure mode in Indic tokenizer and synthetic-data pipelines** and it is Gate G1 in §15.
 
 ### 9.4 Deliverables
 
@@ -623,7 +622,7 @@ Open state of the art on Bengali document OCR, with explicit coverage of pre-195
 
 ### 10.2 Stage 1 — Synthetic data engine (CPU-only, months 2–6)
 
-This stage runs entirely on the local Ryzen 3 machine and is the highest-leverage stage in the programme.
+This stage runs entirely on commodity CPU hardware and is the highest-leverage stage in the programme.
 
 **Fonts.** Collect ≥ 200 Bengali fonts:
 - Unicode: Kalpurush, SolaimanLipi, Nikosh, Hind Siliguri, Noto Serif Bengali, Noto Sans Bengali, Mukti, Lohit Bengali, Akaash, Siyam Rupali
@@ -999,55 +998,9 @@ A programme that builds its own benchmarks must be unusually disciplined, or the
 
 ---
 
-## 15. Infrastructure
+## 15. Roadmap and Phase Gates
 
-### 15.1 Local hardware verdict
-
-**Stated configuration:** Ryzen 3 CPU, 16 GB RAM, NVIDIA GeForce GT 710 (2 GB VRAM).
-
-> **The GT 710 cannot be used for any part of this programme.**
->
-> It is a Kepler-generation card, compute capability **sm_35**. Current PyTorch CUDA builds compile kernels for **sm_50 and above**. Kepler is unsupported by the shipped wheels. Even were it supported, 2 GB of VRAM does not hold a 2B model's weights at 4-bit quantisation, let alone optimiser state.
->
-> **Treat the machine as CPU-only:** Ryzen 3, 16 GB RAM.
-
-This is **not a limitation for the first twelve months.** Track A and Track B Stage 1 are entirely CPU-bound. They are also the two highest-leverage stages in the programme.
-
-**Never buy training hardware for this.** Rent by the hour. A workstation GPU costs more than the entire programme's compute budget and depreciates.
-
-### 15.2 What runs locally
-
-| Workload | Feasible? | Notes |
-|---|---|---|
-| Corpus ingestion, language ID, dedup, quality filtering | ✅ | MinHash LSH (`datasketch`); fastText `lid`; KenLM perplexity. Storage-bound, not compute-bound. |
-| Tokenizer induction | ✅ | Overnight on 5–20 GB with input sharding |
-| Synthetic OCR line rendering + degradation | ✅ | Embarrassingly parallel. **4 TB drive required.** |
-| Benchmark authoring and annotation tooling | ✅ | Zero compute |
-| Toy from-scratch LM (10–30M params, nanoGPT class) | ✅ (days) | **Only** to validate the tokenizer and dataloader. Not a research result. |
-| Inference of Sarvam-1 2B @ Q4 via llama.cpp | ✅ | Usable speed on 16 GB RAM. Use for eyeballing eval sets. |
-| Any training above ~100M params | ❌ | Rent |
-| VLM fine-tuning | ❌ | Rent 4×–8× A100/H100 |
-
-### 15.3 Rented compute
-
-- **Providers:** RunPod, Vast.ai, Lambda Labs. Spot/community at ~USD 1.50–2.00 per A100-hour.
-- **Indian alternatives, worth pricing:** E2E Networks, Yotta, Jarvislabs. Relevant if applying for **IndiaAI Mission** compute subsidy, which explicitly subsidises GPU access for Indian AI work.
-- **Always checkpoint to object storage.** Spot instances are preempted.
-- **bf16 + FlashAttention.** Track MFU. Below 0.30, fix the dataloader before renting more GPUs.
-
-### 15.4 Data engineering
-
-- Corpus stored as **Parquet or WebDataset shards**, never loose files.
-- **Adopt Setu** (AI4Bharat's Indic cleaning, filtering, deduplication pipeline) rather than reimplementing. `Setu-translate` and `Setu-transliterate` are also available.
-- Deduplication: MinHash LSH, then exact substring dedup.
-- Quality filtering: KenLM perplexity filtering (following the CCNet-derived approach Sangraha uses) plus Gopher-style heuristics adapted for Bengali.
-- **Version every dataset.**
-
----
-
-## 16. Roadmap and Phase Gates
-
-### 16.1 Timeline (months from start)
+### 15.1 Timeline (months from start)
 
 ```
 Track A (Foundations)
@@ -1077,7 +1030,7 @@ Track E (LLM)
 
 **Nothing in the first eight months requires a GPU.**
 
-### 16.2 Phase gates
+### 15.2 Phase gates
 
 | Gate | Month | Question | If NO |
 |---|---|---|---|
@@ -1088,7 +1041,7 @@ Track E (LLM)
 | **G5** | 18 | Has the dialect corpus reached 20,000 parallel pairs and 200 hours of speech? | The moat is not forming. Reassess whether field collection is executable at this scale, or partner. |
 | **G6** | 26 | Does continued pretraining on the recovered literary corpus beat an equal-token web-text control on the cultural-register benchmark? | **RQ3 falsified. This is the central premise.** Publish it. It is a real negative result about Bengali and it redirects the field. |
 
-### 16.3 First 30 days
+### 15.3 First 30 days
 
 1. Render 10,000 Bengali lines through **HarfBuzz** across 20 fonts. Read the grapheme clusters back. Verify conjunct shaping. **If wrong, nothing downstream works.**
 2. Download Bengali Wikipedia and a Sangraha Bengali shard. Run dedup + quality filtering. **Measure the survival ratio on real data.**
@@ -1097,15 +1050,15 @@ Track E (LLM)
 5. Assemble 50 real Bengali page scans, half modern print, half pre-1950 letterpress. Run Tesseract, Surya 2, dots.ocr, Gemini 3 Flash, Claude. Score **GCER after NFC normalisation**. Count hallucinated 4-grams.
 6. **Publish that second table.**
 
-> Between them, those two tables are the entire pitch, made with numbers instead of ambition. Neither requires a GPU. Neither costs money. Both can be produced on a Ryzen 3 in under a month.
+> Between them, those two tables are the entire pitch, made with numbers instead of ambition. Neither requires a GPU. Neither costs money. Both can be produced on commodity CPU hardware in under a month.
 
 ---
 
-## 17. Data Ethics, Consent, and Licensing
+## 16. Data Ethics, Consent, and Licensing
 
 A cultural preservation programme that acquires its data badly is not a preservation programme.
 
-### 17.1 Text and archives
+### 16.1 Text and archives
 
 | Source class | Constraint |
 |---|---|
@@ -1115,7 +1068,7 @@ A cultural preservation programme that acquires its data badly is not a preserva
 | Social media text | **Do not scrape without lawful basis.** Reputational cost outweighs marginal token gain. |
 | Frontier model outputs (annotation bootstrapping) | **Read the provider's terms** on training competing models before building a training set from them. A real constraint. |
 
-### 17.2 Speech and dialect collection
+### 16.2 Speech and dialect collection
 
 | # | Requirement |
 |---|---|
@@ -1125,7 +1078,7 @@ A cultural preservation programme that acquires its data badly is not a preserva
 | 4 | A **withdrawal mechanism.** A speaker who asks to be removed is removed from subsequent releases. |
 | 5 | **Institutional ethics review** if partnering with a university. Which is another reason to partner with one. |
 
-### 17.3 Release licensing
+### 16.3 Release licensing
 
 - Corpora: **CC BY 4.0** or **CC BY-SA 4.0**
 - Models: **Apache 2.0** or permissive equivalent
@@ -1135,7 +1088,7 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 
 ---
 
-## 18. Risk Register
+## 17. Risk Register
 
 | # | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
@@ -1148,13 +1101,13 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 | **R7** | Benchmark self-serving bias: the programme builds a benchmark its own model happens to win | Medium | High (reputational) | **Rule E1.** Release benchmark and held-out split before evaluating own models. Invite external submissions. Report competitor baselines even when they win. |
 | **R8** | Compute cost overrun | Low | **Low** | Compute is < 10 percent of total budget. Even a 3× overrun is immaterial. **This risk is routinely overweighted and should not drive decisions.** |
 | **R9** | Hallucinated OCR output silently poisons the pretraining corpus | Medium | High | Hallucination rate is a first-class metric (§10.6). Corpus admission threshold on per-page hallucination score. Two-model agreement filtering on admitted pages. |
-| **R10** | Ethics or consent failure in dialect collection | Low | **Catastrophic (reputational)** | §17.2. University partnership provides institutional review. Written consent, non-negotiable. |
+| **R10** | Ethics or consent failure in dialect collection | Low | **Catastrophic (reputational)** | §16.2. University partnership provides institutional review. Written consent, non-negotiable. |
 
 ---
 
-## 19. Publication and Partnership Strategy
+## 18. Publication and Partnership Strategy
 
-### 19.1 Publication sequence
+### 18.1 Publication sequence
 
 | Order | Output | Venue class | Why it comes when it does |
 |---|---|---|---|
@@ -1165,7 +1118,7 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 | 5 | Dialect-aware Bengali ASR | Interspeech, ICASSP | Requires the corpus |
 | 6 | Foundation model + cultural benchmark | ACL, NeurIPS Datasets & Benchmarks | Last, and only if earlier results justify it |
 
-### 19.2 Partnership targets, in order of approach
+### 18.2 Partnership targets, in order of approach
 
 | Organisation | Why | What to offer | What to ask for |
 |---|---|---|---|
@@ -1177,7 +1130,7 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 | **Bhashini** | Government DPI for Indian languages | Dialect ASR and OCR models | Distribution, institutional legitimacy |
 | **WB state archives, Bichitra, university libraries** | Custodians of the scanned corpus | **Free digitisation and OCR of their holdings** | Scanning access |
 
-### 19.3 Framing for a funder
+### 18.3 Framing for a funder
 
 > **Do not pitch "a Bengali LLM."** That pitch invites the immediate and correct rebuttal that Sarvam already ships one.
 >
@@ -1185,7 +1138,7 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 >
 > **Total compute across the programme is under USD 10,000.** The budget is people, fieldwork, annotation, and archive access. Say this plainly. A funder who hears an honest, small compute number and a large data-labour number is being told the truth about how this class of work actually goes.
 
-### 19.4 Note on the competitive framing
+### 18.4 Note on the competitive framing
 
 Bangladesh has more Bengali NLP activity than India does, by a wide margin, and it is concentrated on Standard Bangla and Bangladesh regional dialects. India has more Indic ML infrastructure, and it treats Bengali as one language among twenty-two.
 
@@ -1329,7 +1282,7 @@ That is the entire opportunity, **and it is not a competitive opportunity. It is
 | Quality filtering | KenLM perplexity; Gopher rules adapted for Bengali | CPU |
 | Training framework | PyTorch + DeepSpeed ZeRO-3 or FSDP + FlashAttention-2 | bf16 |
 | Fine-tuning | PEFT (LoRA / QLoRA); TRL for DPO | Standard |
-| Inference / on-device | llama.cpp; GGUF Q4 | Local testing on the Ryzen 3; final Android deployment |
+| Inference / on-device | llama.cpp; GGUF Q4 | Local CPU testing; final Android deployment |
 | Compute | RunPod, Vast.ai, Lambda; E2E Networks or Yotta for IndiaAI subsidy | **Always spot. Always checkpoint.** |
 | Experiment tracking | Weights & Biases or MLflow | Non-optional for a multi-year programme |
 | Data format | Parquet or WebDataset shards | Never loose files |

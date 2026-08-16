@@ -1,150 +1,577 @@
-/*
-  Project Bornomala website.
-  Material 3 Expressive, light only. A warm, manuscript-inspired palette distinct
-  from any subproject: deep indigo ink, marigold and terracotta accents, a paper
-  background, and the Bengali matra (headline stroke) used as a design motif.
-  System fonts only: fast, private, offline-friendly.
-*/
+/* ==========================================================================
+   Project Bornomala
+   Design system: Apple-style restraint, Material 3 Expressive shape and motion.
+   Mobile-first. Light theme only. No emoji, no decorative iconography:
+   hierarchy is carried by type, space, and a single accent.
+   ========================================================================== */
 
+/* --- tokens --------------------------------------------------------------- */
 :root {
-  --ink:        #2A2350;   /* deep indigo text */
-  --primary:    #3A2E8C;
-  --primary-2:  #5B45C7;
-  --marigold:   #F4A400;
-  --terracotta: #E4572E;
-  --teal:       #00A9A5;
-  --rose:       #E0468A;
+  /* Near-monochrome ground with one accent. The indigo is the Bornomala
+     identity colour; the amber appears only on data that needs emphasis. */
+  --ink:          #14121C;
+  --ink-2:        #3D3852;
+  --muted:        #6B6682;
+  --faint:        #9793A8;
 
-  --paper:      #FBFAF6;   /* warm off-white */
-  --surface:    #FFFFFF;
-  --surface-2:  #F4F1FB;
-  --surface-warm:#FBF4E6;
-  --on-surface: #2A2350;
-  --muted:      #5A5680;
-  --outline:    #E4DEF5;
-  --outline-warm:#F0E4CC;
+  --paper:        #FCFCFD;
+  --surface:      #FFFFFF;
+  --surface-2:    #F6F5F9;
+  --surface-3:    #EFEDF5;
 
-  --good:#1a8f4c; --warn:#C77700; --bad:#C6362F;
+  --accent:       #4B3BC4;
+  --accent-press: #3A2E9E;
+  --accent-tint:  #EEEBFA;
+  --amber:        #B26A00;
+  --amber-tint:   #FBF2E2;
 
-  --r-sm:12px; --r-md:20px; --r-lg:30px; --r-xl:44px; --r-pill:999px;
-  --spring:cubic-bezier(.2,.8,.2,1);
-  --elev-1:0 1px 2px rgba(58,46,140,.06), 0 6px 20px rgba(58,46,140,.07);
-  --elev-2:0 10px 34px rgba(58,46,140,.14);
-  --maxw:1140px;
+  --good:         #17703F;
+  --bad:          #B3332C;
+
+  --outline:      #E6E4EE;
+  --outline-2:    #D6D3E2;
+
+  /* M3 Expressive shape scale */
+  --r-xs: 10px;
+  --r-sm: 16px;
+  --r-md: 22px;
+  --r-lg: 30px;
+  --r-xl: 40px;
+  --r-full: 999px;
+
+  /* Motion: a spring for entrances, a quick ease for state */
+  --spring: cubic-bezier(.22, 1, .36, 1);
+  --swift:  cubic-bezier(.4, 0, .2, 1);
+
+  /* Elevation, kept deliberately soft */
+  --e1: 0 1px 2px rgba(20,18,28,.04), 0 4px 16px rgba(20,18,28,.04);
+  --e2: 0 2px 6px rgba(20,18,28,.06), 0 16px 40px rgba(20,18,28,.08);
+
+  --maxw: 1120px;
+  --gutter: clamp(20px, 5vw, 40px);
+
+  /* Fluid type scale */
+  --t-display: clamp(2.5rem, 1.4rem + 5.2vw, 4.75rem);
+  --t-h2:      clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem);
+  --t-h3:      clamp(1.075rem, 1rem + .35vw, 1.25rem);
+  --t-lede:    clamp(1.075rem, 1rem + .55vw, 1.3rem);
+  --t-body:    clamp(1rem, .97rem + .16vw, 1.075rem);
+  --t-small:   .9rem;
+  --t-eyebrow: .78rem;
 }
 
-* { box-sizing:border-box; }
-html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+/* --- reset ---------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
 body {
-  margin:0; color:var(--on-surface); line-height:1.65;
-  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Bengali",sans-serif;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--t-body);
+  line-height: 1.62;
+  letter-spacing: -0.002em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+:focus-visible {
+  outline: 2.5px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Bengali text: let the system pick a proper Bengali face and give it room. */
+.bn {
+  font-family: "Noto Serif Bengali", "Kalpurush", "SolaimanLipi",
+               "Shonar Bangla", "Noto Sans Bengali", serif;
+  font-size: 1.06em;      /* Bengali sits optically small beside Poppins */
+  line-height: 1.9;
+  letter-spacing: 0;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
+}
+/* In a heading the script must follow the heading's own leading, or a single
+   Bengali word silently doubles the gap between display lines. */
+h1 .bn, h2 .bn, h3 .bn, .brand .bn { line-height: inherit; }
+h1 .bn, h2 .bn { line-height: 1.15; }
+
+/* --- layout --------------------------------------------------------------- */
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section { padding-block: clamp(56px, 9vw, 112px); }
+.section + .section { border-top: 1px solid var(--outline); }
+
+/* --- typography ----------------------------------------------------------- */
+h1, h2, h3 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--t-display); font-weight: 600; letter-spacing: -0.032em; }
+h2 { font-size: var(--t-h2); }
+h3 { font-size: var(--t-h3); letter-spacing: -0.018em; line-height: 1.32; }
+
+p { margin: 0 0 1.05em; }
+p:last-child { margin-bottom: 0; }
+
+.eyebrow {
+  margin: 0 0 14px;
+  font-size: var(--t-eyebrow);
+  font-weight: 600;
+  letter-spacing: .085em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.lede {
+  font-size: var(--t-lede);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 62ch;
+  letter-spacing: -0.012em;
+}
+
+.quote {
+  font-size: clamp(1.25rem, 1rem + 1.2vw, 1.75rem);
+  line-height: 1.35;
+  letter-spacing: -0.024em;
+  font-weight: 550;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* The matra: a single hairline that echoes the Bengali headline stroke.
+   It is the only ornament on the page, and it earns its place by carrying
+   the script's own visual signature. */
+.matra {
+  height: 2px;
+  width: 68px;
+  margin: 22px 0 24px;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--accent), var(--accent) 60%, transparent);
+}
+
+.grad { color: var(--accent); }
+
+/* --- app bar -------------------------------------------------------------- */
+.appbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--outline);
+}
+.appbar .container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 60px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: .975rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.brand:hover { text-decoration: none; }
+.brand img { width: 26px; height: 26px; }
+.brand .bn { font-size: .9em; color: var(--muted); }
+
+.nav { display: none; margin-inline-start: auto; gap: 2px; }
+.nav a {
+  white-space: nowrap;
+  padding: 8px 10px;
+  border-radius: var(--r-full);
+  font-size: .875rem;
+  font-weight: 450;
+  color: var(--ink-2);
+  transition: background-color .18s var(--swift), color .18s var(--swift);
+}
+.nav a:hover { background: var(--surface-3); color: var(--ink); text-decoration: none; }
+
+.nav-toggle { margin-inline-start: auto; }
+
+/* --- buttons -------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  text-align: center;
+  transition: transform .2s var(--spring), background-color .18s var(--swift),
+              border-color .18s var(--swift), box-shadow .18s var(--swift);
+}
+.btn:hover { text-decoration: none; }
+.btn:active { transform: scale(.972); }
+
+.btn-primary { background: var(--accent); color: #fff; box-shadow: var(--e1); }
+.btn-primary:hover { background: var(--accent-press); box-shadow: var(--e2); }
+
+.btn-outline { background: transparent; color: var(--ink); border-color: var(--outline-2); }
+.btn-outline:hover { background: var(--surface-2); border-color: var(--ink-2); }
+
+.btn-warm { background: var(--surface-2); color: var(--ink); border-color: var(--outline); }
+.btn-warm:hover { background: var(--surface-3); }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+
+/* --- hero ----------------------------------------------------------------- */
+.hero { padding-block: clamp(48px, 8vw, 104px) clamp(52px, 8vw, 96px); }
+.hero-grid { display: grid; gap: clamp(32px, 6vw, 64px); align-items: center; }
+.hero-art { display: none; }
+.hero-art img { width: min(300px, 62%); margin-inline: auto; opacity: .96; }
+
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+.pill {
+  padding: 7px 15px;
+  border-radius: var(--r-full);
+  background: var(--surface-2);
+  border: 1px solid var(--outline);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+}
+.pill b { color: var(--ink); font-weight: 600; }
+
+/* --- cards ---------------------------------------------------------------- */
+.cards, .two, .contribute {
+  display: grid;
+  gap: clamp(14px, 2.2vw, 20px);
+  grid-template-columns: 1fr;
+}
+/* auto-fit rather than a fixed count: four 240px columns at the desktop max
+   width squeeze body copy to three or four words a line. */
+.cards, .contribute { grid-template-columns: repeat(auto-fit, minmax(252px, 1fr)); }
+
+.card, .who {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-md);
+  padding: clamp(22px, 3.4vw, 30px);
+  transition: transform .32s var(--spring), box-shadow .32s var(--spring),
+              border-color .32s var(--spring);
+}
+.card:hover, .who:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--e2);
+  border-color: var(--outline-2);
+}
+.card h3, .who h3 { margin-bottom: 9px; }
+.card p, .who p { color: var(--muted); font-size: .985rem; margin: 0; }
+
+/* Tonal variant. M3 surface layering rather than a second hue. */
+.card.warm { background: var(--surface-2); border-color: transparent; }
+.card.warm:hover { background: var(--surface); border-color: var(--outline-2); }
+
+/* --- stats ---------------------------------------------------------------- */
+.stats {
+  display: grid;
+  gap: clamp(14px, 2.2vw, 20px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--r-sm);
+  padding: clamp(18px, 2.8vw, 26px);
+}
+.stat .big {
+  font-size: clamp(1.9rem, 1.3rem + 2.4vw, 3rem);
+  font-weight: 660;
+  letter-spacing: -0.042em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.stat .big.warm { color: var(--amber); }
+.stat .lbl { margin-top: 10px; font-size: var(--t-small); color: var(--muted); line-height: 1.45; }
+
+/* --- tables --------------------------------------------------------------- */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--outline);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+table { width: 100%; border-collapse: collapse; font-size: .93rem; min-width: 520px; }
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2);
+  text-align: left;
+  font-weight: 600;
+  font-size: var(--t-small);
+  letter-spacing: -0.005em;
+  color: var(--ink-2);
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--outline);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--outline);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.ours td { background: var(--accent-tint); color: var(--ink); font-weight: 550; }
+td.win { color: var(--good); font-weight: 650; }
+td.bad { color: var(--bad); }
+
+/* --- note ----------------------------------------------------------------- */
+.note {
+  background: var(--surface-2);
+  border: 1px solid var(--outline);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-xs);
+  padding: clamp(16px, 2.4vw, 22px);
+  font-size: .935rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.note b { color: var(--ink); }
+
+code {
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .88em;
+  background: var(--surface-3);
+  padding: .15em .42em;
+  border-radius: 6px;
+  color: var(--ink-2);
+}
+
+/* --- FAQ ------------------------------------------------------------------ */
+.faq {
+  border-bottom: 1px solid var(--outline);
+  padding: 4px 0;
+}
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 18px 40px 18px 0;
+  font-weight: 550;
+  font-size: 1.05rem;
+  letter-spacing: -0.016em;
+  color: var(--ink);
+  position: relative;
+  transition: color .18s var(--swift);
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary:hover { color: var(--accent); }
+.faq summary::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--faint);
+  border-bottom: 2px solid var(--faint);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform .3s var(--spring);
+}
+.faq[open] summary::after { transform: translateY(-25%) rotate(-135deg); }
+.faq p { padding-bottom: 20px; color: var(--muted); max-width: 68ch; }
+
+/* --- footer --------------------------------------------------------------- */
+footer.site {
+  padding-block: clamp(40px, 6vw, 64px);
+  border-top: 1px solid var(--outline);
+  background: var(--surface-2);
+}
+footer.site .container { display: grid; gap: 14px; }
+footer.site .brand { font-size: 1rem; }
+footer.site .muted { color: var(--muted); font-size: var(--t-small); max-width: 60ch; }
+footer.site a { color: var(--ink-2); font-size: var(--t-small); }
+footer.site a:hover { color: var(--accent); }
+
+/* --- responsive ----------------------------------------------------------- */
+@media (min-width: 600px) {
+  .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  footer.site .container {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .nav { display: flex; }
+  .nav-toggle { display: none; }
+  .two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 48px); }
+  .hero-grid { grid-template-columns: 1.35fr .65fr; }
+  .hero-art { display: block; }
+  /* .cards and .contribute size themselves via auto-fit above. */
+}
+
+/* Mobile nav: the sheet only exists below the desktop breakpoint. */
+@media (max-width: 999px) {
+  .nav {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px var(--gutter) 18px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--outline);
+    box-shadow: var(--e2);
+  }
+  .nav.open { display: flex; }
+  .nav a { padding: 12px 14px; border-radius: var(--r-xs); font-size: 1rem; }
+  .appbar .container { position: relative; }
+  table { font-size: .88rem; }
+}
+
+@media print {
+  .appbar, .nav-toggle, .btn { display: none; }
+  body { background: #fff; }
+  .section + .section { border-top: 1px solid #ccc; }
+}
+
+/* --- utilities the markup relies on --------------------------------------- */
+.two-up { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+/* Vertical rhythm after a heading block. Replaces the inline margins the
+   markup used to carry, so spacing is one decision rather than thirty. */
+.section > .container > .stats,
+.section > .container > .cards,
+.section > .container > .two,
+.section > .container > .contribute,
+.section > .container > .table-wrap,
+.section > .container > .note,
+.section > .container > .faq-list { margin-top: clamp(24px, 3.6vw, 36px); }
+
+.section > .container > .note + h3 { margin-top: clamp(32px, 5vw, 48px); }
+.section > .container > .table-wrap + .lede,
+.section > .container > .table-wrap + .note,
+.section > .container > .cards + p,
+.section > .container > .note + p { margin-top: clamp(18px, 2.6vw, 26px); }
+.faq-list { display: block; }
+
+/* Credit line: reads as text until you look at it, then it is clearly a link. */
+.credit {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 1px solid var(--outline-2);
+  transition: color .18s var(--swift), border-color .18s var(--swift);
+}
+.credit:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+
+/* ==========================================================================
+   Section presence
+   Each section needs to announce itself without shouting. Alternating tonal
+   grounds do the work a border cannot, and the accent appears only where a
+   number or a claim has earned it.
+   ========================================================================== */
+
+/* Alternating ground. Tone, not colour: the hues are the same family, so the
+   page still reads as one surface rather than a stack of coloured bands. */
+.section:nth-of-type(even) { background: var(--surface-2); }
+.section:nth-of-type(even) .card { background: var(--surface); border-color: var(--outline); }
+.section:nth-of-type(even) .card.warm { background: var(--surface); }
+.section:nth-of-type(even) .stat,
+.section:nth-of-type(even) .table-wrap,
+.section:nth-of-type(even) .note { background: var(--surface); }
+.section + .section { border-top: 0; }
+
+/* The hero sits on a soft wash that fades out, so the fold has depth without
+   a hard edge. */
+.hero {
   background:
-    radial-gradient(1100px 520px at 108% -8%, #EFE9FF 0%, transparent 60%),
-    radial-gradient(900px 460px at -8% 4%, #FDF1D8 0%, transparent 55%),
-    var(--paper);
+    radial-gradient(1100px 520px at 12% -10%, var(--accent-tint) 0%, transparent 62%),
+    radial-gradient(760px 420px at 92% 0%, var(--amber-tint) 0%, transparent 58%);
 }
-h1,h2,h3 { line-height:1.12; letter-spacing:-0.02em; color:var(--ink); margin:0 0 .4em; }
-h2 { font-size:clamp(1.7rem,1.1rem+2.4vw,2.7rem); }
-h3 { font-size:1.25rem; }
-p { color:var(--muted); }
-a { color:var(--primary); text-decoration:none; }
-a:hover { text-decoration:underline; }
-code { background:var(--surface-2); padding:.1em .4em; border-radius:8px; font-family:ui-monospace,Consolas,monospace; font-size:.9em; }
-:focus-visible { outline:3px solid var(--primary); outline-offset:3px; border-radius:8px; }
 
-.container { max-width:var(--maxw); margin:0 auto; padding:0 22px; }
-.section { padding:clamp(52px,6.5vw,104px) 0; }
-.eyebrow { color:var(--terracotta); font-weight:800; letter-spacing:.06em; text-transform:uppercase; font-size:.78rem; }
-.lede { font-size:1.16rem; max-width:64ch; color:#443F6B; }
-
-/* matra: the Bengali headline stroke, our divider motif */
-.matra { height:6px; width:96px; border-radius:6px;
-  background:linear-gradient(90deg,var(--marigold),var(--terracotta)); margin:14px 0 22px; }
-.matra.center { margin-left:auto; margin-right:auto; }
-
-/* app bar */
-.appbar { position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.4) blur(10px);
-  background:rgba(251,250,246,.82); border-bottom:1px solid var(--outline-warm); }
-.appbar .container { display:flex; align-items:center; gap:14px; height:66px; }
-.brand { display:flex; align-items:center; gap:10px; font-weight:800; color:var(--ink); }
-.brand img { width:36px; height:36px; }
-.brand .bn { font-family:"Noto Serif Bengali",serif; color:var(--terracotta); font-weight:700; }
-.nav { margin-left:auto; display:flex; gap:4px; }
-.nav a { padding:9px 15px; border-radius:var(--r-pill); color:var(--muted); font-weight:600; }
-.nav a:hover { background:var(--surface-2); text-decoration:none; }
-.nav-toggle { display:none; margin-left:auto; }
-
-.btn { display:inline-flex; align-items:center; gap:8px; padding:13px 24px; border-radius:var(--r-pill);
-  border:none; cursor:pointer; font:inherit; font-weight:800; transition:transform .15s var(--spring),box-shadow .2s; }
-.btn:active { transform:scale(.97); }
-.btn-primary { background:var(--primary); color:#fff; box-shadow:var(--elev-1); }
-.btn-primary:hover { box-shadow:var(--elev-2); text-decoration:none; }
-.btn-warm { background:linear-gradient(90deg,var(--marigold),var(--terracotta)); color:#3a2306; }
-.btn-warm:hover { text-decoration:none; filter:brightness(1.03); }
-.btn-outline { background:transparent; color:var(--primary); box-shadow:inset 0 0 0 1.6px var(--outline); }
-
-/* hero */
-.hero { padding-top:clamp(44px,5vw,80px); }
-.hero-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:44px; align-items:center; }
-.hero h1 { font-size:clamp(2.3rem,1.2rem+4.6vw,4.2rem); }
-.hero h1 .bn { font-family:"Noto Serif Bengali",serif; background:linear-gradient(100deg,var(--primary),var(--terracotta)); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.hero .grad { background:linear-gradient(100deg,var(--primary),var(--rose) 60%,var(--terracotta)); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.pills { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
-.pill { background:var(--surface); box-shadow:var(--elev-1); border-radius:var(--r-pill); padding:9px 17px; font-weight:700; font-size:.9rem; }
-.pill b { color:var(--terracotta); }
-.hero-art { display:grid; place-items:center; }
-.hero-art img { width:100%; max-width:340px; filter:drop-shadow(0 22px 42px rgba(58,46,140,.2)); }
-
-/* cards */
-.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:22px; }
-.card { background:var(--surface); border-radius:var(--r-lg); padding:26px; box-shadow:var(--elev-1); border:1px solid var(--outline); transition:transform .2s var(--spring),box-shadow .2s; }
-.card:hover { transform:translateY(-5px); box-shadow:var(--elev-2); }
-.card.warm { background:var(--surface-warm); border-color:var(--outline-warm); }
-.card .ic { font-size:1.9rem; }
-.card h3 { margin:.5em 0 .3em; }
-.card p { margin:0; font-size:.97rem; }
-
-/* stat row */
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:20px; }
-.stat { background:var(--surface); border-radius:var(--r-lg); padding:26px; box-shadow:var(--elev-1); border:1px solid var(--outline); text-align:center; }
-.stat .big { font-size:2.4rem; font-weight:900; color:var(--primary); letter-spacing:-.02em; }
-.stat .big.warm { color:var(--terracotta); }
-.stat .lbl { color:var(--muted); font-size:.92rem; margin-top:4px; }
-
-/* table */
-.table-wrap { overflow-x:auto; border-radius:var(--r-lg); border:1px solid var(--outline); background:var(--surface); box-shadow:var(--elev-1); }
-table { border-collapse:collapse; width:100%; min-width:640px; }
-th,td { padding:13px 16px; text-align:right; border-bottom:1px solid var(--outline); white-space:nowrap; }
-th:first-child,td:first-child { text-align:left; position:sticky; left:0; background:var(--surface); }
-thead th { background:var(--surface-2); font-weight:800; color:var(--ink); }
-tbody tr.ours td { background:var(--surface-warm); font-weight:700; }
-tbody tr:hover td { filter:brightness(.99); }
-.win { color:var(--good); font-weight:800; }
-.bad { color:var(--bad); font-weight:700; }
-
-/* problem list / callouts */
-.two { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-.note { background:var(--surface-warm); border-left:5px solid var(--terracotta); border-radius:var(--r-sm); padding:16px 20px; color:#5a4a2a; }
-.quote { font-size:1.25rem; font-weight:700; color:var(--ink); border-left:5px solid var(--marigold); padding-left:18px; margin:0; }
-
-details.faq { background:var(--surface); border-radius:var(--r-md); padding:2px 22px; box-shadow:var(--elev-1); border:1px solid var(--outline); margin-bottom:12px; }
-details.faq summary { cursor:pointer; font-weight:800; padding:16px 0; list-style:none; color:var(--ink); }
-details.faq summary::-webkit-details-marker { display:none; }
-details.faq[open] summary { color:var(--terracotta); }
-
-.contribute { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
-.who { background:var(--surface); border-radius:var(--r-md); padding:20px; border:1px solid var(--outline); box-shadow:var(--elev-1); }
-.who .ic { font-size:1.5rem; }
-
-footer.site { background:var(--surface); border-top:1px solid var(--outline-warm); padding:44px 0; margin-top:36px; }
-footer.site .container { display:flex; flex-wrap:wrap; gap:18px; justify-content:space-between; align-items:center; }
-footer.site .muted { color:var(--muted); font-size:.9rem; }
-
-@media (max-width:880px){
-  .hero-grid,.two{ grid-template-columns:1fr; }
-  .hero-art{ order:-1; }
-  .nav{ display:none; position:absolute; top:66px; left:0; right:0; flex-direction:column; background:var(--surface); padding:12px; box-shadow:var(--elev-2); }
-  .nav.open{ display:flex; }
-  .nav-toggle{ display:inline-flex; }
+/* Eyebrow gets a leading tick, so the eye finds the start of every section. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
 }
-@media (prefers-reduced-motion:reduce){ *{ transition:none!important; scroll-behavior:auto; } }
+.eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 2px;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  flex: none;
+}
+
+/* Statistics are the page's loudest element by design: they are the argument. */
+.stat {
+  position: relative;
+  overflow: hidden;
+  transition: transform .32s var(--spring), box-shadow .32s var(--spring);
+}
+.stat::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+  opacity: .8;
+}
+.stat:hover { transform: translateY(-3px); box-shadow: var(--e2); }
+
+/* A claim worth stopping on. Used sparingly, on the sentence that carries the
+   section, not on every bold phrase. */
+.mark {
+  background: linear-gradient(180deg, transparent 58%, var(--accent-tint) 58%);
+  padding: 0 .12em;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Our row in a results table should be unmistakable at a glance. */
+tbody tr.ours td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* Headline figures inside prose. */
+.figure {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section heads breathe more now that the borders are gone. */
+.section > .container > h2 { max-width: 26ch; }
+.section > .container > h2 + .matra { margin-top: 20px; }

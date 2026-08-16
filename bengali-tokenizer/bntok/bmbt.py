@@ -29,9 +29,38 @@ What BMBT adds regardless of the fertility outcome is `featurize()`: for
 each akshara, its actual structural decomposition (onset consonants, which
 carry a nukta, the vowel, trailing modifiers, whether a ZWJ/ZWNJ occurred) -
 a real, tested, usable output of the tokenizer itself, not an
-embedding-layer afterthought. Morphology (root/suffix decomposition, v2
-roadmap step 5's other half) is explicitly NOT built yet; this is a
-grammar + featural + statistical-fallback tokenizer only.
+embedding-layer afterthought.
+
+Morphology (v2 roadmap step 5's other half) is now built, opt-in via
+`morphology=True`. `morphology.py` finds the suffix chain, and training
+inserts a merge barrier at each morpheme seam so BPE cannot learn a token
+spanning one. Two things about it are stated up front rather than discovered
+in the results:
+
+  * it is expected to make fertility slightly WORSE, because FORMAL_SPEC.md's
+    OPTIMAL proof applies to any additional constraint, and morpheme
+    boundaries are additional constraints. What it buys is boundaries that
+    fall where Bengali's morphemes fall, which fertility cannot see;
+  * it reaches 100% of Bengali morpheme boundaries, but only after separating
+    two guarantees this module had been treating as one. CONJUNCT INTEGRITY
+    (never sever a virama-joined consonant cluster) is the guarantee that
+    matters and stays absolute. AKSHARA ATOMICITY (never part a consonant
+    cluster from its matra) was an implementation choice strictly stronger
+    than that, and it was costing 30.4% of all morpheme boundaries, because a
+    matra binds orthographically to the consonant before it while belonging
+    morphologically to the suffix after it.
+
+    Under akshara atomicity only 62.4% of seams were placeable. Refusing
+    analyses that would cut inside a conjunct (`morphology.cuts_inside_conjunct`)
+    removed the rest as false positives rather than as unreachable seams, and
+    factoring an akshara at the onset/rime seam where a morpheme boundary falls
+    there covers the remainder: 100% reachable, zero conjunct-integrity
+    violations, verified on 1.47M codepoints of held-out text.
+
+    The cost is real and reported, not hidden: a morphology-enabled artifact
+    splits 3.349% of grapheme clusters by design, all at morpheme seams, while
+    its conjunct fragmentation stays exactly zero. `evaluate.py` reports both
+    numbers separately. Full measurement: `docs/bmbt-morphology.md`.
 
 This module is deliberately self-contained: it imports nothing from
 atoms.py or tokenizer.py (v1's implementation), only from errors.py,
@@ -57,7 +86,7 @@ from dataclasses import dataclass
 
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
-from .akshara import Akshara, aksharas
+from .akshara import Akshara, akshara_bounds, akshara_bounds_batch, aksharas
 from .errors import (
     BnTokError,
     ConfigError,
@@ -69,6 +98,7 @@ from .errors import (
     VocabSizeError,
     require,
 )
+from .morphology import morph_bounds
 from .normalize import normalize
 from .substrate import (
     CONSONANTS,
@@ -84,6 +114,11 @@ from .substrate import (
 
 UNK_TOKEN = "<unk>"
 _SPECIALS = ["<pad>", "<unk>", "<s>", "</s>", "<mask>"]
+
+# Lines segmented per vectorized call during atom-map training. Large enough
+# that numpy's per-call setup is amortised, small enough that a streamed
+# corpus is never fully materialised in memory.
+_TRAIN_BATCH_LINES = 4096
 
 
 class FeaturizeError(BnTokError):
@@ -101,6 +136,28 @@ class FeaturizeError(BnTokError):
 # constant costs nothing and removes the question entirely.
 _PUA_RANGES = [(0xF0000, 0xFFFFD), (0x100000, 0x10FFFD)]
 _UNK_ATOM = chr(0xF8FE)
+
+# Morpheme-boundary marker. Never a token and never part of the vocabulary: the
+# pre-tokenizer splits on it and discards it, so it exists only to stop BPE
+# merging across a morpheme seam. Because it is removed before training and
+# before encoding, decode is unaffected and round-trip is unchanged.
+_MORPH_MARKER = chr(0xF8FD)
+
+
+def _morph_seams(nfc_text: str) -> frozenset[int]:
+    """Morpheme seam offsets in `nfc_text`, word by word.
+
+    Shared by `AksharaAtomMap.build` and `AksharaAtomMap._morph_barriers` so the
+    atom inventory is built over exactly the pieces encoding will later produce.
+    """
+    seams: set[int] = set()
+    base = 0
+    for word in nfc_text.split(" "):
+        if word:
+            for cut in morph_bounds(word):
+                seams.add(base + cut)
+        base += len(word) + 1
+    return frozenset(seams)
 
 
 def _pua_generator():
@@ -126,8 +183,10 @@ class AksharaAtomMap:
     specifically.
     """
 
-    def __init__(self, cluster_to_atom: dict[str, str], min_freq: int = 1):
+    def __init__(self, cluster_to_atom: dict[str, str], min_freq: int = 1,
+                 morphology: bool = False):
         self.cluster_to_atom = cluster_to_atom
+        self.morphology = morphology
         self.atom_to_cluster = {a: c for c, a in cluster_to_atom.items()}
         self.min_freq = min_freq
         self.atom_to_cluster[_UNK_ATOM] = ""  # UNK decodes to nothing (lossy, rare)
@@ -139,6 +198,7 @@ class AksharaAtomMap:
         corpus: Iterable[str],
         min_freq: int = 2,
         guarantee: Iterable[str] | None = None,
+        morphology: bool = False,
     ) -> AksharaAtomMap:
         """Build an akshara atom map from a corpus of NFC-normalised strings.
 
@@ -154,19 +214,43 @@ class AksharaAtomMap:
         chunk_freq: Counter[str] = Counter()
         codepoints: set[str] = set()
         seen_any = False
+
+        def _absorb(batch: list[str]) -> bool:
+            """Count every chunk in `batch`. Returns whether anything counted."""
+            any_text = False
+            for line, bounds in zip(batch, akshara_bounds_batch(batch)):
+                if morphology:
+                    seams = _morph_seams(line)
+                    if seams:
+                        bounds = sorted(set(bounds) | seams)
+                start = 0
+                for end in bounds:
+                    text = line[start:end]
+                    start = end
+                    if text.isspace():
+                        continue  # whitespace stays literal (carries word boundaries)
+                    any_text = True
+                    chunk_freq[text] += 1
+                    if len(text) > 1:
+                        codepoints.update(text)
+                    else:
+                        codepoints.add(text)
+            return any_text
+
+        # Buffered rather than line-at-a-time: the vectorized backend's array
+        # setup dominates on single short lines, so segmenting a block at once
+        # is what actually makes it faster than the scalar scan. `corpus` may
+        # be a one-shot stream, so it is consumed exactly once.
+        batch: list[str] = []
         for line in corpus:
             if not isinstance(line, str) or not line:
                 continue
-            for chunk in aksharas(line):
-                text = chunk.text
-                if text.isspace():
-                    continue  # whitespace stays literal (carries word boundaries)
-                seen_any = True
-                chunk_freq[text] += 1
-                if len(text) > 1:
-                    codepoints.update(text)
-                else:
-                    codepoints.add(text)
+            batch.append(line)
+            if len(batch) >= _TRAIN_BATCH_LINES:
+                seen_any = _absorb(batch) or seen_any
+                batch.clear()
+        if batch:
+            seen_any = _absorb(batch) or seen_any
 
         if not seen_any:
             raise EmptyCorpusError("akshara atom map: corpus contained no usable text")
@@ -195,25 +279,75 @@ class AksharaAtomMap:
             if len(text) > 1 and freq >= min_freq and text not in cluster_to_atom:
                 cluster_to_atom[text] = _next_atom()
 
-        return cls(cluster_to_atom, min_freq=min_freq)
+        return cls(cluster_to_atom, min_freq=min_freq, morphology=morphology)
 
     # ---- encode / decode ----
     def encode(self, nfc_text: str) -> str:
         """Map NFC text to a string of atoms (one atom per known chunk,
         else one atom per constituent codepoint, else UNK)."""
         out = []
-        for chunk in aksharas(nfc_text):
-            text = chunk.text
+        # `akshara_bounds` rather than `aksharas`: this loop only ever needs
+        # each chunk's surface text, never its kind or offsets, so there is
+        # no reason to pay for an Akshara object per chunk. Same scan, same
+        # boundaries - see akshara.py's `_scan`.
+        get = self.cluster_to_atom.get
+        barriers = self._morph_barriers(nfc_text) if self.morphology else frozenset()
+        # A barrier may fall strictly INSIDE an akshara, at the seam between a
+        # consonant cluster and its matra. Merging the barrier offsets into the
+        # boundary list splits the akshara there, which is the whole point of
+        # the factoring: see `_morph_barriers` for why that is safe and
+        # `docs/bmbt-morphology.md` for what it buys.
+        bounds = akshara_bounds(nfc_text)
+        if barriers:
+            bounds = sorted(set(bounds) | barriers)
+        start = 0
+        for end in bounds:
+            text = nfc_text[start:end]
+            if start in barriers:
+                out.append(_MORPH_MARKER)
+            start = end
             if text.isspace():
                 out.append(text)  # keep whitespace literal for the word-boundary marker
                 continue
-            a = self.cluster_to_atom.get(text)
+            a = get(text)
             if a is not None:
                 out.append(a)
             else:
                 for cp in text:
-                    out.append(self.cluster_to_atom.get(cp, _UNK_ATOM))
+                    out.append(get(cp, _UNK_ATOM))
         return "".join(out)
+
+    def _morph_barriers(self, nfc_text: str) -> frozenset[int]:
+        """Offsets in `nfc_text` where a token boundary is allowed to be forced.
+
+        Every morpheme seam qualifies. Two facts make that safe, and both were
+        measured rather than assumed (`docs/bmbt-morphology.md`):
+
+          * `morphology.cuts_inside_conjunct` already refuses any analysis whose
+            seam would fall inside a virama-joined cluster, so no barrier can
+            ever split a conjunct. On 80,000 held-out Wikipedia words this
+            removed 2,288 proposed boundaries, every one of them a false
+            positive (`রাষ্ট্র`, `মাত্র` and `স্তোত্র` split before a
+            stem-final `র`; `বিশ্বে` read as a future-tense `বে`);
+          * of the seams that remain, the ones that do not coincide with an
+            akshara boundary are now ALL of a single kind: the onset/rime seam,
+            between a consonant cluster and its matra (`শ্বে` -> `শ্ব` + `ে`).
+
+        Splitting there breaks the akshara but not the conjunct, and those are
+        different operations. `শ্ব` + `ে` yields a valid consonant cluster and a
+        valid vowel sign, both units Bengali literacy teaches by name. `ক্` +
+        `ষ` yields a fragment corresponding to nothing. BMBT's real guarantee is
+        conjunct integrity; akshara atomicity was an implementation choice
+        strictly stronger than that guarantee needs, and it was costing 30.4% of
+        all morpheme boundaries. Relaxing it exactly here takes morphological
+        reachability from 66.5% to 100%, with conjunct fragmentation still zero.
+
+        The consequence is stated rather than hidden: grapheme-cluster
+        fragmentation is no longer zero for a morphology-enabled artifact, by
+        design and only at morpheme seams. Conjunct fragmentation, the metric
+        this project has always actually meant, is unchanged at zero.
+        """
+        return _morph_seams(nfc_text)
 
     def decode(self, atom_text: str) -> str:
         """Map a string of atoms back to text.
@@ -233,7 +367,8 @@ class AksharaAtomMap:
     def save(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(
-                {"min_freq": self.min_freq, "cluster_to_atom": self.cluster_to_atom},
+                {"min_freq": self.min_freq, "morphology": self.morphology,
+                 "cluster_to_atom": self.cluster_to_atom},
                 f, ensure_ascii=False,
             )
 
@@ -244,7 +379,8 @@ class AksharaAtomMap:
         try:
             with open(path, encoding="utf-8") as f:
                 d = json.load(f)
-            return cls(d["cluster_to_atom"], min_freq=d.get("min_freq", 1))
+            return cls(d["cluster_to_atom"], min_freq=d.get("min_freq", 1),
+                       morphology=d.get("morphology", False))
         except (json.JSONDecodeError, KeyError, TypeError) as e:
             raise LoadError(f"corrupt akshara atom map {path}: {e}") from e
 
@@ -283,6 +419,7 @@ class BMBT:
         vocab_size: int = 64000,
         min_atom_freq: int = 2,
         zwnj_policy: str = "preserve",
+        morphology: bool = False,
     ) -> BMBT:
         """Induce a BMBT tokenizer from a corpus (a list of raw strings).
 
@@ -308,7 +445,8 @@ class BMBT:
         if not norm:
             raise EmptyCorpusError("corpus contained no usable text after normalisation")
 
-        atoms = AksharaAtomMap.build(norm, min_freq=min_atom_freq, guarantee=GUARANTEED_CODEPOINTS)
+        atoms = AksharaAtomMap.build(norm, min_freq=min_atom_freq,
+                                     guarantee=GUARANTEED_CODEPOINTS, morphology=morphology)
 
         floor = len(atoms) + len(_SPECIALS)
         if vocab_size < floor:
@@ -333,7 +471,17 @@ class BMBT:
                 initial_alphabet=initial_alphabet, show_progress=False,
             )
 
-        tok.pre_tokenizer = pre_tokenizers.Metaspace(replacement="▁")
+        if morphology:
+            # Split on the morpheme marker and discard it, so BPE can never
+            # learn a merge that spans a morpheme seam. The marker is not in
+            # the vocabulary and never becomes a token, so decode is untouched
+            # and round-trip still holds exactly.
+            tok.pre_tokenizer = pre_tokenizers.Sequence([
+                pre_tokenizers.Metaspace(replacement="▁"),
+                pre_tokenizers.Split(_MORPH_MARKER, behavior="removed"),
+            ])
+        else:
+            tok.pre_tokenizer = pre_tokenizers.Metaspace(replacement="▁")
         tok.decoder = decoders.Metaspace(replacement="▁")
 
         try:
@@ -343,6 +491,7 @@ class BMBT:
 
         config = {
             "algo": algo,
+            "morphology": morphology,
             "vocab_size": vocab_size,
             "actual_vocab_size": tok.get_vocab_size(),
             "min_atom_freq": min_atom_freq,

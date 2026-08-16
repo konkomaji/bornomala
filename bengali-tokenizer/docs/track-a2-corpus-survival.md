@@ -1,8 +1,8 @@
 # Track A2: corpus dedup + quality-filter survival ratio (Gate G3)
 
-Spec section 16.2, Gate G3, month 6: "After dedup and quality filtering, what
+Spec section 15.2, Gate G3, month 6: "After dedup and quality filtering, what
 fraction of raw Bengali web text survives? Is the surviving corpus ≥5B clean
-tokens?" Section 16.3's "First 30 days" plan says exactly how to answer it:
+tokens?" Section 15.3's "First 30 days" plan says exactly how to answer it:
 "Download Bengali Wikipedia and a Sangraha Bengali shard. Run dedup + quality
 filtering. Measure the survival ratio on real data." This is that measurement.
 
@@ -130,7 +130,7 @@ survival ratio on real data."
   from source (no `lmplz` in the PyPI wheel); not blocking, since the
   rule-based pipeline alone already answers the gate's core question.
 - **Now wired into `build_configured_corpus` itself, opt-in** (`dedup=True`,
-  CLI `--dedup` on `train`/`bmbt-train`/`hybrid-train`): runs exact dedup,
+  CLI `--dedup` on `train`/`bmbt-train`): runs exact dedup,
   near dedup, and quality filtering on each source's lines before
   `weighted_corpus` combines them - per-source, not on the final weighted
   output, since `weighted_corpus` deliberately cycles a thin source (e.g.

@@ -106,10 +106,10 @@ atom remap), not a bespoke runtime.
 
 ## What runs where
 
-Induction is CPU-bound and runs anywhere, including the local machine (spec
-section 15.2). Large corpus assembly and the full ablation grid (two algorithms
-by four vocabulary sizes by two induction corpora) run on the training machine.
-Nothing here needs a GPU.
+Induction is CPU-bound and runs anywhere, including a commodity laptop. Large
+corpus assembly and the full ablation grid (two algorithms by four vocabulary
+sizes by two induction corpora) run on the training machine. Nothing here needs
+a GPU.
 
 ## Relation to the rest of Bornomala
 

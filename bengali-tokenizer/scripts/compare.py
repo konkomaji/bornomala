@@ -70,9 +70,23 @@ from bntok.graphemes import grapheme_clusters
 # release, Gemma family used as the closest open proxy but is gated and
 # reports unavailable without a HF auth token, which this repo does not
 # assume the user has configured).
+#
+# 2026-08-16: BrahmicTokenizer-131K added. It is the third and last baseline
+# named in the whitepaper's own Gate G2 list, and unlike IndicSuperTokenizer
+# and BengaliBPE above it does have a real, loadable public release
+# (theschoolofai/BrahmicTokenizer-131K, Apache-2.0, arXiv:2605.29379): a
+# PreTrainedTokenizerFast with working offset_mapping, so it gets a full row
+# including the conjunct-fragmentation column, not a partial one. It had
+# simply never been attempted before this date, which is a coverage gap in
+# our own benchmark, not an availability problem on their side.
+# Note the vocabulary asymmetry runs in BOTH directions and is stated in
+# benchmarks/bengali-comparison.md rather than left for a reader to notice:
+# BrahmicTokenizer has 131,072 tokens to our 64,000, but spreads them across
+# 12 Brahmic-script languages, where ours are spent entirely on Bengali.
 HF_MODELS = [
     ("Sarvam-1 (Sarvam AI)", "sarvamai/sarvam-1"),
     ("SUTRA (TWO AI)", "TWO/sutra-mlt256-v2"),
+    ("BrahmicTokenizer-131K (TSAI)", "theschoolofai/BrahmicTokenizer-131K"),
     ("Krutrim (Krutrim AI)", "krutrim-ai-labs/Krutrim-2-instruct"),
     ("Param2-17B (BharatGen)", "bharatgenai/Param2-17B-A2.4B-Thinking"),
     ("IndicBERTv2 (AI4Bharat)", "ai4bharat/IndicBERTv2-MLM-only"),
@@ -321,53 +335,6 @@ def measure_bmbt(directory: str, texts: list[str]) -> dict:
     return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
 
 
-def measure_hybrid(directory: str, texts: list[str]) -> dict:
-    """Measure BMBT-Hybrid (bntok.bmbt_hybrid.BMBTHybrid) the same way
-    measure_bmbt() measures BMBT: a genuine like-for-like row. Structurally
-    identical to measure_bmbt() - see that function's docstring for why
-    offsets (not a pairwise cluster-count heuristic) are the correct way to
-    detect a split conjunct, and why lines that do not cleanly round-trip are
-    skipped for fragmentation specifically (out-of-coverage codepoints).
-    """
-    from bntok.bmbt_hybrid import BMBTHybrid
-    tok = BMBTHybrid.load(directory)
-    n_tok = n_words = n_bytes = single = frag = clusters = 0
-    skipped_for_frag = 0
-    for raw in texts:
-        nfc = normalize(raw)
-        words = nfc.split()
-        n_tok += len(tok.encode(raw))
-        n_words += len(words)
-        n_bytes += len(nfc.encode("utf-8"))
-        for w in words:
-            if len(tok.encode(w)) == 1:
-                single += 1
-        if not tok.roundtrip_ok(raw):
-            skipped_for_frag += 1
-            continue
-        surfaces = tok.encode_tokens(raw)
-        joined = "".join(surfaces)
-        trimmed = joined.lstrip(" ")
-        lead = len(joined) - len(trimmed)
-        assert trimmed == nfc, (
-            f"surface reconstruction mismatch on a round-trippable line: "
-            f"{trimmed!r} != {nfc!r} (this would silently corrupt the fragmentation count)"
-        )
-        offsets = []
-        pos = -lead
-        for s in surfaces:
-            offsets.append((pos, pos + len(s)))
-            pos += len(s)
-        f, c = _frag_from_offsets(nfc, offsets)
-        frag += f
-        clusters += c
-    if skipped_for_frag:
-        print(f"  ({skipped_for_frag}/{len(texts)} lines skipped for fragmentation: "
-              f"out-of-coverage codepoints, see docs/known-issues.md point 4)", file=sys.stderr)
-    name = f"Bornomala BMBT-Hybrid ({tok.config['algo']} {tok.config['actual_vocab_size']})"
-    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
-
-
 def measure_akshara(texts: list[str]) -> dict:
     """Measure the v2 akshara finite-state parser (roadmap step 4).
 
@@ -431,8 +398,6 @@ def main(argv=None) -> int:
     p.add_argument("--out", default="out/comparison.json")
     p.add_argument("--bmbt-tokenizer", dest="bmbt_tokenizer",
                     help="also measure a trained BMBT directory (bntok.bmbt.BMBT) as a normal row")
-    p.add_argument("--hybrid-tokenizer", dest="hybrid_tokenizer",
-                    help="also measure a trained BMBT-Hybrid directory (bntok.bmbt_hybrid.BMBTHybrid) as a normal row")
     args = p.parse_args(argv)
 
     if args.register:
@@ -447,9 +412,6 @@ def main(argv=None) -> int:
     if args.bmbt_tokenizer:
         print("measuring BMBT ...", file=sys.stderr)
         rows.append(measure_bmbt(args.bmbt_tokenizer, texts))
-    if args.hybrid_tokenizer:
-        print("measuring BMBT-Hybrid ...", file=sys.stderr)
-        rows.append(measure_hybrid(args.hybrid_tokenizer, texts))
     for name, repo in HF_MODELS:
         print(f"measuring {name} ...", file=sys.stderr)
         rows.append(measure_hf(name, repo, texts))

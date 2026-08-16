@@ -9,10 +9,20 @@ Reports the metrics the whitepaper requires (spec section 9.2 step 4, section
   bytes_per_token      UTF-8 bytes / tokens. Script-independent compression.
   gc_per_token         grapheme clusters / tokens. True characters per token.
   conjunct_fragmentation_rate
-                       fraction of grapheme-cluster boundaries that a token
-                       boundary splits. The headline correctness metric. With the
-                       atom scheme this must be 0 for text whose clusters were
-                       seen in training; rare unseen clusters may decompose.
+                       LEGACY. Fraction of ALL grapheme clusters that a token
+                       boundary splits. Retained unchanged for comparability
+                       with published numbers, but it is misnamed and its
+                       denominator is wrong: it counts any split cluster rather
+                       than only severed conjuncts, and it divides by clusters
+                       that cannot be split. See fragmentation.py.
+  destructive_rate     HEADLINE. Splits that strand a virama or detach a nukta,
+                       over clusters that could have been split. This is what
+                       the legacy field was always meant to say.
+  any_split_rate       every intra-cluster split, corrected denominator.
+  n_destructive / n_modifier / n_onset_rime
+                       the graded counts, reported separately rather than
+                       collapsed behind a severity weight (rule E4: a weight is
+                       a judgement presented as a measurement).
   roundtrip_ok         did encode then decode reproduce the normalised text.
 
 All inputs are NFC-normalised before measurement (requirement B-1). The
@@ -25,6 +35,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
+from .fragmentation import count_splits
 from .graphemes import grapheme_clusters
 from .normalize import normalize
 from .tokenizer import BengaliTokenizer
@@ -43,6 +54,15 @@ class Report:
     gc_per_token: float
     conjunct_fragmentation_rate: float
     n_fragmented: int
+    # Graded replacement, see fragmentation.py. `destructive_rate` is what
+    # `conjunct_fragmentation_rate` was always meant to say; the legacy field
+    # is kept so every already-published number stays comparable.
+    destructive_rate: float
+    any_split_rate: float
+    n_destructive: int
+    n_modifier: int
+    n_onset_rime: int
+    splittable_clusters: int
     roundtrip_ok: bool
 
     def as_dict(self) -> dict:
@@ -50,7 +70,15 @@ class Report:
 
 
 def _fragmented_boundaries(token_surfaces: list[str]) -> int:
-    """Count adjacent token boundaries that split a grapheme cluster."""
+    """Count adjacent token boundaries that split a grapheme cluster.
+
+    NOTE: despite the `conjunct_fragmentation_rate` field this feeds, it counts
+    ANY split grapheme cluster, not only severed conjuncts, and it divides by
+    ALL clusters including the 61% that are a single codepoint and cannot be
+    split at all. Both are kept exactly as they were so that every
+    already-published number stays comparable. `fragmentation.count_splits` is
+    the corrected, graded measure and `destructive_rate` is the headline.
+    """
     frag = 0
     for i in range(len(token_surfaces) - 1):
         a, b = token_surfaces[i], token_surfaces[i + 1]
@@ -64,6 +92,7 @@ def _fragmented_boundaries(token_surfaces: list[str]) -> int:
 def evaluate(tok: BengaliTokenizer, texts: list[str]) -> Report:
     """Evaluate a tokenizer over a list of held-out texts."""
     n_words = n_tokens = n_gc = n_bytes = n_frag = 0
+    splits = []
     roundtrip = True
 
     for raw in texts:
@@ -79,9 +108,15 @@ def evaluate(tok: BengaliTokenizer, texts: list[str]) -> Report:
         n_gc += len(grapheme_clusters(nfc))
         n_bytes += len(nfc.encode("utf-8"))
         n_frag += _fragmented_boundaries(surfaces)
+        splits.append(count_splits(surfaces, nfc))
 
         if roundtrip and not tok.roundtrip_ok(raw):
             roundtrip = False
+
+    n_destructive = sum(s.destructive for s in splits)
+    n_modifier = sum(s.modifier for s in splits)
+    n_onset_rime = sum(s.onset_rime for s in splits)
+    n_splittable = sum(s.splittable_clusters for s in splits)
 
     def div(a, b):
         return a / b if b else 0.0
@@ -108,5 +143,11 @@ def evaluate(tok: BengaliTokenizer, texts: list[str]) -> Report:
         gc_per_token=div(n_gc, n_tokens),
         conjunct_fragmentation_rate=div(n_frag, n_gc),
         n_fragmented=n_frag,
+        destructive_rate=div(n_destructive, n_splittable),
+        any_split_rate=div(n_destructive + n_modifier + n_onset_rime, n_splittable),
+        n_destructive=n_destructive,
+        n_modifier=n_modifier,
+        n_onset_rime=n_onset_rime,
+        splittable_clusters=n_splittable,
         roundtrip_ok=roundtrip,
     )

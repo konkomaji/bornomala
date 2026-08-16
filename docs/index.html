@@ -4,19 +4,22 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Project Bornomala: preserving Bengali in the age of AI</title>
-<meta name="description" content="A first-of-its-kind, West Bengal based research effort to build a Bengali-first, dialect-aware language model and to preserve the richness of the Bengali language and its culture. Non-commercial. Open. Measured. See how today's AI, from ChatGPT and Claude and Gemini to Indic models like Sarvam and AI4Bharat, still treats Bengali as a second-class language, and what we are doing about it."/>
-<meta name="theme-color" content="#3A2E8C"/>
+<meta name="description" content="West Bengal based research building a Bengali-first, dialect-aware language model and the open tools and data behind it. Two published Bengali tokenizers, both measured against every public baseline. See how today's AI, from ChatGPT and Claude and Gemini to Indic models like Sarvam and AI4Bharat, still treats Bengali as a second-class language, and what we are doing about it."/>
+<meta name="theme-color" content="#FCFCFD"/>
 <link rel="canonical" href="https://konkomaji.github.io/bornomala/"/>
 <link rel="icon" href="assets/logo.svg" type="image/svg+xml"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap"/>
 <link rel="stylesheet" href="assets/styles.css"/>
 
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="Project Bornomala: preserving Bengali in the age of AI"/>
-<meta property="og:description" content="Building a Bengali-first, dialect-aware language model. A first-of-its-kind, non-commercial research effort from West Bengal at the intersection of modern AI and the richness of the Bengali language and its culture."/>
+<meta property="og:description" content="Building a Bengali-first, dialect-aware language model. Two published Bengali tokenizers that never break a conjunct, measured against every public baseline. Built in West Bengal."/>
 <meta property="og:image" content="assets/banner.svg"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="Project Bornomala"/>
-<meta name="twitter:description" content="Preserving Bengali in the age of AI. A Bengali-first, dialect-aware language model. Open, measured, non-commercial research from West Bengal."/>
+<meta name="twitter:description" content="Preserving Bengali in the age of AI. Two published Bengali tokenizers, a dialect-aware language model in progress. Open and measured."/>
 
 <script type="application/ld+json">
 {
@@ -25,11 +28,11 @@
   "name": "Project Bornomala",
   "alternateName": "বর্ণমালা",
   "url": "https://github.com/konkomaji/bornomala",
-  "description": "A first-of-its-kind, non-commercial research effort to build a Bengali-first, dialect-aware language model and to preserve the Bengali language, its dialects, and its culture. Based in West Bengal.",
+  "description": "Research building a Bengali-first, dialect-aware language model and the open tools and data behind it, including two published Bengali tokenizers. Based in West Bengal.",
   "founder": { "@type": "Person", "name": "Konko Maji", "email": "work.konkomaji@gmail.com" },
   "areaServed": "West Bengal, India",
   "keywords": "Bengali, Bangla, dialect, language model, tokenizer, language preservation, low-resource, West Bengal, Indic NLP",
-  "nonprofitStatus": "Non-commercial research"
+  "founder_url": "https://www.linkedin.com/in/konkomaji/"
 }
 </script>
 <script type="application/ld+json">
@@ -37,7 +40,7 @@
   "@context": "https://schema.org",
   "@type": "Dataset",
   "name": "Bengali cross-tokenizer comparison",
-  "description": "The first measured, reproducible comparison of how efficiently mainstream tokenizers (Bornomala, AI4Bharat IndicBERTv2, SUTRA, Sarvam-1, XLM-RoBERTa, GPT-4o, mBERT, DeepSeek-V3, Krutrim) encode Bengali, on identical held-out Bengali Wikipedia text.",
+  "description": "The first measured, reproducible comparison of how efficiently mainstream tokenizers (Bornomala, AI4Bharat IndicBERTv2, SUTRA, Sarvam-1, XLM-RoBERTa, GPT-4o, BrahmicTokenizer-131K, mBERT, DeepSeek-V3, Krutrim) encode Bengali, on identical held-out Bengali Wikipedia text.",
   "creator": { "@type": "Person", "name": "Konko Maji" },
   "license": "https://www.apache.org/licenses/LICENSE-2.0",
   "isAccessibleForFree": true,
@@ -54,7 +57,7 @@
     { "@type": "Question", "name": "How is Project Bornomala different from work in Bangladesh?",
       "acceptedAnswer": { "@type": "Answer", "text": "Bangladesh has more Bengali language technology activity, concentrated on Standard and Dhaka-region Bangla and Bangladesh dialects. Project Bornomala is based in West Bengal and focuses on the western half of the language: its literary register and the five West Bengal dialect groups, which currently have zero computational resources anywhere. The relationship is complementary, not competitive." } },
     { "@type": "Question", "name": "Is Project Bornomala commercial?",
-      "acceptedAnswer": { "@type": "Answer", "text": "No. It is non-commercial research for now, aimed at preserving the Bengali language and its culture. Code is open under Apache 2.0 and data is released under open Creative Commons licences." } },
+      "acceptedAnswer": { "@type": "Answer", "text": "The code is open under Apache 2.0 and the data under open Creative Commons licences. Anyone can use, study, and build on it." } },
     { "@type": "Question", "name": "What has Project Bornomala achieved so far?",
       "acceptedAnswer": { "@type": "Answer", "text": "A Bengali tokenizer that needs fewer tokens per Bengali word than AI4Bharat IndicBERTv2, Sarvam-1, GPT-4o, mBERT, and DeepSeek-V3, and that almost never splits a Bengali conjunct while those systems split between 4 and 30 percent of them. Also an open tool that measures the token cost of any language against English across 28 model tokenizers." } }
   ]
@@ -86,17 +89,15 @@
 <section class="section hero">
   <div class="container hero-grid">
     <div>
-      <p class="eyebrow">A first of its kind, non-commercial research effort from West Bengal</p>
       <h1>Preserving <span class="bn">বাংলা</span> in the <span class="grad">age of AI</span></h1>
       <div class="matra"></div>
       <p class="lede">Project Bornomala is building a Bengali-first, dialect-aware language model, and the open tools and data to make it possible. It sits at the intersection of modern technology and the richness of the Bengali language, its dialects, and its culture. Everything is open, measured, and honest.</p>
       <div class="pills">
         <span class="pill"><b>First</b> of its kind</span>
         <span class="pill"><b>West Bengal</b> based</span>
-        <span class="pill"><b>Non-commercial</b> research</span>
         <span class="pill"><b>Open</b> source and data</span>
       </div>
-      <div style="display:flex;gap:12px;margin-top:26px;flex-wrap:wrap">
+      <div class="btn-row">
         <a class="btn btn-primary" href="#achieved">See what we have achieved</a>
         <a class="btn btn-outline" href="#contribute">Help build it</a>
       </div>
@@ -113,31 +114,27 @@
     <div class="matra"></div>
     <p class="lede">Bengali is spoken by more than 250 million people. Yet the systems shaping the future of knowledge, from ChatGPT, Claude, and Gemini to Indic-focused models, were built for English first. The gap is measurable, and we measured it.</p>
 
-    <div class="stats" style="margin-top:26px">
+    <div class="stats">
       <div class="stat"><div class="big warm">7.6x</div><div class="lbl">more tokens Bengali costs than English on older GPT-4, for the same meaning</div></div>
       <div class="stat"><div class="big warm">67x</div><div class="lbl">gap between cleaned Bengali text (about 30 billion tokens) and English (about 2 trillion)</div></div>
       <div class="stat"><div class="big warm">5</div><div class="lbl">West Bengal dialect groups with zero computational resources anywhere</div></div>
       <div class="stat"><div class="big warm">8%</div><div class="lbl">share of Indic data a leading Indic model gives Bengali; others treat it as 1 of 22</div></div>
     </div>
 
-    <div class="two" style="margin-top:30px">
+    <div class="two">
       <div class="card">
-        <div class="ic">🌐</div>
         <h3>The general models</h3>
         <p>ChatGPT, Claude, and Gemini split Bengali into many small pieces, so it costs more and less of it fits in memory. Worse, they routinely break a Bengali conjunct, the single written unit a reader recognises, into fragments that mean nothing.</p>
       </div>
       <div class="card">
-        <div class="ic">🧩</div>
         <h3>Even the Indic models</h3>
         <p>Sarvam and AI4Bharat have done important open work, but they optimise across many Indian languages at once and cover Standard Bengali. The literary register, and the dialects of West Bengal, are left out.</p>
       </div>
       <div class="card">
-        <div class="ic">🇧🇩</div>
         <h3>Bangladesh has built a lot</h3>
         <p>Bangladesh leads Bengali language technology, and we honour that. But it centres on Standard and Dhaka-region Bangla. The western half of the language, its dialects and its literary corpus, is still missing. We take that up, as a complement, not a competitor.</p>
       </div>
       <div class="card">
-        <div class="ic">📖</div>
         <h3>The corpus is trapped</h3>
         <p>The depth of Bengali, its literature from 1850 to 1950, exists mostly as scanned page images. No amount of web crawling recovers it. That is a data problem, not a compute problem, and it is the one we set out to solve.</p>
       </div>
@@ -152,11 +149,11 @@
     <h2>Build the language model Bengali deserves, from the data up</h2>
     <div class="matra"></div>
     <p class="lede">The constraint on a great Bengali model is not compute or model size. It is clean, deep Bengali data, and coverage of the dialects. So we build in that order: the data and the tools first, the model as what they make possible.</p>
-    <div class="cards" style="margin-top:26px">
-      <div class="card warm"><div class="ic">✍️</div><h3>Respect the script</h3><p>A Bengali tokenizer that treats the written unit as a whole and never breaks a conjunct, so the model reads Bengali the way a reader does.</p></div>
-      <div class="card warm"><div class="ic">📚</div><h3>Recover the literature</h3><p>Read the scanned Bengali literary corpus back into clean text, so a century of the language rejoins the machine-readable world.</p></div>
-      <div class="card warm"><div class="ic">🗣️</div><h3>Document the dialects</h3><p>Create the first computational record of the West Bengal dialect groups, in text and in speech, with the consent and dignity of the communities who speak them.</p></div>
-      <div class="card warm"><div class="ic">🧠</div><h3>Then, the model</h3><p>A Bengali-first, dialect-aware model that can run on an ordinary phone, offline, understanding literary register, idiom, and regional voice.</p></div>
+    <div class="cards">
+      <div class="card warm"><h3>Respect the script</h3><p>A Bengali tokenizer that treats the written unit as a whole and never breaks a conjunct, so the model reads Bengali the way a reader does.</p></div>
+      <div class="card warm"><h3>Recover the literature</h3><p>Read the scanned Bengali literary corpus back into clean text, so a century of the language rejoins the machine-readable world.</p></div>
+      <div class="card warm"><h3>Document the dialects</h3><p>Create the first computational record of the West Bengal dialect groups, in text and in speech, with the consent and dignity of the communities who speak them.</p></div>
+      <div class="card warm"><h3>Then, the model</h3><p>A Bengali-first, dialect-aware model that can run on an ordinary phone, offline, understanding literary register, idiom, and regional voice.</p></div>
     </div>
   </div>
 </section>
@@ -165,11 +162,18 @@
 <section class="section" id="achieved">
   <div class="container">
     <p class="eyebrow">What we have achieved, measured and transparent</p>
-    <h2>A Bengali tokenizer that outperforms existing public tokenizers on our benchmark</h2>
+    <h2>Two Bengali tokenizers, both ahead of every public baseline we tested</h2>
     <div class="matra"></div>
-    <p class="lede">Our first result: a Bengali tokenizer that needs fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and that almost never breaks a conjunct while they break many &mdash; and this holds not just on Wikipedia, but on literary/formal, general web, and news text too.</p>
+    <p class="lede">Both tokenizers need fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and neither breaks a conjunct while the others break many. This holds on four disjoint held-out sets: Wikipedia, literary and formal, general web, and news.</p>
 
-    <div class="table-wrap" style="margin-top:22px">
+    <div class="stats">
+      <div class="stat"><div class="big warm">1.14</div><div class="lbl">tokens per Bengali word on news text, against GPT-4o's 2.19 and GPT-4's 7.74</div></div>
+      <div class="stat"><div class="big warm">0</div><div class="lbl">conjuncts broken, by construction rather than by tuning, on every register</div></div>
+      <div class="stat"><div class="big warm">100%</div><div class="lbl">of Bengali morpheme boundaries now reachable by BMBT, up from 62 percent</div></div>
+      <div class="stat"><div class="big warm">6.2M</div><div class="lbl">characters a second, more than twice the C regex the first version relies on</div></div>
+    </div>
+
+    <div class="table-wrap">
       <table>
         <thead><tr><th>Tokenizer</th><th>Tokens per word</th><th>Whole words kept</th><th>Bytes per token</th><th>Broken conjuncts</th></tr></thead>
         <tbody>
@@ -179,6 +183,7 @@
           <tr><td>XLM-RoBERTa (Meta)</td><td>2.46</td><td>36%</td><td>7.04</td><td class="bad">10.2%</td></tr>
           <tr><td>Sarvam-1 (Sarvam AI)</td><td>2.59</td><td>42%</td><td>6.69</td><td class="bad">11.9%</td></tr>
           <tr><td>GPT-4o (OpenAI)</td><td>2.61</td><td>11%</td><td>6.65</td><td>not measurable</td></tr>
+          <tr><td>BrahmicTokenizer-131K</td><td>2.62</td><td>15%</td><td>6.62</td><td class="bad">22.1%</td></tr>
           <tr><td>mBERT (Google)</td><td>2.78</td><td>39%</td><td>6.25</td><td class="bad">18.0%</td></tr>
           <tr><td>DeepSeek-V3</td><td>2.99</td><td>9%</td><td>5.79</td><td class="bad">28.5%</td></tr>
           <tr><td>Krutrim (Krutrim AI)</td><td>3.21</td><td>8%</td><td>5.41</td><td class="bad">28.6%</td></tr>
@@ -186,11 +191,11 @@
       </table>
     </div>
 
-    <div class="note" style="margin-top:16px">
+    <div class="note">
       <b>Exactly how this was measured, so anyone can check.</b> Our tokenizer was trained on a literary-weighted corpus mixing Wikisource public-domain text, Sangraha verified Bengali (formal and general register), Bengali Wikipedia, and XL-Sum news. It was then tested, along with every other tokenizer, on 828 held-out lines from Bengali Wikipedia articles never seen in training; three further held-out sets (literary/formal, general web, news) confirm the same ranking beyond Wikipedia. Every other tokenizer is its real, official public tokenizer, run on the same text. Fewer tokens per word is better; a broken conjunct is a written unit split across a boundary, computed from each tokenizer's own character offsets. GPT-4o exposes no offsets, so its conjunct figure is left unmeasured rather than guessed. Full method and raw numbers are in the repository, and the comparison reruns with a single command. To our knowledge, this is the first fully reproducible benchmark comparing modern Bengali tokenizers across compression, word preservation, and conjunct fragmentation using a common evaluation pipeline. <b>BMBT (v2, below) was trained on the identical corpus and measured the same way: it ties every number in this table</b>, exactly, on every register tested.
     </div>
 
-    <h3 style="margin-top:40px">And an open tool that makes the inequity visible</h3>
+    <h3>And an open tool that makes the inequity visible</h3>
     <p>MotherTongueIndex, a tool that grew out of this programme and now has its own repository, lets anyone paste text in any language and see how many more tokens it costs than English across 28 model tokenizers, and the reasoning cost that follows. It is how we hold ourselves, and everyone else, to measured claims.</p>
     <p><a class="btn btn-outline" href="https://github.com/konkomaji/mothertongueindex">Explore MotherTongueIndex</a></p>
   </div>
@@ -200,11 +205,11 @@
 <section class="section" id="hardwords">
   <div class="container">
     <p class="eyebrow">Not just an average</p>
-    <h2>Deity names, a national poet, West Bengal places &mdash; one token, every time</h2>
+    <h2>Deity names, a national poet, West Bengal places: one token, every time</h2>
     <div class="matra"></div>
-    <p class="lede">A register average can hide how a tokenizer treats specific, culturally load-bearing words. We measured a fixed list of 13: deity names, a national poet, well-known West Bengal places, all conjunct-dense, on every tokenizer we track &mdash; 14 external systems plus our own.</p>
+    <p class="lede">A register average can hide how a tokenizer treats specific, culturally load-bearing words. We measured a fixed list of 13: deity names, a national poet, well-known West Bengal places, all conjunct-dense, on every tokenizer we track, 14 external systems plus our own.</p>
 
-    <div class="table-wrap" style="margin-top:22px">
+    <div class="table-wrap">
       <table>
         <thead><tr><th>Word</th><th>Meaning</th><th>Ours (v1/BMBT)</th><th>IndicBERTv2 (best rival)</th><th>GPT-4o</th></tr></thead>
         <tbody>
@@ -218,9 +223,9 @@
       </table>
     </div>
 
-    <p class="lede" style="margin-top:26px"><b>Ours tokenizes every one of the 13 words as exactly one token. No exception</b>, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara রবীন্দ্রনাথ.</p>
+    <p class="lede"><b>Ours tokenizes every one of the 13 words as exactly one token. No exception</b>, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara রবীন্দ্রনাথ.</p>
 
-    <div class="table-wrap" style="margin-top:10px">
+    <div class="table-wrap">
       <table>
         <thead><tr><th>Tokenizer</th><th>Avg tokens/word (13 hard words)</th></tr></thead>
         <tbody>
@@ -243,8 +248,8 @@
       </table>
     </div>
 
-    <div class="note" style="margin-top:16px">
-      IndicBERTv2, the only real rival at 1.31 average, still splits 3 of the 13 words (ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন) &mdash; even India's best-funded Indic tokenizer cannot hold conjunct integrity on every word here. Ours does, by construction, not luck. A notable pattern, unverified beyond this word list: every single value in Llama-3.1's row is byte-for-byte identical to GPT-4's cl100k row &mdash; its tokenizer is tiktoken-derived and does not appear to extend Bengali coverage at all. Full per-word table, every tokenizer, and the reproduce command: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md">benchmarks/hard-words.md</a>.
+    <div class="note">
+      IndicBERTv2, the only real rival at 1.31 average, still splits 3 of the 13 words (ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন), even India's best-funded Indic tokenizer cannot hold conjunct integrity on every word here. Ours does, by construction, not luck. A notable pattern, unverified beyond this word list: every single value in Llama-3.1's row is byte-for-byte identical to GPT-4's cl100k row, its tokenizer is tiktoken-derived and does not appear to extend Bengali coverage at all. Full per-word table, every tokenizer, and the reproduce command: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md">benchmarks/hard-words.md</a>.
     </div>
   </div>
 </section>
@@ -256,14 +261,18 @@
     <h2>BMBT: reading Bengali on its own terms</h2>
     <div class="matra"></div>
     <p class="lede">The tokenizer above achieved that result the way almost every serious tokenizer does today: it retrains BPE, a statistical compressor, on Bengali data. That fixes the vocabulary while keeping the frame, and we thought the frame was the actual problem. Bengali is not a language whose structure needs discovering by counting bytes. It is an abugida, a generative system with explicit, Unicode-standardized rules for how a written syllable (an akshara) is built from a consonant, its conjuncts, and its vowel signs. So we built <b>BMBT, Bornomala's Bengali Tokenizer</b>: it reads the script by its own grammar first, a finite-state machine, and falls back to statistics only for what the grammar cannot explain: loanwords, code-mixing, noise.</p>
-    <div class="cards" style="margin-top:26px">
-      <div class="card warm"><div class="ic">📐</div><h3>Grammar first, statistics as fallback</h3><p>A finite-state parser for the akshara grammar (the virama rule, matra reordering, unbounded conjuncts) runs before any learned merge. Bengali BPE only ever tuned the frame; this replaces it.</p></div>
-      <div class="card warm"><div class="ic">🧬</div><h3>Featural tokens, not opaque IDs</h3><p>Each akshara decomposes into its own structure &mdash; onset, vowel, modifiers &mdash; via <code>featurize()</code>, a real, tested output, so a model can see for free that related syllables share an onset, instead of learning every combination as an unrelated integer.</p></div>
-      <div class="card warm"><div class="ic">🔁</div><h3>Lossless by construction, proven not assumed</h3><p>A formal specification states losslessness, totality, linear time, and constrained optimality as predicates, proves three of the four by construction, and pins the fourth to a property-based fuzzer contract in CI.</p></div>
-      <div class="card warm"><div class="ic">⚖️</div><h3>An honest result: a tie, not a win</h3><p>Measured against the original tokenizer on identical held-out text, BMBT ties it &mdash; on Wikipedia, identical down to the raw token count &mdash; rather than beating it. The formal spec itself proves a grammar-constrained BPE cannot beat an unconstrained one on raw token count; this is that prediction, confirmed in practice, not a disappointment hidden.</p></div>
+    <div class="cards">
+      <div class="card warm"><h3>Grammar first, statistics as fallback</h3><p>A finite-state parser for the akshara grammar (the virama rule, matra reordering, unbounded conjuncts) runs before any learned merge. Bengali BPE only ever tuned the frame; this replaces it.</p></div>
+      <div class="card warm"><h3>Featural tokens, not opaque IDs</h3><p>Each akshara decomposes into its own structure, onset, vowel, modifiers, via <code>featurize()</code>, a real, tested output, so a model can see for free that related syllables share an onset, instead of learning every combination as an unrelated integer.</p></div>
+      <div class="card warm"><h3>Lossless by construction, proven not assumed</h3><p>A formal specification states losslessness, totality, linear time, and constrained optimality as predicates, proves three of the four by construction, and pins the fourth to a property-based fuzzer contract in CI.</p></div>
+      <div class="card warm"><h3>An honest result: a tie on compression, not a win</h3><p>Measured against the original tokenizer on identical held-out text, BMBT ties it, on Wikipedia identical down to the raw token count, rather than beating it. The formal spec itself proves a grammar-constrained BPE cannot beat an unconstrained one on raw token count. This is that prediction confirmed in practice, not a disappointment hidden.</p></div>
     </div>
-    <p style="margin-top:22px">Morphology (root/suffix decomposition) is not built yet &mdash; deferred, not abandoned. The tokenizer above still outperforms every external baseline tested, by a wide margin, on every held-out register; BMBT ties it there too, while adding the featural structure at no fertility cost. Full numbers: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/bengali-comparison.md">the benchmark doc</a>.</p>
-    <p style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap">
+    <p><b>Morphology is now built too.</b> BMBT aligns its token boundaries to Bengali's suffix structure. Getting there meant separating two things we had been treating as one guarantee: never severing a conjunct, and never splitting a written syllable. Only the first is what a Bengali tokenizer exists to protect. Splitting the syllable <i>shbe</i> into its consonant cluster and its vowel sign leaves two units any Bengali reader names; severing the cluster itself leaves a fragment that means nothing. Holding the stronger rule was costing us a third of all Bengali morpheme boundaries, because a vowel sign attaches to the consonant before it while belonging to the suffix after it. Relaxing it only at morpheme seams took reachable boundaries from 62% to <b>100%</b>, with not one conjunct severed, checked across 1.47 million characters.</p>
+
+    <p>The same work made us correct our own measurement. Our conjunct-fragmentation figure counted any split written unit rather than only broken conjuncts, and divided by every unit including the 61% that consist of a single character and cannot be split by anyone. That made every number, ours and everyone else's, look about twice as good as it was. Corrected, the ranking of the other tokenizers changes: multilingual BERT, not DeepSeek-V3, does the most real damage to Bengali. We kept the old figure alongside the new one so nothing already published becomes uncheckable.</p>
+
+    <p>The tokenizer above still outperforms every external baseline tested, by a wide margin, on every held-out register, and BMBT ties it there too. Full numbers: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/bengali-comparison.md">the benchmark doc</a>.</p>
+    <p class="btn-row">
       <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/design/reading-bengali-on-its-own-terms.md">Read the position paper</a>
       <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/design/FORMAL_SPEC.md">Read the formal spec</a>
       <a class="btn btn-outline" href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/docs/bmbt-architecture.md">Read the BMBT architecture</a>
@@ -277,10 +286,10 @@
     <p class="eyebrow">Rare, and first of its kind</p>
     <h2>Things no one had done before</h2>
     <div class="matra"></div>
-    <div class="cards" style="margin-top:22px">
-      <div class="card"><div class="ic">🥇</div><h3>The first Bengali tokenizer comparison</h3><p>Bengali had never appeared in a published cross-tokenizer comparison. This is the first, and it is open and reproducible.</p></div>
-      <div class="card"><div class="ic">🔒</div><h3>Conjunct integrity by design</h3><p>A Bengali tokenizer engineered so that breaking a conjunct is structurally impossible, not merely rare.</p></div>
-      <div class="card"><div class="ic">🗺️</div><h3>The West Bengal dialects</h3><p>The plan to build the first computational resource for dialect groups that have none, an asset no better-funded lab can simply buy.</p></div>
+    <div class="cards">
+      <div class="card"><h3>The first Bengali tokenizer comparison</h3><p>Bengali had never appeared in a published cross-tokenizer comparison. This is the first, and it is open and reproducible.</p></div>
+      <div class="card"><h3>Conjunct integrity by design</h3><p>A Bengali tokenizer engineered so that breaking a conjunct is structurally impossible, not merely rare.</p></div>
+      <div class="card"><h3>The West Bengal dialects</h3><p>The plan to build the first computational resource for dialect groups that have none, an asset no better-funded lab can simply buy.</p></div>
     </div>
   </div>
 </section>
@@ -291,16 +300,16 @@
     <p class="eyebrow">Our values and goals</p>
     <h2>Open, honest, and for the language</h2>
     <div class="matra"></div>
-    <div class="two" style="margin-top:22px">
+    <div class="two">
       <div>
         <p class="quote">We measure everything, we claim only what we can show, and we publish the method with the result.</p>
-        <p style="margin-top:20px">The goal is not a product. It is to make sure that as machines learn to read and write, they can read and write Bengali, in full, including the voices of West Bengal that have never been written into a computer before. This is language preservation carried out with modern tools.</p>
+        <p>The goal is not a product. It is to make sure that as machines learn to read and write, they can read and write Bengali, in full, including the voices of West Bengal that have never been written into a computer before. This is language preservation carried out with modern tools.</p>
       </div>
-      <div class="cards" style="grid-template-columns:1fr 1fr">
-        <div class="card"><div class="ic">🔍</div><h3>Transparent</h3><p>Every number states the data behind it. No fabricated or estimated results presented as measured.</p></div>
-        <div class="card"><div class="ic">🕊️</div><h3>Open</h3><p>Code under Apache 2.0, data under open Creative Commons licences. Free to study and build on.</p></div>
-        <div class="card"><div class="ic">🌾</div><h3>Cultural</h3><p>Rooted in the richness of Bengali literature, idiom, and dialect, treated as heritage worth preserving.</p></div>
-        <div class="card"><div class="ic">🤝</div><h3>Consensual</h3><p>Dialect and speech data collected with informed consent, fair compensation, and the right to withdraw.</p></div>
+      <div class="cards two-up">
+        <div class="card"><h3>Transparent</h3><p>Every number states the data behind it. No fabricated or estimated results presented as measured.</p></div>
+        <div class="card"><h3>Open</h3><p>Code under Apache 2.0, data under open Creative Commons licences. Free to study and build on.</p></div>
+        <div class="card"><h3>Cultural</h3><p>Rooted in the richness of Bengali literature, idiom, and dialect, treated as heritage worth preserving.</p></div>
+        <div class="card"><h3>Consensual</h3><p>Dialect and speech data collected with informed consent, fair compensation, and the right to withdraw.</p></div>
       </div>
     </div>
   </div>
@@ -313,13 +322,13 @@
     <h2>This is bigger than one person</h2>
     <div class="matra"></div>
     <p class="lede">Project Bornomala is open and needs many hands. If you care about Bengali, about language technology, or about preserving a culture in the age of AI, there is a place for you.</p>
-    <div class="contribute" style="margin-top:26px">
-      <div class="who"><div class="ic">🧑‍💻</div><h3>Engineers</h3><p>Improve the tokenizer and tools, add models to the comparison, build the data pipeline.</p></div>
-      <div class="who"><div class="ic">🗣️</div><h3>Native speakers</h3><p>Especially of West Bengal dialects. Your voice can become the first record of it.</p></div>
-      <div class="who"><div class="ic">📝</div><h3>Linguists</h3><p>Guide dialect documentation, transcription conventions, and evaluation.</p></div>
-      <div class="who"><div class="ic">📚</div><h3>Archives and libraries</h3><p>Share scanned Bengali holdings so a century of literature can rejoin the machine-readable world.</p></div>
+    <div class="contribute">
+      <div class="who"><h3>Engineers</h3><p>Improve the tokenizer and tools, add models to the comparison, build the data pipeline.</p></div>
+      <div class="who"><h3>Native speakers</h3><p>Especially of West Bengal dialects. Your voice can become the first record of it.</p></div>
+      <div class="who"><h3>Linguists</h3><p>Guide dialect documentation, transcription conventions, and evaluation.</p></div>
+      <div class="who"><h3>Archives and libraries</h3><p>Share scanned Bengali holdings so a century of literature can rejoin the machine-readable world.</p></div>
     </div>
-    <div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+    <div class="btn-row">
       <a class="btn btn-primary" href="https://github.com/konkomaji/bornomala">Contribute on GitHub</a>
       <a class="btn btn-outline" href="mailto:work.konkomaji@gmail.com">Get in touch</a>
     </div>
@@ -332,10 +341,10 @@
     <p class="eyebrow">Answers</p>
     <h2>Frequently asked</h2>
     <div class="matra"></div>
-    <div style="margin-top:20px">
+    <div class="faq-list">
       <details class="faq" open><summary>Why do today's AI models handle Bengali poorly?</summary><p>They are optimised for English. Bengali is broken into far more tokens than English for the same meaning, which costs more and shrinks the usable context, and general tokenizers routinely break Bengali conjuncts. The literary corpus is trapped in page images, and the West Bengal dialects have no computational resource at all.</p></details>
       <details class="faq"><summary>How is this different from work in Bangladesh?</summary><p>Bangladesh leads Bengali language technology, focused on Standard and Dhaka-region Bangla. We are based in West Bengal and take up the western half of the language: its literary register and its five dialect groups, which have zero resources anywhere. The relationship is complementary, not competitive.</p></details>
-      <details class="faq"><summary>Is this commercial?</summary><p>No. It is non-commercial research for now, to preserve the Bengali language and its culture. Code is open under Apache 2.0 and data under open Creative Commons licences.</p></details>
+      <details class="faq"><summary>What licence is this under?</summary><p>Code is open under Apache 2.0 and data under open Creative Commons licences. Anyone can use it, study it, and build on it, including commercially.</p></details>
       <details class="faq"><summary>Can I trust the numbers?</summary><p>Every figure states the exact data behind it and reruns with one command. We never present an estimate as a measurement.</p></details>
       <details class="faq"><summary>How can I help?</summary><p>Engineers, native speakers of West Bengal dialects, linguists, and archives are all needed. Start on GitHub or get in touch.</p></details>
     </div>
@@ -347,7 +356,8 @@
 <footer class="site">
   <div class="container">
     <div class="brand"><img src="assets/logo.svg" alt="" width="28"/> Project Bornomala <span class="bn">বর্ণমালা</span></div>
-    <div class="muted">A non-commercial research effort to preserve Bengali. Apache-2.0 and open data. Konko Maji.</div>
+    <div class="muted">Open Bengali language technology. Apache-2.0 code, open data.<br/>
+      Created and maintained by <a class="credit" href="https://www.linkedin.com/in/konkomaji/" rel="me noopener" target="_blank">Konko Maji</a>.</div>
     <div><a href="https://github.com/konkomaji/bornomala">GitHub</a> &middot; <a href="llms.txt">llms.txt</a> &middot; <a href="mailto:work.konkomaji@gmail.com">Contact</a></div>
   </div>
 </footer>
