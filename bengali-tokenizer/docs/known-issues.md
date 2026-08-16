@@ -469,6 +469,81 @@ Kept as an honest record of what went wrong and how it was resolved.
     still worth making, because these are the tokenizers Bengali text
     actually gets encoded by in practice.
 
+## BMBT-Hybrid: a failed experiment, removed
+
+BMBT-Hybrid was an attempt to improve fertility by changing WHAT the atomic
+unit is, rather than how BPE merges it. It has been **removed from the
+codebase**: the module, its tests, its three artifacts, its three CLI
+subcommands and its row in `scripts/compare.py` are all gone. It is recorded
+here because the reason it failed is structural and worth not rediscovering.
+
+### The idea, which was sound
+
+A rare akshara spends its whole corpus frequency on one opaque atom. Factoring
+it into an onset atom (the consonant chain) and a tail atom (matra plus
+modifiers) lets the onset accumulate frequency across every vowel it occurs
+with, and the tail across every onset it attaches to. v1 cannot do this at all:
+its atoms are opaque grapheme-cluster strings with no internal boundary to
+split on. Only the akshara grammar knows where to cut. Factoring the very
+highest-frequency syllables is pure overhead, so only the long tail was
+factored and the top `k_fused` were left whole.
+
+At small scale it looked right: 8k vocab on 3,000 Wikipedia articles gave
+fused-only 1.9587, always-factored 1.8700, hybrid k=200 1.8454.
+
+### Why it failed, in four stages
+
+1. **Factoring breaks the conjunct guarantee.** At production scale fertility
+   did improve 1.2-3.8%, but conjunct fragmentation got 20-70x worse
+   (0.18-0.70% against a flat 0.01%). Factoring creates a cut point and BPE is
+   under no obligation to heal it: wherever the learned merges did not happen
+   to re-fuse an onset+tail pair, the boundary survived as a real split.
+
+2. **The obvious fix was unsound.** Baking low-priority merge rules to force
+   re-fusion required predicting the intermediate symbols a left-to-right fold
+   would produce. Real BPE applies whichever adjacent pair has the globally
+   lowest rank first, not left to right, so a high-priority learned merge can
+   fuse a middle pair before the predicted chain reaches it. Caught on a real
+   case, `ঙ্ক্ষ` partially merging to `ঙ্` + `ক্` + `ষ`, before shipping.
+
+3. **The working fix spent the vocabulary the factoring saved.**
+   `_reserve_guaranteed_chunk_vocab` sidestepped merge-order prediction by
+   reserving a dedicated id for every multi-atom chunk's full span, plus an
+   encode-time guard. Fragmentation went to zero, and the first build ballooned
+   to 90,433 effective ids against a requested 64,000.
+
+4. **The fair rerun reversed the result.** Vocab-matched at 64,355 and
+   benchmarked across all four held-out registers, BMBT-Hybrid came out
+   **2-9% WORSE on fertility than v1/BMBT on every register**. The original
+   "1.2-3.8% better" had been measured against the inflated-vocab build.
+
+### Why this is structural, not a tuning failure
+
+Factoring buys compression by sharing sub-akshara pieces. Preserving the
+conjunct guarantee forces a reserved whole-span id for every multi-atom chunk,
+which re-spends exactly what the sharing saved. The two goals are in direct
+tension and the guarantee wins. No value of `k_fused` changes that.
+
+One result survived: fragmentation was genuinely lower than v1/BMBT on every
+register, zero on news.
+
+### What replaced it
+
+The morphology layer reaches the same underlying goal by a different route.
+Instead of factoring aksharas by FREQUENCY and then trying to re-fuse them, it
+factors them only at MORPHEME seams, where the split is linguistically real and
+no re-fusion is wanted. That needs no reservation mechanism, so it does not
+spend the vocabulary, and it keeps conjunct integrity absolute. See
+[`docs/bmbt-morphology.md`](bmbt-morphology.md).
+
+### Housekeeping this closes
+
+`artifacts/bmbt-64k-hybrid` and `artifacts/bmbt-64k-hybrid-fixed` had been
+byte-identical since they were committed: the docstring described a real fix
+between them that was never baked into a regenerated artifact. Both, and
+`bmbt-64k-hybrid-v2`, are now deleted. The long-standing duplicate-artifact
+item is closed by removal rather than by choosing between them.
+
 ## Track A2: corpus dedup and quality filtering (Gate G3)
 
 `bntok/dedup.py`: exact dedup, MinHash-LSH near dedup (`datasketch`), and a

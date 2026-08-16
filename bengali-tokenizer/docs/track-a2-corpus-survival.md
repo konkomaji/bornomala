@@ -130,7 +130,7 @@ survival ratio on real data."
   from source (no `lmplz` in the PyPI wheel); not blocking, since the
   rule-based pipeline alone already answers the gate's core question.
 - **Now wired into `build_configured_corpus` itself, opt-in** (`dedup=True`,
-  CLI `--dedup` on `train`/`bmbt-train`/`hybrid-train`): runs exact dedup,
+  CLI `--dedup` on `train`/`bmbt-train`): runs exact dedup,
   near dedup, and quality filtering on each source's lines before
   `weighted_corpus` combines them - per-source, not on the final weighted
   output, since `weighted_corpus` deliberately cycles a thin source (e.g.
