@@ -72,11 +72,11 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
-               "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI",
+               system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: var(--t-body);
   line-height: 1.62;
-  letter-spacing: -0.006em;
+  letter-spacing: -0.002em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
@@ -95,10 +95,12 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Bengali text: let the system pick a proper Bengali face and give it room. */
 .bn {
-  font-family: "Noto Serif Bengali", "Noto Sans Bengali", "Kalpurush",
-               "SolaimanLipi", "Shonar Bangla", serif;
+  font-family: "Noto Serif Bengali", "Kalpurush", "SolaimanLipi",
+               "Shonar Bangla", "Noto Sans Bengali", serif;
+  font-size: 1.06em;      /* Bengali sits optically small beside Poppins */
   line-height: 1.9;
   letter-spacing: 0;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1;
 }
 /* In a heading the script must follow the heading's own leading, or a single
    Bengali word silently doubles the gap between display lines. */
@@ -120,12 +122,12 @@ h1 .bn, h2 .bn { line-height: 1.15; }
 h1, h2, h3 {
   margin: 0;
   font-weight: 600;
-  letter-spacing: -0.028em;
-  line-height: 1.08;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
   text-wrap: balance;
 }
 
-h1 { font-size: var(--t-display); font-weight: 650; letter-spacing: -0.038em; }
+h1 { font-size: var(--t-display); font-weight: 600; letter-spacing: -0.032em; }
 h2 { font-size: var(--t-h2); }
 h3 { font-size: var(--t-h3); letter-spacing: -0.018em; line-height: 1.32; }
 
@@ -203,12 +205,13 @@ p:last-child { margin-bottom: 0; }
 .brand img { width: 26px; height: 26px; }
 .brand .bn { font-size: .9em; color: var(--muted); }
 
-.nav { display: none; margin-inline-start: auto; gap: 4px; }
+.nav { display: none; margin-inline-start: auto; gap: 2px; }
 .nav a {
-  padding: 8px 12px;
+  white-space: nowrap;
+  padding: 8px 10px;
   border-radius: var(--r-full);
-  font-size: .9rem;
-  font-weight: 500;
+  font-size: .875rem;
+  font-weight: 450;
   color: var(--ink-2);
   transition: background-color .18s var(--swift), color .18s var(--swift);
 }
@@ -428,7 +431,7 @@ footer.site a:hover { color: var(--accent); }
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1000px) {
   .nav { display: flex; }
   .nav-toggle { display: none; }
   .two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 4vw, 48px); }
@@ -438,7 +441,7 @@ footer.site a:hover { color: var(--accent); }
 }
 
 /* Mobile nav: the sheet only exists below the desktop breakpoint. */
-@media (max-width: 899px) {
+@media (max-width: 999px) {
   .nav {
     position: absolute;
     inset-inline: 0;
@@ -491,3 +494,84 @@ footer.site a:hover { color: var(--accent); }
   transition: color .18s var(--swift), border-color .18s var(--swift);
 }
 .credit:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+
+/* ==========================================================================
+   Section presence
+   Each section needs to announce itself without shouting. Alternating tonal
+   grounds do the work a border cannot, and the accent appears only where a
+   number or a claim has earned it.
+   ========================================================================== */
+
+/* Alternating ground. Tone, not colour: the hues are the same family, so the
+   page still reads as one surface rather than a stack of coloured bands. */
+.section:nth-of-type(even) { background: var(--surface-2); }
+.section:nth-of-type(even) .card { background: var(--surface); border-color: var(--outline); }
+.section:nth-of-type(even) .card.warm { background: var(--surface); }
+.section:nth-of-type(even) .stat,
+.section:nth-of-type(even) .table-wrap,
+.section:nth-of-type(even) .note { background: var(--surface); }
+.section + .section { border-top: 0; }
+
+/* The hero sits on a soft wash that fades out, so the fold has depth without
+   a hard edge. */
+.hero {
+  background:
+    radial-gradient(1100px 520px at 12% -10%, var(--accent-tint) 0%, transparent 62%),
+    radial-gradient(760px 420px at 92% 0%, var(--amber-tint) 0%, transparent 58%);
+}
+
+/* Eyebrow gets a leading tick, so the eye finds the start of every section. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.eyebrow::before {
+  content: "";
+  width: 18px;
+  height: 2px;
+  border-radius: var(--r-full);
+  background: var(--accent);
+  flex: none;
+}
+
+/* Statistics are the page's loudest element by design: they are the argument. */
+.stat {
+  position: relative;
+  overflow: hidden;
+  transition: transform .32s var(--spring), box-shadow .32s var(--spring);
+}
+.stat::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+  opacity: .8;
+}
+.stat:hover { transform: translateY(-3px); box-shadow: var(--e2); }
+
+/* A claim worth stopping on. Used sparingly, on the sentence that carries the
+   section, not on every bold phrase. */
+.mark {
+  background: linear-gradient(180deg, transparent 58%, var(--accent-tint) 58%);
+  padding: 0 .12em;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Our row in a results table should be unmistakable at a glance. */
+tbody tr.ours td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* Headline figures inside prose. */
+.figure {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section heads breathe more now that the borders are gone. */
+.section > .container > h2 { max-width: 26ch; }
+.section > .container > h2 + .matra { margin-top: 20px; }
