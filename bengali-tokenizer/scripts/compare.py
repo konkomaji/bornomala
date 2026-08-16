@@ -70,9 +70,23 @@ from bntok.graphemes import grapheme_clusters
 # release, Gemma family used as the closest open proxy but is gated and
 # reports unavailable without a HF auth token, which this repo does not
 # assume the user has configured).
+#
+# 2026-08-16: BrahmicTokenizer-131K added. It is the third and last baseline
+# named in the whitepaper's own Gate G2 list, and unlike IndicSuperTokenizer
+# and BengaliBPE above it does have a real, loadable public release
+# (theschoolofai/BrahmicTokenizer-131K, Apache-2.0, arXiv:2605.29379): a
+# PreTrainedTokenizerFast with working offset_mapping, so it gets a full row
+# including the conjunct-fragmentation column, not a partial one. It had
+# simply never been attempted before this date, which is a coverage gap in
+# our own benchmark, not an availability problem on their side.
+# Note the vocabulary asymmetry runs in BOTH directions and is stated in
+# benchmarks/bengali-comparison.md rather than left for a reader to notice:
+# BrahmicTokenizer has 131,072 tokens to our 64,000, but spreads them across
+# 12 Brahmic-script languages, where ours are spent entirely on Bengali.
 HF_MODELS = [
     ("Sarvam-1 (Sarvam AI)", "sarvamai/sarvam-1"),
     ("SUTRA (TWO AI)", "TWO/sutra-mlt256-v2"),
+    ("BrahmicTokenizer-131K (TSAI)", "theschoolofai/BrahmicTokenizer-131K"),
     ("Krutrim (Krutrim AI)", "krutrim-ai-labs/Krutrim-2-instruct"),
     ("Param2-17B (BharatGen)", "bharatgenai/Param2-17B-A2.4B-Thinking"),
     ("IndicBERTv2 (AI4Bharat)", "ai4bharat/IndicBERTv2-MLM-only"),

@@ -424,6 +424,51 @@ Kept as an honest record of what went wrong and how it was resolved.
     competitor baselines (Param2-17B, Llama-3.1, Gemma-2 [gated, reports
     unavailable], Mistral-7B, Qwen2.5, GPT-4 cl100k).
 
+19. **A coverage gap in our own benchmark, found and closed: the third
+    Gate G2 baseline had a public release all along and had never been
+    run.** The whitepaper's Gate G2 names three external baselines. Two of
+    them, IndicSuperTokenizer (arXiv:2511.03237) and BengaliBPE
+    (arXiv:2511.05324), were checked directly and honestly reported as
+    having no usable public artifact (point 17 and `scripts/compare.py`'s
+    header comment). The third, **BrahmicTokenizer-131K**
+    (`theschoolofai/BrahmicTokenizer-131K`, Apache-2.0, arXiv:2605.29379),
+    was never checked at all - it was simply never attempted. It does have
+    a real release: it loads as a `PreTrainedTokenizerFast` with working
+    `offset_mapping`, needs no auth token and no `trust_remote_code`, and
+    therefore gets a **full** row here including the conjunct-fragmentation
+    column, not a partial one.
+
+    This is recorded as our own omission, not as an availability problem on
+    their side. Until 2026-08-16 the claim "outperforms existing public
+    tokenizers on our benchmark" was carrying an untested public tokenizer,
+    which is exactly the kind of gap this file exists to record.
+
+    **Measured result (Wikipedia held-out, same 828 lines as every other
+    row): fertility 2.620, STRR 0.154, 6.62 bytes/token, conjunct
+    fragmentation 0.2209.** It does not change the ranking - it lands 8th,
+    a hair behind GPT-4o (2.608) and ahead of mBERT (2.777).
+
+    **The interesting part is that it is Indic-targeted and still lands
+    there.** BrahmicTokenizer is built specifically as an Indic-capable
+    drop-in replacement for OpenAI's o200k, and it carries 131,072 tokens
+    against our 64,000 - more than twice the vocabulary budget. It still
+    fragments 22.1% of Bengali conjuncts, worse than script-blind mBERT's
+    18.0%, because it is still a byte-level BPE with no notion of a
+    grapheme cluster. Targeting Indic scripts in the training mix is not
+    the same as constraining the merge space to the script's own units.
+
+    **The vocabulary asymmetry is stated in both directions, because it
+    cuts both ways.** BrahmicTokenizer has roughly twice our raw budget,
+    which favours it; but it spreads that budget across 12 Brahmic-script
+    languages (~11k effective per language) where ours is spent entirely
+    on Bengali, which favours us. Neither framing alone is honest. The
+    general caveat stands for this whole comparison table: every external
+    baseline in it is multilingual, and a monolingual Bengali tokenizer
+    beating multilingual ones on Bengali is an expected consequence of
+    that design choice, not a surprising discovery. The comparison is
+    still worth making, because these are the tokenizers Bengali text
+    actually gets encoded by in practice.
+
 ## Track A2: corpus dedup and quality filtering (Gate G3)
 
 `bntok/dedup.py`: exact dedup, MinHash-LSH near dedup (`datasketch`), and a

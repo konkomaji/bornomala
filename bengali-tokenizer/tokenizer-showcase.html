@@ -328,7 +328,10 @@
     <div class="note"><b>Real numbers, measured on held-out Bengali Wikipedia</b>, not estimated: mBERT breaks 18.0% of
       Bengali conjuncts; XLM-R breaks 10.2%; Sarvam-1 breaks 11.9%; DeepSeek-V3 breaks 28.5%. GPT-4o's o200k
       fares best of this group on raw fertility (2.608) but fragmentation isn't measurable the same way for
-      it (no open vocabulary to inspect). Full methodology: <code>benchmarks/bengali-comparison.md</code>.</div>
+      it (no open vocabulary to inspect). Being <em>aimed</em> at Indic scripts is not by itself enough:
+      BrahmicTokenizer-131K, built specifically as an Indic-capable drop-in replacement for o200k and carrying
+      more than twice our vocabulary budget, still lands at 2.620 fertility and breaks 22.1% of conjuncts.
+      Full methodology: <code>benchmarks/bengali-comparison.md</code>.</div>
   </div>
 </section>
 
@@ -446,6 +449,7 @@
           <tr><td>XLM-RoBERTa (Meta)</td><td class="tabular">2.464</td><td class="tabular">0.363</td><td class="tabular">7.04</td><td class="tabular">10.19%</td></tr>
           <tr><td>Sarvam-1 (Sarvam AI)</td><td class="tabular">2.593</td><td class="tabular">0.415</td><td class="tabular">6.69</td><td class="tabular">11.91%</td></tr>
           <tr><td>GPT-4o (OpenAI o200k)</td><td class="tabular">2.608</td><td class="tabular">0.111</td><td class="tabular">6.65</td><td class="tabular">n/a</td></tr>
+          <tr><td>BrahmicTokenizer-131K (TSAI)</td><td class="tabular">2.620</td><td class="tabular">0.154</td><td class="tabular">6.62</td><td class="tabular">22.09%</td></tr>
           <tr><td>mBERT (Google)</td><td class="tabular">2.777</td><td class="tabular">0.385</td><td class="tabular">6.25</td><td class="tabular">18.00%</td></tr>
           <tr><td>DeepSeek-V3</td><td class="tabular">2.994</td><td class="tabular">0.089</td><td class="tabular">5.79</td><td class="tabular">28.45%</td></tr>
           <tr><td>Krutrim (Krutrim AI)</td><td class="tabular">3.207</td><td class="tabular">0.076</td><td class="tabular">5.41</td><td class="tabular">28.59%</td></tr>

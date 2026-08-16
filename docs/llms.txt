@@ -21,8 +21,8 @@
 
 - A Bengali tokenizer that outperforms existing public tokenizers on a measured
   comparison on held-out Bengali: fertility 1.52 tokens per word, ahead of
-  AI4Bharat IndicBERTv2 (1.65), Sarvam-1 (2.59), GPT-4o (2.61), mBERT (2.78),
-  and DeepSeek-V3 (2.99).
+  AI4Bharat IndicBERTv2 (1.65), Sarvam-1 (2.59), GPT-4o (2.61),
+  BrahmicTokenizer-131K (2.62), mBERT (2.78), and DeepSeek-V3 (2.99).
 - It keeps 72 percent of words whole and almost never splits a Bengali conjunct
   (0.01 percent), while general tokenizers split between about 4 and 29 percent.
 - Method: trained on a literary-weighted corpus including the first 15,000

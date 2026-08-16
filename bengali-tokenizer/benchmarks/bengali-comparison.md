@@ -6,7 +6,7 @@ To our knowledge, the first fully reproducible benchmark comparing modern Bengal
 
 - **Our tokenizer**: Bornomala Bengali tokenizer, BPE, 64,000 vocabulary, trained on a literary-weighted corpus of 1.5M lines mixing Wikisource public-domain text, Sangraha verified/ben (pdf-typed as a formal/literary-register proxy, OCR-noise-filtered, and web-typed for general register), the first 15,000 Bengali Wikipedia articles, and XL-Sum Bengali news. Full corpus composition, what was substituted and why: `docs/known-issues.md` point 6. An ablation across 32k/48k/64k vocab on this same corpus showed fertility recovering monotonically with vocab size (point 7); 64k is the smallest size that beats IndicBERTv2 on every register tested.
 - **Evaluation text**: four disjoint held-out sets, none touched during training. Wikipedia: 828 lines from articles after the first 15,000. Literary/formal, general web, news: reserved tails of Sangraha pdf-typed, Sangraha web-typed, and XL-Sum documents respectively, starting exactly where training's document budget ends (`bntok.corpus.build_register_held_out`).
-- **Other tokenizers**: loaded from their official public releases and run with their own real tokenizers. Sarvam-1 (sarvamai/sarvam-1), IndicBERTv2 (ai4bharat/IndicBERTv2-MLM-only), XLM-RoBERTa (FacebookAI/xlm-roberta-base), mBERT (google-bert/bert-base-multilingual-cased), DeepSeek-V3 (deepseek-ai/DeepSeek-V3), GPT-4o (OpenAI o200k via tiktoken); on the Wikipedia held-out set only, also SUTRA (TWO/sutra-mlt256-v2) and Krutrim (krutrim-ai-labs/Krutrim-2-instruct). Two baselines named in the v2 design doc's roadmap could not be added, honestly rather than faked: IndicSuperTokenizer (arXiv:2511.03237) has no public code/tokenizer release found; the only similarly-named BengaliBPE (arXiv:2511.05324) Hugging Face repo found fails to load and is not verifiably the paper's own artifact.
+- **Other tokenizers**: loaded from their official public releases and run with their own real tokenizers. Sarvam-1 (sarvamai/sarvam-1), IndicBERTv2 (ai4bharat/IndicBERTv2-MLM-only), XLM-RoBERTa (FacebookAI/xlm-roberta-base), mBERT (google-bert/bert-base-multilingual-cased), DeepSeek-V3 (deepseek-ai/DeepSeek-V3), GPT-4o (OpenAI o200k via tiktoken); on the Wikipedia held-out set only, also SUTRA (TWO/sutra-mlt256-v2) and Krutrim (krutrim-ai-labs/Krutrim-2-instruct). BrahmicTokenizer-131K (theschoolofai/BrahmicTokenizer-131K, Apache-2.0, arXiv:2605.29379) was added on 2026-08-16: it is the third baseline named in the whitepaper's own Gate G2 list, it does have a real public release, and it had simply never been run here before that date. That was a coverage gap in this benchmark, not an availability problem on their side, and it is recorded as such. Two baselines named in the v2 design doc's roadmap still could not be added, honestly rather than faked: IndicSuperTokenizer (arXiv:2511.03237) has no public code/tokenizer release found; the only similarly-named BengaliBPE (arXiv:2511.05324) Hugging Face repo found fails to load and is not verifiably the paper's own artifact.
 - **Metrics**: all text NFC-normalised first. Fertility = tokens / whitespace-words (lower is better). STRR = fraction of words kept as a single token. Bytes/token = UTF-8 bytes / tokens. Conjunct fragmentation = fraction of Bengali grapheme clusters that a token boundary splits, computed from each tokenizer's own character offsets (GPT-4o gives no offsets, so its fragmentation is not measured). A small number of held-out lines that quote foreign-script text (Greek, Arabic, Japanese — genuinely present in Wikipedia and news text) fall outside this tokenizer's guaranteed coverage (Bengali block + ASCII, see `docs/known-issues.md` point 4) and are excluded from the fragmentation count specifically, since that is a documented, separate scope boundary, not a conjunct-splitting question; they still count normally toward fertility/STRR/bytes. At most 11 of 828-28,461 lines per register were excluded this way.
 - **Reproduce**:
   ```
@@ -27,9 +27,25 @@ To our knowledge, the first fully reproducible benchmark comparing modern Bengal
 | XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.1019 |
 | Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.1191 |
 | GPT-4o (OpenAI o200k) | 2.608 | 0.111 | 6.65 | n/a |
+| BrahmicTokenizer-131K (TSAI) | 2.620 | 0.154 | 6.62 | 0.2209 |
 | mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1800 |
 | DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
 | Krutrim (Krutrim AI) | 3.207 | 0.076 | 5.41 | 0.2859 |
+
+BrahmicTokenizer-131K across all four registers, alongside the two closest rows for scale:
+
+| Register | Ours | BrahmicTokenizer-131K | GPT-4o (o200k) |
+|---|--:|--:|--:|
+| Wikipedia | **1.524** | 2.620 | 2.608 |
+| Literary/formal | **1.320** | 2.449 | 2.456 |
+| General web | **1.201** | 2.267 | 2.266 |
+| News | **1.140** | 2.184 | 2.192 |
+
+Its conjunct fragmentation is 0.2209 / 0.2378 / 0.2004 / 0.1949 on the four registers respectively, against our 0.0000-0.0001.
+
+**Being aimed at Indic scripts is not, by itself, enough, and this is the row that shows it.** BrahmicTokenizer-131K is built specifically as an Indic-capable drop-in replacement for OpenAI's o200k, and it carries 131,072 tokens against our 64,000. On Bengali it lands within 0.01 of GPT-4o on every one of the four registers, and it splits roughly a fifth of all conjuncts, worse than script-blind mBERT on three registers of four. Targeting Indic scripts in the training mix is a different thing from constraining the merge space to the script's own units.
+
+**The vocabulary comparison cuts both ways and is stated in both directions.** BrahmicTokenizer has just over twice our raw budget, which favours it; it also spreads that budget across 12 Brahmic-script languages, roughly 11k per language, where ours is spent entirely on Bengali, which favours us. The same caveat applies to this whole table: every external baseline in it is multilingual, so a monolingual Bengali tokenizer beating them on Bengali is a consequence of that design choice rather than a surprising discovery. The comparison is still the right one to run, because these are the tokenizers Bengali text is actually encoded by in practice.
 
 SUTRA and Krutrim are now measured on all four registers (added after the initial Wikipedia-only pass):
 

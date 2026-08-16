@@ -70,6 +70,7 @@ evaluation pipeline.
 | XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.1019 |
 | Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.1191 |
 | GPT-4o (OpenAI o200k) | 2.608 | 0.111 | 6.65 | n/a |
+| BrahmicTokenizer-131K (TSAI) | 2.620 | 0.154 | 6.62 | 0.2209 |
 | mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1800 |
 | DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
 

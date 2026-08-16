@@ -68,6 +68,7 @@ never breaks a conjunct, where every other system breaks many.
 | XLM-RoBERTa (Meta) | 2.46 | 36% | 7.04 | 10.2% |
 | Sarvam-1 (Sarvam AI) | 2.59 | 42% | 6.69 | 11.9% |
 | GPT-4o (OpenAI) | 2.61 | 11% | 6.65 | not measurable |
+| BrahmicTokenizer-131K | 2.62 | 15% | 6.62 | 22.1% |
 | mBERT (Google) | 2.78 | 39% | 6.25 | 18.0% |
 | DeepSeek-V3 | 2.99 | 9% | 5.79 | 28.5% |
 | Krutrim (Krutrim AI) | 3.21 | 8% | 5.41 | 28.6% |
