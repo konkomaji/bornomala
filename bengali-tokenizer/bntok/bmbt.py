@@ -29,9 +29,26 @@ What BMBT adds regardless of the fertility outcome is `featurize()`: for
 each akshara, its actual structural decomposition (onset consonants, which
 carry a nukta, the vowel, trailing modifiers, whether a ZWJ/ZWNJ occurred) -
 a real, tested, usable output of the tokenizer itself, not an
-embedding-layer afterthought. Morphology (root/suffix decomposition, v2
-roadmap step 5's other half) is explicitly NOT built yet; this is a
-grammar + featural + statistical-fallback tokenizer only.
+embedding-layer afterthought.
+
+Morphology (v2 roadmap step 5's other half) is now built, opt-in via
+`morphology=True`. `morphology.py` finds the suffix chain, and training
+inserts a merge barrier at each morpheme seam so BPE cannot learn a token
+spanning one. Two things about it are stated up front rather than discovered
+in the results:
+
+  * it is expected to make fertility slightly WORSE, because FORMAL_SPEC.md's
+    OPTIMAL proof applies to any additional constraint, and morpheme
+    boundaries are additional constraints. What it buys is boundaries that
+    fall where Bengali's morphemes fall, which fertility cannot see;
+  * it can only reach about 62% of Bengali morpheme boundaries. The other
+    37.6% land INSIDE an akshara (measured on 80,000 held-out Wikipedia
+    words), because a matra binds orthographically to the consonant before it
+    while belonging morphologically to the suffix after it. BMBT may not split
+    an akshara, so those seams are unreachable by construction, not by
+    omission. Boundaries that cannot be placed correctly are skipped rather
+    than snapped to a neighbouring akshara. Full measurement, including the
+    per-suffix-class breakdown: `docs/bmbt-morphology.md`.
 
 This module is deliberately self-contained: it imports nothing from
 atoms.py or tokenizer.py (v1's implementation), only from errors.py,
@@ -58,11 +75,6 @@ from dataclasses import dataclass
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
 from .akshara import Akshara, akshara_bounds, akshara_bounds_batch, aksharas
-
-# Lines segmented per vectorized call during atom-map training. Large enough
-# that numpy's per-call setup is amortised, small enough that a streamed
-# corpus is never fully materialised in memory.
-_TRAIN_BATCH_LINES = 4096
 from .errors import (
     BnTokError,
     ConfigError,
@@ -74,6 +86,7 @@ from .errors import (
     VocabSizeError,
     require,
 )
+from .morphology import morph_bounds
 from .normalize import normalize
 from .substrate import (
     CONSONANTS,
@@ -89,6 +102,11 @@ from .substrate import (
 
 UNK_TOKEN = "<unk>"
 _SPECIALS = ["<pad>", "<unk>", "<s>", "</s>", "<mask>"]
+
+# Lines segmented per vectorized call during atom-map training. Large enough
+# that numpy's per-call setup is amortised, small enough that a streamed
+# corpus is never fully materialised in memory.
+_TRAIN_BATCH_LINES = 4096
 
 
 class FeaturizeError(BnTokError):
@@ -106,6 +124,12 @@ class FeaturizeError(BnTokError):
 # constant costs nothing and removes the question entirely.
 _PUA_RANGES = [(0xF0000, 0xFFFFD), (0x100000, 0x10FFFD)]
 _UNK_ATOM = chr(0xF8FE)
+
+# Morpheme-boundary marker. Never a token and never part of the vocabulary: the
+# pre-tokenizer splits on it and discards it, so it exists only to stop BPE
+# merging across a morpheme seam. Because it is removed before training and
+# before encoding, decode is unaffected and round-trip is unchanged.
+_MORPH_MARKER = chr(0xF8FD)
 
 
 def _pua_generator():
@@ -131,8 +155,10 @@ class AksharaAtomMap:
     specifically.
     """
 
-    def __init__(self, cluster_to_atom: dict[str, str], min_freq: int = 1):
+    def __init__(self, cluster_to_atom: dict[str, str], min_freq: int = 1,
+                 morphology: bool = False):
         self.cluster_to_atom = cluster_to_atom
+        self.morphology = morphology
         self.atom_to_cluster = {a: c for c, a in cluster_to_atom.items()}
         self.min_freq = min_freq
         self.atom_to_cluster[_UNK_ATOM] = ""  # UNK decodes to nothing (lossy, rare)
@@ -144,6 +170,7 @@ class AksharaAtomMap:
         corpus: Iterable[str],
         min_freq: int = 2,
         guarantee: Iterable[str] | None = None,
+        morphology: bool = False,
     ) -> AksharaAtomMap:
         """Build an akshara atom map from a corpus of NFC-normalised strings.
 
@@ -220,7 +247,7 @@ class AksharaAtomMap:
             if len(text) > 1 and freq >= min_freq and text not in cluster_to_atom:
                 cluster_to_atom[text] = _next_atom()
 
-        return cls(cluster_to_atom, min_freq=min_freq)
+        return cls(cluster_to_atom, min_freq=min_freq, morphology=morphology)
 
     # ---- encode / decode ----
     def encode(self, nfc_text: str) -> str:
@@ -232,9 +259,12 @@ class AksharaAtomMap:
         # no reason to pay for an Akshara object per chunk. Same scan, same
         # boundaries - see akshara.py's `_scan`.
         get = self.cluster_to_atom.get
+        barriers = self._morph_barriers(nfc_text) if self.morphology else frozenset()
         start = 0
         for end in akshara_bounds(nfc_text):
             text = nfc_text[start:end]
+            if start in barriers:
+                out.append(_MORPH_MARKER)
             start = end
             if text.isspace():
                 out.append(text)  # keep whitespace literal for the word-boundary marker
@@ -246,6 +276,40 @@ class AksharaAtomMap:
                 for cp in text:
                     out.append(get(cp, _UNK_ATOM))
         return "".join(out)
+
+    def _morph_barriers(self, nfc_text: str) -> frozenset[int]:
+        """Offsets in `nfc_text` where a merge barrier may legitimately go.
+
+        A morpheme boundary only qualifies if an akshara boundary already falls
+        there. Measured on 80,000 held-out Wikipedia words, 37.6% of Bengali
+        morpheme boundaries do NOT: they land inside an akshara, most often one
+        codepoint to its right, because a matra binds orthographically to the
+        consonant before it while belonging morphologically to the suffix after
+        it (`বিশ্বের` breaks morphologically at `বিশ্ব|ের`, but its aksharas are
+        `বি|শ্বে|র`).
+
+        Those boundaries are simply skipped. Snapping them to the nearest
+        akshara boundary was considered and rejected: it would assert a
+        morpheme seam one codepoint away from the real one, and a boundary in
+        the wrong place is worse than no boundary at all, both for the model
+        and for morphological-alignment scoring. The consequence, stated
+        plainly rather than discovered later, is that this layer can align to
+        at most about 62% of Bengali morpheme boundaries, and that ceiling is
+        a property of the script's orthography, not of this implementation.
+        Full measurement by suffix class: `docs/bmbt-morphology.md`.
+        """
+        barriers: set[int] = set()
+        base = 0
+        for word in nfc_text.split(" "):
+            if word:
+                akshara_starts = {0}
+                for end in akshara_bounds(word)[:-1]:
+                    akshara_starts.add(end)
+                for cut in morph_bounds(word):
+                    if cut in akshara_starts:
+                        barriers.add(base + cut)
+            base += len(word) + 1
+        return frozenset(barriers)
 
     def decode(self, atom_text: str) -> str:
         """Map a string of atoms back to text.
@@ -265,7 +329,8 @@ class AksharaAtomMap:
     def save(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(
-                {"min_freq": self.min_freq, "cluster_to_atom": self.cluster_to_atom},
+                {"min_freq": self.min_freq, "morphology": self.morphology,
+                 "cluster_to_atom": self.cluster_to_atom},
                 f, ensure_ascii=False,
             )
 
@@ -276,7 +341,8 @@ class AksharaAtomMap:
         try:
             with open(path, encoding="utf-8") as f:
                 d = json.load(f)
-            return cls(d["cluster_to_atom"], min_freq=d.get("min_freq", 1))
+            return cls(d["cluster_to_atom"], min_freq=d.get("min_freq", 1),
+                       morphology=d.get("morphology", False))
         except (json.JSONDecodeError, KeyError, TypeError) as e:
             raise LoadError(f"corrupt akshara atom map {path}: {e}") from e
 
@@ -315,6 +381,7 @@ class BMBT:
         vocab_size: int = 64000,
         min_atom_freq: int = 2,
         zwnj_policy: str = "preserve",
+        morphology: bool = False,
     ) -> BMBT:
         """Induce a BMBT tokenizer from a corpus (a list of raw strings).
 
@@ -340,7 +407,8 @@ class BMBT:
         if not norm:
             raise EmptyCorpusError("corpus contained no usable text after normalisation")
 
-        atoms = AksharaAtomMap.build(norm, min_freq=min_atom_freq, guarantee=GUARANTEED_CODEPOINTS)
+        atoms = AksharaAtomMap.build(norm, min_freq=min_atom_freq,
+                                     guarantee=GUARANTEED_CODEPOINTS, morphology=morphology)
 
         floor = len(atoms) + len(_SPECIALS)
         if vocab_size < floor:
@@ -365,7 +433,17 @@ class BMBT:
                 initial_alphabet=initial_alphabet, show_progress=False,
             )
 
-        tok.pre_tokenizer = pre_tokenizers.Metaspace(replacement="▁")
+        if morphology:
+            # Split on the morpheme marker and discard it, so BPE can never
+            # learn a merge that spans a morpheme seam. The marker is not in
+            # the vocabulary and never becomes a token, so decode is untouched
+            # and round-trip still holds exactly.
+            tok.pre_tokenizer = pre_tokenizers.Sequence([
+                pre_tokenizers.Metaspace(replacement="▁"),
+                pre_tokenizers.Split(_MORPH_MARKER, behavior="removed"),
+            ])
+        else:
+            tok.pre_tokenizer = pre_tokenizers.Metaspace(replacement="▁")
         tok.decoder = decoders.Metaspace(replacement="▁")
 
         try:
@@ -375,6 +453,7 @@ class BMBT:
 
         config = {
             "algo": algo,
+            "morphology": morphology,
             "vocab_size": vocab_size,
             "actual_vocab_size": tok.get_vocab_size(),
             "min_atom_freq": min_atom_freq,

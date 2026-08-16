@@ -140,11 +140,12 @@ def cmd_bmbt_train(args) -> int:
     from .bmbt import BMBT
     from .evaluate import evaluate
     corpus = _load_input(args)
-    print(f"loaded {len(corpus)} lines; training BMBT {args.algo} vocab={args.vocab_size} ...",
-          file=sys.stderr)
+    print(f"loaded {len(corpus)} lines; training BMBT {args.algo} vocab={args.vocab_size}"
+          f"{' with morphology' if args.morphology else ''} ...", file=sys.stderr)
     tok = BMBT.train(
         corpus, algo=args.algo, vocab_size=args.vocab_size,
         min_atom_freq=args.min_atom_freq, zwnj_policy=args.zwnj,
+        morphology=args.morphology,
     )
     tok.save(args.out)
     rep = evaluate(tok, corpus[: min(len(corpus), 2000)])
@@ -288,6 +289,9 @@ def main(argv=None) -> int:
     bt.add_argument("--vocab-size", type=int, default=64000, dest="vocab_size")
     bt.add_argument("--min-atom-freq", type=int, default=2, dest="min_atom_freq")
     bt.add_argument("--zwnj", choices=["preserve", "strip"], default="preserve")
+    bt.add_argument("--morphology", action="store_true",
+                     help="constrain merges at morpheme boundaries (see docs/bmbt-morphology.md); "
+                          "expected to cost a little fertility and to buy morphological alignment")
     bt.add_argument("--out", required=True, help="output directory for the tokenizer")
     bt.set_defaults(func=cmd_bmbt_train)
 
