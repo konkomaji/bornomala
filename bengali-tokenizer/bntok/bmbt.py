@@ -57,7 +57,12 @@ from dataclasses import dataclass
 
 from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 
-from .akshara import Akshara, aksharas
+from .akshara import Akshara, akshara_bounds, akshara_bounds_batch, aksharas
+
+# Lines segmented per vectorized call during atom-map training. Large enough
+# that numpy's per-call setup is amortised, small enough that a streamed
+# corpus is never fully materialised in memory.
+_TRAIN_BATCH_LINES = 4096
 from .errors import (
     BnTokError,
     ConfigError,
@@ -154,19 +159,39 @@ class AksharaAtomMap:
         chunk_freq: Counter[str] = Counter()
         codepoints: set[str] = set()
         seen_any = False
+
+        def _absorb(batch: list[str]) -> bool:
+            """Count every chunk in `batch`. Returns whether anything counted."""
+            any_text = False
+            for line, bounds in zip(batch, akshara_bounds_batch(batch)):
+                start = 0
+                for end in bounds:
+                    text = line[start:end]
+                    start = end
+                    if text.isspace():
+                        continue  # whitespace stays literal (carries word boundaries)
+                    any_text = True
+                    chunk_freq[text] += 1
+                    if len(text) > 1:
+                        codepoints.update(text)
+                    else:
+                        codepoints.add(text)
+            return any_text
+
+        # Buffered rather than line-at-a-time: the vectorized backend's array
+        # setup dominates on single short lines, so segmenting a block at once
+        # is what actually makes it faster than the scalar scan. `corpus` may
+        # be a one-shot stream, so it is consumed exactly once.
+        batch: list[str] = []
         for line in corpus:
             if not isinstance(line, str) or not line:
                 continue
-            for chunk in aksharas(line):
-                text = chunk.text
-                if text.isspace():
-                    continue  # whitespace stays literal (carries word boundaries)
-                seen_any = True
-                chunk_freq[text] += 1
-                if len(text) > 1:
-                    codepoints.update(text)
-                else:
-                    codepoints.add(text)
+            batch.append(line)
+            if len(batch) >= _TRAIN_BATCH_LINES:
+                seen_any = _absorb(batch) or seen_any
+                batch.clear()
+        if batch:
+            seen_any = _absorb(batch) or seen_any
 
         if not seen_any:
             raise EmptyCorpusError("akshara atom map: corpus contained no usable text")
@@ -202,17 +227,24 @@ class AksharaAtomMap:
         """Map NFC text to a string of atoms (one atom per known chunk,
         else one atom per constituent codepoint, else UNK)."""
         out = []
-        for chunk in aksharas(nfc_text):
-            text = chunk.text
+        # `akshara_bounds` rather than `aksharas`: this loop only ever needs
+        # each chunk's surface text, never its kind or offsets, so there is
+        # no reason to pay for an Akshara object per chunk. Same scan, same
+        # boundaries - see akshara.py's `_scan`.
+        get = self.cluster_to_atom.get
+        start = 0
+        for end in akshara_bounds(nfc_text):
+            text = nfc_text[start:end]
+            start = end
             if text.isspace():
                 out.append(text)  # keep whitespace literal for the word-boundary marker
                 continue
-            a = self.cluster_to_atom.get(text)
+            a = get(text)
             if a is not None:
                 out.append(a)
             else:
                 for cp in text:
-                    out.append(self.cluster_to_atom.get(cp, _UNK_ATOM))
+                    out.append(get(cp, _UNK_ATOM))
         return "".join(out)
 
     def decode(self, atom_text: str) -> str:

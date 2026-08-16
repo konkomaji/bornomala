@@ -7,6 +7,32 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Vectorized akshara segmentation (`bntok/akshara_vec.py`), optional via
+  `pip install "bntok[speed]"`.** The akshara grammar is regular, so the
+  parse state at any position is determined by two segmented reductions (a
+  running maximum locating each run's start, and two prefix-sum differences
+  for the virama/blocker flags) rather than a character-by-character
+  recurrence. New `akshara_bounds_batch()` segments a whole block that way,
+  measured **12x `aksharas()`, 4.9x the scalar bounds scan, and 2.3x the
+  `regex` `\X` C implementation** on 6,000 held-out Wikipedia lines
+  (1.08M codepoints), at 100% identical boundaries.
+  A conservative guard admits only the subset where the array model is
+  provably equivalent to `\X` (99.4% of measured lines); anything else -
+  another script's conjuncts, emoji ZWJ sequences, Hangul, CRLF - is
+  partitioned out and answered by the proven scalar scan, so correctness
+  rests on the guard being conservative rather than on this backend
+  covering all of Unicode. Absent numpy, everything falls back silently.
+  Two failed designs are recorded in the module docstring rather than
+  discarded: a parallel prefix scan over the transition monoid (correct,
+  but O(n log n) in gathers, measured only 1.33x), and an all-or-nothing
+  batch guard (correct, but zero of the real 4096-line batches qualified,
+  so it never once took the fast path).
+- **`akshara_bounds()` (`bntok/akshara.py`)**, the boundary offsets without
+  an `Akshara` object per chunk. Profiling put frozen-dataclass construction
+  at 38% of `aksharas()`' total cost, and `BMBT.encode`/`train` never read
+  `kind`/`start`/`end`. 2.0x on the same held-out text; `aksharas()` keeps
+  its full object-returning API and both share one `_scan`, so they cannot
+  disagree about a boundary.
 - **Track A2: corpus dedup and quality filtering (`bntok/dedup.py`), Gate
   G3.** Exact dedup, MinHash-LSH near dedup (`datasketch`), and a
   rule-based quality filter. Measured on real data across four sources
