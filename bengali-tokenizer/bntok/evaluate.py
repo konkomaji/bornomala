@@ -27,6 +27,7 @@ from dataclasses import asdict, dataclass
 
 from .graphemes import grapheme_clusters
 from .normalize import normalize
+from .substrate import VIRAMA
 from .tokenizer import BengaliTokenizer
 
 
@@ -43,14 +44,51 @@ class Report:
     gc_per_token: float
     conjunct_fragmentation_rate: float
     n_fragmented: int
+    conjunct_broken_rate: float
+    n_conjunct_broken: int
     roundtrip_ok: bool
 
     def as_dict(self) -> dict:
         return asdict(self)
 
 
+def _conjunct_broken_boundaries(token_surfaces: list[str]) -> int:
+    """Count boundaries that sever a virama-joined consonant cluster.
+
+    Strictly narrower than `_fragmented_boundaries`, and the difference is the
+    point. That function counts every split grapheme cluster, which includes
+    separating a consonant cluster from its matra (`শ্বে` -> `শ্ব` + `ে`). This
+    one counts only splits that leave a virama stranded from the consonant it
+    joins (`ক্ষ` -> `ক্` + `ষ`).
+
+    The distinction was academic while every atom was a whole akshara. It stops
+    being academic once BMBT's morphology layer deliberately splits at
+    onset/rime seams: a morphology-enabled artifact has a nonzero
+    grapheme-cluster fragmentation rate by design, while this rate must remain
+    exactly zero. Reporting only the first number would misread that trade as a
+    regression; reporting only the second would hide a real cost. Both are
+    reported. See `docs/bmbt-morphology.md`.
+    """
+    broken = 0
+    for i in range(len(token_surfaces) - 1):
+        a, b = token_surfaces[i], token_surfaces[i + 1]
+        if not a or not b:
+            continue
+        # A conjunct is severed exactly when the virama is parted from the
+        # consonant it joins, in either direction.
+        if a.endswith(VIRAMA) or b.startswith(VIRAMA):
+            broken += 1
+    return broken
+
+
 def _fragmented_boundaries(token_surfaces: list[str]) -> int:
-    """Count adjacent token boundaries that split a grapheme cluster."""
+    """Count adjacent token boundaries that split a grapheme cluster.
+
+    NOTE: despite the `conjunct_fragmentation_rate` field this feeds, it counts
+    ANY split grapheme cluster, not only severed conjuncts. The name predates
+    the distinction and is kept so that every already-published number stays
+    comparable; `_conjunct_broken_boundaries` is the stricter measure.
+    """
     frag = 0
     for i in range(len(token_surfaces) - 1):
         a, b = token_surfaces[i], token_surfaces[i + 1]
@@ -63,7 +101,7 @@ def _fragmented_boundaries(token_surfaces: list[str]) -> int:
 
 def evaluate(tok: BengaliTokenizer, texts: list[str]) -> Report:
     """Evaluate a tokenizer over a list of held-out texts."""
-    n_words = n_tokens = n_gc = n_bytes = n_frag = 0
+    n_words = n_tokens = n_gc = n_bytes = n_frag = n_broken = 0
     roundtrip = True
 
     for raw in texts:
@@ -79,6 +117,7 @@ def evaluate(tok: BengaliTokenizer, texts: list[str]) -> Report:
         n_gc += len(grapheme_clusters(nfc))
         n_bytes += len(nfc.encode("utf-8"))
         n_frag += _fragmented_boundaries(surfaces)
+        n_broken += _conjunct_broken_boundaries(surfaces)
 
         if roundtrip and not tok.roundtrip_ok(raw):
             roundtrip = False
@@ -108,5 +147,7 @@ def evaluate(tok: BengaliTokenizer, texts: list[str]) -> Report:
         gc_per_token=div(n_gc, n_tokens),
         conjunct_fragmentation_rate=div(n_frag, n_gc),
         n_fragmented=n_frag,
+        conjunct_broken_rate=div(n_broken, n_gc),
+        n_conjunct_broken=n_broken,
         roundtrip_ok=roundtrip,
     )

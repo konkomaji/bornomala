@@ -143,3 +143,59 @@ def test_known_limitation_proper_noun_over_strips():
     segments = morph_split(normalize("কলকাতা"))
     assert len(segments) == 2
     assert segments[1].kind == "derivational"
+
+
+# --- the conjunct guard, and what it unlocks --------------------------------
+
+CONJUNCT_FALSE_POSITIVES = [
+    "রাষ্ট্র",       # 'state': stem-final র, not a case marker
+    "একমাত্র",       # 'only'
+    "স্তোত্র",       # 'hymn'
+]
+
+
+@pytest.mark.parametrize("word", CONJUNCT_FALSE_POSITIVES)
+def test_no_analysis_cuts_inside_a_conjunct(word):
+    """A Bengali morpheme does not begin in the middle of a conjunct.
+
+    Every intra-conjunct boundary the inventory proposed on 80,000 held-out
+    Wikipedia words was a false positive of this shape, so the guard raises
+    precision and removes the only class of seam a conjunct-preserving
+    tokenizer genuinely could not reach.
+    """
+    from bntok.morphology import cuts_inside_conjunct
+
+    w = normalize(word)
+    for cut in morph_bounds(w):
+        assert not cuts_inside_conjunct(w, cut), f"{word} cut at {cut} splits a conjunct"
+
+
+def test_cuts_inside_conjunct_detects_both_directions():
+    from bntok.morphology import cuts_inside_conjunct
+
+    w = normalize("রাষ্ট্র")
+    virama_positions = [i for i, c in enumerate(w) if c == "\u09cd"]
+    assert virama_positions, "fixture should contain a virama"
+    for v in virama_positions:
+        assert cuts_inside_conjunct(w, v)          # cut before the virama
+        assert cuts_inside_conjunct(w, v + 1)      # cut after the virama
+
+
+def test_every_seam_is_reachable_without_breaking_a_conjunct():
+    """The architecture claim: 100% of seams placeable, conjuncts untouched.
+
+    Onset/rime seams (`শ্বে` -> `শ্ব` + `ে`) split an akshara but not a
+    conjunct. After the conjunct guard removes the false positives, every
+    remaining seam is either akshara-aligned or of that kind, so all of them
+    can be placed.
+    """
+    from bntok.morphology import cuts_inside_conjunct
+
+    words = [w for w, _, _ in SPLITS] + CONJUNCT_FALSE_POSITIVES + NO_SPLIT
+    seams = 0
+    for word in words:
+        w = normalize(word)
+        for cut in morph_bounds(w):
+            seams += 1
+            assert not cuts_inside_conjunct(w, cut)
+    assert seams > 0

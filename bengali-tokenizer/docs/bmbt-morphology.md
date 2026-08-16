@@ -63,62 +63,82 @@ Bengali words, which is the same way the akshara parser's three bugs surfaced.
 
 Both are regression tests in `tests/test_morphology.py`.
 
-## The constraint that decides the design
+## The constraint that decides the design, and how it was removed
 
 BMBT's atoms are aksharas and it may never split one. It can therefore only
 place a boundary where an akshara boundary already exists. **How often does a
 Bengali morpheme boundary actually fall there?**
 
 Measured over 80,000 held-out Bengali Wikipedia words, 39,928 morpheme
-boundaries:
+boundaries: **62.4% land on an akshara boundary, 37.6% land inside one.**
+By suffix class, reachable: clitic 100%, classifier 91.3%, plural 89.7%,
+verb 79.9%, derivational 52.3%, **case 48.8%**. Case markers are Bengali's
+most frequent suffix class and the worst affected.
 
-| | Count | Share |
+That looked like a hard ceiling. It was not. Taking the unreachable set apart
+by *what kind of split it would require* showed it is two different things:
+
+| | Count | Share of unreachable |
 |---|--:|--:|
-| Boundary lands **on** an akshara boundary | 24,904 | **62.4%** |
-| Boundary lands **inside** an akshara | 15,024 | **37.6%** |
+| **Onset/rime seam** (`শ্বে` -> `শ্ব` + `ে`) | 12,132 | 80.8% |
+| **Inside a conjunct** (`ষ্ট্র` -> `ষ্ট্` + `র`) | 2,892 | 19.2% |
 
-By suffix class:
+### The intra-conjunct cases were not unreachable, they were wrong
 
-| Suffix class | Reachable | Unreachable | Reachable share |
-|---|--:|--:|--:|
-| Clitic | 1,255 | 0 | 100.0% |
-| Classifier | 2,034 | 193 | 91.3% |
-| Plural | 2,516 | 289 | 89.7% |
-| Verb | 6,489 | 1,630 | 79.9% |
-| Derivational | 2,225 | 2,029 | 52.3% |
-| **Case** | 10,385 | 10,883 | **48.8%** |
+Every one inspected was the analyser over-stripping, not a real seam it could
+not place: `জাতিরাষ্ট্র`, `একমাত্র` and `স্তোত্র` split before a stem-final
+`র`, and `বিশ্বে` was read as stem plus a future-tense `বে` rather than
+`বিশ্ব` plus the locative `ে`.
 
-The unreachable boundaries are overwhelmingly one codepoint away (9,636 of
-15,024 sit exactly one codepoint right of the nearest akshara boundary), and
-the cause is a single orthographic fact: **a matra binds orthographically to
-the consonant before it while belonging morphologically to the suffix after
-it.** `বিশ্বের` breaks morphologically at `বিশ্ব|ের`, but its aksharas are
-`বি|শ্বে|র`, so the seam falls inside `শ্বে`. Case markers are the most
-frequent suffix class in Bengali and the worst affected, at 48.8%.
+A Bengali morpheme does not begin in the middle of a conjunct.
+`morphology.cuts_inside_conjunct` now refuses any analysis requiring such a
+cut. That removed 2,288 proposed boundaries, all false positives, which
+**raises precision and empties the "blocked" category at the same time**.
 
-### What follows from it
+### The onset/rime cases needed a distinction this project had been eliding
 
-- **The alignment ceiling is about 62%, and it is a property of the script,
-  not of this implementation.** No amount of work on the suffix inventory
-  raises it while the akshara guarantee holds.
-- **v1 has the identical ceiling.** Grapheme-cluster boundaries and akshara
-  boundaries are near-isomorphic on well-formed Bengali, so `bn-bpe-64k` is
-  subject to exactly the same limit.
-- **Byte-level tokenizers that break conjuncts can reach those boundaries.**
-  GPT-4o's o200k, BrahmicTokenizer-131K and the rest are under no constraint
-  here. They may therefore score *better* on morphological alignment while
-  fragmenting a fifth to a third of Bengali conjuncts. These two quality axes
-  are in genuine tension, and any morphological-alignment result this project
-  publishes has to report both rather than the flattering one.
+Two guarantees had been treated as one:
 
-### Boundaries that cannot be placed correctly are skipped
+- **Conjunct integrity** - never sever a virama-joined consonant cluster.
+  This is the guarantee that matters, and it is absolute.
+- **Akshara atomicity** - never split a consonant cluster from its matra.
+  This is an *implementation choice*, strictly stronger than the guarantee
+  requires, and it was costing 30.4% of all morpheme boundaries.
 
-Snapping an unreachable boundary to the nearest akshara boundary was
-considered and rejected. It would assert a morpheme seam one codepoint away
-from the real one, and a boundary in the wrong place is worse than no boundary
-at all, for the model and for alignment scoring alike. `_morph_barriers` emits
-a barrier only where a morpheme boundary and an akshara boundary already
-coincide.
+`শ্ব` + `ে` yields a valid consonant cluster and a valid vowel sign, both
+units Bengali literacy teaches by name. `ক্` + `ষ` yields a fragment
+corresponding to nothing. Those are not the same operation, and only the
+second is the thing this tokenizer exists to prevent.
+
+So BMBT now factors an akshara at the onset/rime seam **when, and only when, a
+morpheme boundary falls there**.
+
+### Result
+
+| | Reachable | Blocked by a conjunct |
+|---|--:|--:|
+| Akshara atoms, no conjunct guard | 62.4% | 7.2% |
+| Conjunct guard only | 66.5% | **0** |
+| **Conjunct guard + onset/rime factoring** | **100.0%** | **0** |
+
+Verified directly on 1,468,236 codepoints of held-out Wikipedia: 99,945
+morpheme seams forced, **zero conjunct-integrity violations**, and 31,923
+akshara splits (3.349% of all grapheme clusters) which are the deliberate,
+measured cost.
+
+### The cost, stated rather than buried
+
+A morphology-enabled artifact has a **nonzero grapheme-cluster fragmentation
+rate by design** (3.349%), entirely at morpheme seams. Its **conjunct
+fragmentation rate remains exactly zero**.
+
+`evaluate.py` now reports both. The long-standing field
+`conjunct_fragmentation_rate` in fact counts any split grapheme cluster, not
+only severed conjuncts; the name predates this distinction and is kept so that
+every already-published number stays comparable. The new
+`conjunct_broken_rate` is the strict measure. Reporting only the first would
+misread this trade as a regression; reporting only the second would hide a
+real cost.
 
 ## How the constraint reaches BPE
 

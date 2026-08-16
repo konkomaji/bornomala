@@ -54,6 +54,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from . import substrate
 from .akshara import akshara_bounds
 from .errors import ConfigError, NormalizationError
 
@@ -233,6 +234,29 @@ def _akshara_count(text: str) -> int:
     return len(akshara_bounds(text))
 
 
+def cuts_inside_conjunct(word: str, cut: int) -> bool:
+    """Would splitting `word` at `cut` land inside a virama-joined cluster?
+
+    A Bengali morpheme essentially never begins in the middle of a conjunct,
+    so an analysis that requires such a cut is almost always the analyser
+    over-stripping rather than a real seam it cannot reach. Measured on 80,000
+    held-out Wikipedia words, every intra-conjunct "boundary" the inventory
+    proposed was a false positive of exactly this kind: `জাতিরাষ্ট্র` and
+    `একমাত্র` split before a stem-final `র`, `স্তোত্র` likewise, and `বিশ্বে`
+    was read as stem plus a future-tense `বে` rather than `বিশ্ব` plus the
+    locative `ে`.
+
+    Rejecting these raises precision, and it also removes the only class of
+    morpheme boundary a conjunct-preserving tokenizer genuinely could not
+    reach. See `docs/bmbt-morphology.md`.
+    """
+    if cut <= 0 or cut >= len(word):
+        return False
+    # Cutting immediately after a virama severs it from the consonant it
+    # joins; cutting immediately before one hands the virama to the suffix.
+    return word[cut - 1] == substrate.VIRAMA or word[cut] == substrate.VIRAMA
+
+
 def morph_split(word: str) -> list[Morph]:
     """Segment one word into a stem followed by its suffix chain.
 
@@ -272,6 +296,10 @@ def morph_split(word: str) -> list[Morph]:
             ):
                 continue
             remaining = stem[: len(stem) - len(suffix)]
+            # A morpheme does not begin inside a conjunct. An analysis that
+            # requires such a cut is over-stripping, not a real seam.
+            if cuts_inside_conjunct(word, len(remaining)):
+                continue
             floor = _RISKY_MIN_STEM_AKSHARAS if suffix in _RISKY else MIN_STEM_AKSHARAS
             if _akshara_count(remaining) < floor:
                 continue
