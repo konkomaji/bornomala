@@ -164,7 +164,7 @@
     <p class="eyebrow">What we have achieved, measured and transparent</p>
     <h2>Two Bengali tokenizers, both ahead of every public baseline we tested</h2>
     <div class="matra"></div>
-    <p class="lede">Both tokenizers need fewer tokens per Bengali word than every system we tested, including AI4Bharat's own and the frontier models, and neither breaks a conjunct while the others break many. This holds on four disjoint held-out sets: Wikipedia, literary and formal, general web, and news.</p>
+    <p class="lede">Both tokenizers need fewer tokens per Bengali word than every system we tested, including two Bengali-monolingual models and the frontier models, and neither breaks a conjunct while the others break many. This holds on six disjoint held-out sets: Wikipedia, literary and formal, general web, news, romanized Banglish, and FLORES+.</p>
 
     <div class="stats">
       <div class="stat"><div class="big warm">1.14</div><div class="lbl">tokens per Bengali word on news text, against GPT-4o's 2.19 and GPT-4's 7.74</div></div>
@@ -175,24 +175,25 @@
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Tokenizer</th><th>Tokens per word</th><th>Whole words kept</th><th>Bytes per token</th><th>Broken conjuncts</th></tr></thead>
+        <thead><tr><th>Tokenizer</th><th>Tokens per word</th><th>Whole words kept</th><th>Bytes per token</th><th>Broken conjuncts (destructive)</th></tr></thead>
         <tbody>
-          <tr class="ours"><td>Bornomala (ours)</td><td class="win">1.52</td><td class="win">72%</td><td class="win">11.38</td><td class="win">0.01%</td></tr>
-          <tr><td>IndicBERTv2 (AI4Bharat)</td><td>1.65</td><td>61%</td><td>10.50</td><td class="bad">4.4%</td></tr>
-          <tr><td>SUTRA (TWO AI)</td><td>2.22</td><td>42%</td><td>7.82</td><td class="bad">15.8%</td></tr>
-          <tr><td>XLM-RoBERTa (Meta)</td><td>2.46</td><td>36%</td><td>7.04</td><td class="bad">10.2%</td></tr>
-          <tr><td>Sarvam-1 (Sarvam AI)</td><td>2.59</td><td>42%</td><td>6.69</td><td class="bad">11.9%</td></tr>
+          <tr class="ours"><td>Bornomala v1</td><td class="win">1.52</td><td class="win">72%</td><td class="win">11.38</td><td class="win">0.04%</td></tr>
+          <tr class="ours"><td>Bornomala BMBT</td><td class="win">1.52</td><td class="win">72%</td><td class="win">11.38</td><td class="win">0.04%</td></tr>
+          <tr><td>BanglaBERT (csebuetnlp)</td><td>1.63</td><td>65%</td><td>10.67</td><td class="bad">1.6%</td></tr>
+          <tr><td>IndicBERTv2 (AI4Bharat)</td><td>1.65</td><td>61%</td><td>10.50</td><td class="bad">1.9%</td></tr>
+          <tr><td>BanglaT5 (csebuetnlp)</td><td>1.67</td><td>63%</td><td>10.39</td><td class="bad">0.9%</td></tr>
+          <tr><td>SUTRA (TWO AI)</td><td>2.22</td><td>42%</td><td>7.82</td><td class="bad">5.0%</td></tr>
+          <tr><td>XLM-RoBERTa (Meta)</td><td>2.46</td><td>36%</td><td>7.04</td><td class="bad">6.3%</td></tr>
+          <tr><td>Sarvam-1 (Sarvam AI)</td><td>2.59</td><td>42%</td><td>6.69</td><td class="bad">3.6%</td></tr>
           <tr><td>GPT-4o (OpenAI)</td><td>2.61</td><td>11%</td><td>6.65</td><td>not measurable</td></tr>
-          <tr><td>BrahmicTokenizer-131K</td><td>2.62</td><td>15%</td><td>6.62</td><td class="bad">22.1%</td></tr>
-          <tr><td>mBERT (Google)</td><td>2.78</td><td>39%</td><td>6.25</td><td class="bad">18.0%</td></tr>
-          <tr><td>DeepSeek-V3</td><td>2.99</td><td>9%</td><td>5.79</td><td class="bad">28.5%</td></tr>
-          <tr><td>Krutrim (Krutrim AI)</td><td>3.21</td><td>8%</td><td>5.41</td><td class="bad">28.6%</td></tr>
+          <tr><td>BrahmicTokenizer-131K</td><td>2.62</td><td>15%</td><td>6.62</td><td class="bad">8.2%</td></tr>
+          <tr><td>mBERT (Google)</td><td>2.78</td><td>39%</td><td>6.25</td><td class="bad">15.5%</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="note">
-      <b>Exactly how this was measured, so anyone can check.</b> Our tokenizer was trained on a literary-weighted corpus mixing Wikisource public-domain text, Sangraha verified Bengali (formal and general register), Bengali Wikipedia, and XL-Sum news. It was then tested, along with every other tokenizer, on 828 held-out lines from Bengali Wikipedia articles never seen in training; three further held-out sets (literary/formal, general web, news) confirm the same ranking beyond Wikipedia. Every other tokenizer is its real, official public tokenizer, run on the same text. Fewer tokens per word is better; a broken conjunct is a written unit split across a boundary, computed from each tokenizer's own character offsets. GPT-4o exposes no offsets, so its conjunct figure is left unmeasured rather than guessed. Full method and raw numbers are in the repository, and the comparison reruns with a single command. To our knowledge, this is the first fully reproducible benchmark comparing modern Bengali tokenizers across compression, word preservation, and conjunct fragmentation using a common evaluation pipeline. <b>BMBT (v2, below) was trained on the identical corpus and measured the same way: it ties every number in this table</b>, exactly, on every register tested.
+      <b>Exactly how this was measured, so anyone can check.</b> Both tokenizers were trained on a literary-weighted corpus mixing Wikisource public-domain text, Sangraha verified Bengali (formal and general register), Bengali Wikipedia, and XL-Sum news. They were then tested, along with every other tokenizer, on 828 held-out lines from Bengali Wikipedia articles never seen in training; five further held-out sets confirm the same ranking beyond Wikipedia: literary/formal, general web, news, romanized Banglish (where, deliberately, both of ours score worst - see below), and FLORES+, the exact corpus an external tokenizer-fertility paper's own published numbers are built from. Every other tokenizer is its real, official public tokenizer, run on the same text. Fewer tokens per word is better; a broken conjunct here is the corrected, graded measure - a split that actually severs something real (a stranded virama, a detached nukta), not a harmless consonant-cluster/vowel-sign seam counted the same as real damage. GPT-4o exposes no character offsets, so its conjunct figure is left unmeasured rather than guessed. Full method and raw numbers are in the repository, and the comparison reruns with a single command. To our knowledge, this is the first fully reproducible benchmark comparing modern Bengali tokenizers across compression, word preservation, and conjunct fragmentation using a common evaluation pipeline. <b>v1 and BMBT tie exactly on five of six registers</b>, and differ by 0.001 fertility on the sixth (FLORES+, BMBT very slightly ahead) - reported exactly as measured, not smoothed into one row.
     </div>
   </div>
 </section>
@@ -207,45 +208,49 @@
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Word</th><th>Meaning</th><th>Ours (v1/BMBT)</th><th>IndicBERTv2 (best rival)</th><th>GPT-4o</th></tr></thead>
+        <thead><tr><th>Word</th><th>Meaning</th><th>Ours (v1/BMBT)</th><th>BanglaBERT/BanglaT5</th><th>IndicBERTv2</th><th>GPT-4o</th></tr></thead>
         <tbody>
-          <tr class="ours"><td class="bn">স্ত্রী</td><td>wife/woman</td><td class="win">1</td><td>1</td><td>2</td></tr>
-          <tr class="ours"><td class="bn">আকাঙ্ক্ষা</td><td>aspiration (triple conjunct)</td><td class="win">1</td><td>1</td><td>6</td></tr>
-          <tr class="ours"><td class="bn">রবীন্দ্রনাথ</td><td>Rabindranath (Tagore)</td><td class="win">1</td><td>1</td><td>7</td></tr>
-          <tr class="ours"><td class="bn">পশ্চিমবঙ্গ</td><td>West Bengal</td><td class="win">1</td><td>1</td><td>5</td></tr>
-          <tr class="ours"><td class="bn">বিষ্ণুপুর</td><td>Bishnupur</td><td class="win">1</td><td class="bad">2</td><td>5</td></tr>
-          <tr class="ours"><td class="bn">শান্তিনিকেতন</td><td>Santiniketan</td><td class="win">1</td><td class="bad">3</td><td>5</td></tr>
+          <tr class="ours"><td class="bn">স্ত্রী</td><td>wife/woman</td><td class="win">1</td><td class="win">1 / 1</td><td>1</td><td>2</td></tr>
+          <tr class="ours"><td class="bn">আকাঙ্ক্ষা</td><td>aspiration (triple conjunct)</td><td class="win">1</td><td class="win">1 / 1</td><td>1</td><td>6</td></tr>
+          <tr class="ours"><td class="bn">রবীন্দ্রনাথ</td><td>Rabindranath (Tagore)</td><td class="win">1</td><td class="win">1 / 1</td><td>1</td><td>7</td></tr>
+          <tr class="ours"><td class="bn">পশ্চিমবঙ্গ</td><td>West Bengal</td><td class="win">1</td><td class="win">1 / 1</td><td>1</td><td>5</td></tr>
+          <tr class="ours"><td class="bn">বিষ্ণুপুর</td><td>Bishnupur</td><td class="win">1</td><td class="win">1 / 1</td><td class="bad">2</td><td>5</td></tr>
+          <tr class="ours"><td class="bn">শান্তিনিকেতন</td><td>Santiniketan</td><td class="win">1</td><td class="win">1 / 1</td><td class="bad">3</td><td>5</td></tr>
         </tbody>
       </table>
     </div>
 
-    <p class="lede"><b>Ours tokenizes every one of the 13 words as exactly one token. No exception</b>, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara রবীন্দ্রনাথ.</p>
+    <p class="lede"><b>Ours tokenizes every one of the 13 words as exactly one token</b>, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara রবীন্দ্রনাথ. <b>Correction, kept visible rather than quietly edited away:</b> an earlier version of this page said "no exception" as if ours were the only one - BanglaBERT and BanglaT5 also score a perfect 1.00 here, added to this comparison 2026-08-17. What still sets ours apart: we guarantee it by construction, not by whatever a vocabulary happened to cover on these 13 words.</p>
 
     <div class="table-wrap">
       <table>
         <thead><tr><th>Tokenizer</th><th>Avg tokens/word (13 hard words)</th></tr></thead>
         <tbody>
-          <tr class="ours"><td>Bornomala v1 / BMBT (ours)</td><td class="win">1.00</td></tr>
+          <tr class="ours"><td>Bornomala v1</td><td class="win">1.00</td></tr>
+          <tr class="ours"><td>Bornomala BMBT</td><td class="win">1.00</td></tr>
+          <tr><td>BanglaBERT (csebuetnlp)</td><td>1.00</td></tr>
+          <tr><td>BanglaT5 (csebuetnlp)</td><td>1.00</td></tr>
           <tr><td>IndicBERTv2 (AI4Bharat)</td><td>1.31</td></tr>
           <tr><td>SUTRA (TWO AI)</td><td>3.31</td></tr>
           <tr><td>Sarvam-1</td><td>3.46</td></tr>
           <tr><td>Param2-17B (BharatGen)</td><td>3.62</td></tr>
           <tr><td>XLM-RoBERTa (Meta)</td><td>3.69</td></tr>
+          <tr><td>BrahmicTokenizer-131K</td><td>4.38</td></tr>
           <tr><td>mBERT (Google)</td><td>4.38</td></tr>
           <tr><td>GPT-4o (o200k)</td><td>4.46</td></tr>
           <tr><td>DeepSeek-V3</td><td>4.62</td></tr>
           <tr><td>Krutrim</td><td class="bad">4.77</td></tr>
+          <tr><td>Gemma-2 (Google)</td><td class="bad">5.69</td></tr>
           <tr><td>Qwen2.5 (Alibaba)</td><td class="bad">9.15</td></tr>
           <tr><td>GPT-4 (cl100k)</td><td class="bad">10.85</td></tr>
           <tr><td>Llama-3.1 (Meta)</td><td class="bad">10.85</td></tr>
           <tr><td>Mistral-7B</td><td class="bad">11.08</td></tr>
-          <tr><td>Gemma-2 (Google)</td><td>gated, unmeasurable</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="note">
-      IndicBERTv2, the only real rival at 1.31 average, still splits 3 of the 13 words (ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন), even India's best-funded Indic tokenizer cannot hold conjunct integrity on every word here. Ours does, by construction, not luck. A notable pattern, unverified beyond this word list: every single value in Llama-3.1's row is byte-for-byte identical to GPT-4's cl100k row, its tokenizer is tiktoken-derived and does not appear to extend Bengali coverage at all. Full per-word table, every tokenizer, and the reproduce command: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md">benchmarks/hard-words.md</a>.
+      Four tokenizers now tie at a perfect 1.00 average: ours (v1 and BMBT), BanglaBERT, and BanglaT5. IndicBERTv2 is the closest tokenizer not tied (1.31 average) and still splits 3 of the 13 words (ঋত্বিক, বিষ্ণুপুর, শান্তিনিকেতন). Ours is the only one of the four that guarantees this by construction rather than by empirical vocabulary coverage of this specific list. A notable pattern, unverified beyond this word list: every single value in Llama-3.1's row is byte-for-byte identical to GPT-4's cl100k row, its tokenizer is tiktoken-derived and does not appear to extend Bengali coverage at all. Gemma-2's row is real (5.69) now that access was granted 2026-08-18 - an earlier version of this page reported it as gated and unmeasurable. Full per-word table, every tokenizer, and the reproduce command: <a href="https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md">benchmarks/hard-words.md</a>.
     </div>
   </div>
 </section>

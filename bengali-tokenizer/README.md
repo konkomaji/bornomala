@@ -41,7 +41,7 @@ both on identical held-out text.
 | Atomic unit | UAX #29 grapheme cluster | akshara, parsed by grammar |
 | How structure is found | discovered statistically | parsed from the virama rule |
 | Depends on | `regex`'s `\X` implementation | its own finite-state machine |
-| Fertility (4 registers) | 1.524 / 1.320 / 1.201 / 1.140 | **identical** |
+| Fertility (Wiki/lit/web/news/Banglish/FLORES+) | 1.524 / 1.320 / 1.195 / 1.142 / 2.906 / 1.241 | 1.524 / 1.320 / 1.195 / 1.142 / 2.905 / 1.240 - identical on 5 of 6, BMBT edges v1 by 0.001 on FLORES+ |
 | Conjunct integrity | absolute | absolute |
 | Structural output | none | `featurize()`: onset, vowel, modifiers |
 | Morphology | none | suffix chain, 100% of seams reachable |
@@ -53,7 +53,10 @@ both on identical held-out text.
 unconstrained one on raw token count, and akshara boundaries are
 near-isomorphic to grapheme-cluster boundaries on well-formed Bengali, so the
 two atom schemes are close to the same scheme on real text. On Wikipedia
-held-out they match down to the raw integer token count.
+held-out they match down to the raw integer token count. Across all six
+registers now measured they tie exactly on five and differ by 0.001 fertility
+on the sixth (FLORES+, BMBT ahead) - real, small, reported rather than
+smoothed over.
 
 What separates them is everything else. BMBT owes nothing to a third-party
 Unicode library for its correctness, it emits a real structural decomposition
@@ -142,17 +145,32 @@ The cl100k agreement is close enough to be striking: two people, two corpora,
 two pipelines, within 3%. I am not going to claim the other two are, because
 they are not. o200k is 11% out and XLM-R is 30% out.
 
-I think the reason is the corpus rather than either measurement being wrong.
-They use FLORES-200, which is professionally translated single sentences, and
-they say themselves it may carry translationese. I use held-out Bengali
-Wikipedia, which is longer, messier, and has more proper nouns and rare
-compounds. Harder text costs more tokens, and it should cost *relatively* more
-on the tokenizers with better Bengali coverage, which is the direction the gaps
-actually go. That is a hypothesis I have not tested, so I am flagging it as one.
+I thought the reason was the corpus rather than either measurement being
+wrong. They use FLORES-200, which is professionally translated single
+sentences, and they say themselves it may carry translationese. I use
+held-out Bengali Wikipedia, which is longer, messier, and has more proper
+nouns and rare compounds. Harder text costs more tokens, and it should cost
+*relatively* more on the tokenizers with better Bengali coverage, which is
+the direction the gaps went. That was a hypothesis I had not tested.
 
-Adding FLORES-200 as a fifth register in `scripts/compare.py` would settle it
-and let me report a directly comparable multiplier instead of a cross-walk. It
-is cheap, 997 sentences on CPU, and it is on my list rather than done.
+**I have now tested it.** `scripts/compare.py --register flores` measures
+directly on FLORES+ (`openlanguagedata/flores_plus`, the maintained
+FLORES-200 successor, 2,009 dev+devtest sentences), not a cross-walk:
+
+| Tokenizer | Implied (their tax multiplier) | Measured on my Wikipedia set | Measured directly on FLORES+ |
+|---|--:|--:|--:|
+| GPT-4 (cl100k) | 8.02 | 7.794 (gap -2.8%) | **7.941 (gap -1.0%)** |
+| GPT-4o (o200k) | 2.35 | 2.608 (gap +11.0%) | **2.309 (gap -1.7%)** |
+| XLM-R | 1.89 | 2.464 (gap +30.1%) | **2.146 (gap +13.5%)** |
+
+The hypothesis holds, mostly. Measuring on their own corpus instead of mine
+closes the cl100k and o200k gaps to under 2% either way - as close as two
+independent pipelines measuring the same tokenizer are likely to get. XLM-R's
+gap shrinks by more than half (30.1% to 13.5%) but does not fully close, so I
+am reporting that honestly rather than declaring the hypothesis fully
+confirmed. My own tokenizers measure **1.240 (BMBT) / 1.241 (v1)** fertility
+on this exact corpus - full six-register table, both tokenizers shown
+separately everywhere: `benchmarks/bengali-comparison.md`.
 
 ### What this paper does not let me claim
 
@@ -440,23 +458,26 @@ for f in featurize("স্ত্রী"):        # no training needed - pure gra
 ## Measured result: ties v1, adds featural structure
 
 <!-- METRICS:START -->
-Trained on the identical literary-weighted corpus as v1 (`configs/bpe-64k.json`, same 64,000 vocabulary), measured on the same four held-out registers:
+Trained on the identical literary-weighted corpus as v1 (`configs/bpe-64k.json`, same 64,000 vocabulary), measured on all six held-out registers now tracked (destructive rate is the corrected fragmentation measure, `bntok/fragmentation.py` - see `benchmarks/bengali-comparison.md` for both metrics defined precisely):
 
-| Register | Fertility (v1 / BMBT) | STRR (v1 / BMBT) | Conjunct frag. (v1 / BMBT) |
+| Register | Fertility (v1 / BMBT) | STRR (v1 / BMBT) | Destructive rate (v1 / BMBT) |
 |---|--:|--:|--:|
-| Wikipedia | 1.524 / 1.524 | 0.722 / 0.722 | 0.000075 / 0.000075 |
-| Literary/formal | 1.320 / 1.320 | 0.789 / 0.789 | 0.000104 / 0.000112 |
-| General web | 1.201 / 1.201 | 0.861 / 0.861 | 0.000055 / 0.000057 |
-| News | 1.140 / 1.140 | 0.893 / 0.894 | 0.000025 / 0.000025 |
+| Wikipedia | 1.524 / 1.524 | 0.722 / 0.722 | 0.0004 / 0.0004 |
+| Literary/formal | 1.319 / 1.319 | 0.789 / 0.789 | 0.0003 / 0.0003 |
+| General web | 1.195 / 1.195 | 0.863 / 0.863 | 0.0002 / 0.0002 |
+| News | 1.142 / 1.142 | 0.893 / 0.893 | 0.0001 / 0.0001 |
+| Banglish (raw, deliberately bad) | 2.906 / 2.905 | 0.110 / 0.110 | n/m |
+| FLORES+ | 1.241 / **1.240** | 0.838 / 0.838 | 0.0001 / 0.0001 |
 
-On Wikipedia the two are identical down to the raw integer counts, despite genuinely different vocabularies (12,233 atoms for v1, 12,199 for BMBT). On the larger registers, tiny real differences appear in both directions - BMBT needs marginally fewer tokens, has marginally more fragmented clusters - neither large enough to call a win. **This is an honest tie**, reported exactly as measured. Both still lead every external baseline tested (IndicBERTv2, SUTRA, Sarvam-1, XLM-RoBERTa, GPT-4o, mBERT, DeepSeek-V3, Krutrim) by a wide margin on every register.
+On five of six registers the two are identical down to the fourth decimal, despite genuinely different vocabularies (12,233 atoms for v1, 12,199 for BMBT). On FLORES+ - the one register measured on the exact corpus an external tokenizer-fertility paper's own published numbers come from - BMBT edges v1 by 0.001 fertility: real, small, reported rather than smoothed into "identical." **This is an honest near-tie**, reported exactly as measured, not the outcome assumed going in. Both lead every external baseline tested by a wide margin on every register except Banglish, where both are LAST on purpose - see `benchmarks/bengali-comparison.md`'s Banglish section for why, and what actually fixes it.
 
-Full account, the CC-100 ablation, and why the tie makes sense given `FORMAL_SPEC.md`'s own proof: [`docs/known-issues.md`](docs/known-issues.md) ("Roadmap: a proposed v2") and [`benchmarks/bengali-comparison.md`](benchmarks/bengali-comparison.md).
+Full account, the CC-100 ablation, and why the near-tie makes sense given `FORMAL_SPEC.md`'s own proof: [`docs/known-issues.md`](docs/known-issues.md) ("Roadmap: a proposed v2") and [`benchmarks/bengali-comparison.md`](benchmarks/bengali-comparison.md).
 
 Reproduce:
 ```bash
 python -m bntok bmbt-train --corpus-config configs/bpe-64k.json --out artifacts/bmbt-64k
-python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --skip 15000 --limit 800
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --skip 15000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k --register flores
 ```
 <!-- METRICS:END -->
 
@@ -468,25 +489,35 @@ well-known West Bengal places, all conjunct-dense - measured on every
 tokenizer this repository tracks:
 
 **Ours (v1 and BMBT) tokenizes every one of the 13 words as exactly one
-token.** No exception, including the triple-conjunct আকাঙ্ক্ষা and the
-multi-akshara রবীন্দ্রনাথ.
+token**, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara
+রবীন্দ্রনাথ. **Correction to an earlier version of this section**: this was
+once "no exception, ours alone" - that stopped being true once BanglaBERT and
+BanglaT5 (csebuetnlp, added 2026-08-17) were measured on this list and also
+scored a perfect 1.00 average, tying us. The retraction stands here rather
+than quietly disappearing. What is still true: **ours is the only one of the
+three that guarantees this by construction** (grammar-first parsing provably
+cannot split a grapheme cluster/akshara), not by whatever their own
+vocabulary induction happened to cover on these 13 specific words - a
+guarantee that holds on words not on this list too, where empirical coverage
+of a fixed list does not.
 
-| Word | Meaning | Ours (v1/BMBT) | IndicBERTv2 (best rival) | GPT-4o |
-|---|---|--:|--:|--:|
-| স্ত্রী | wife/woman | 1 | 1 | 2 |
-| আকাঙ্ক্ষা | aspiration | 1 | 1 | 6 |
-| রবীন্দ্রনাথ | Rabindranath (Tagore) | 1 | 1 | 7 |
-| পশ্চিমবঙ্গ | West Bengal | 1 | 1 | 5 |
-| বিষ্ণুপুর | Bishnupur | 1 | 2 | 5 |
-| শান্তিনিকেতন | Santiniketan | 1 | 3 | 5 |
+| Word | Meaning | Ours (v1/BMBT) | BanglaBERT/BanglaT5 | IndicBERTv2 | GPT-4o |
+|---|---|--:|--:|--:|--:|
+| স্ত্রী | wife/woman | 1 | 1 / 1 | 1 | 2 |
+| আকাঙ্ক্ষা | aspiration | 1 | 1 / 1 | 1 | 6 |
+| রবীন্দ্রনাথ | Rabindranath (Tagore) | 1 | 1 / 1 | 1 | 7 |
+| পশ্চিমবঙ্গ | West Bengal | 1 | 1 / 1 | 1 | 5 |
+| বিষ্ণুপুর | Bishnupur | 1 | 1 / 1 | 2 | 5 |
+| শান্তিনিকেতন | Santiniketan | 1 | 1 / 1 | 3 | 5 |
 
-Average tokens/word over all 13 words, all 16 tokenizers measured (ours,
-IndicBERTv2, SUTRA, Sarvam-1, Param2-17B, XLM-RoBERTa, mBERT, GPT-4o,
-DeepSeek-V3, Krutrim, Qwen2.5, GPT-4 cl100k, Llama-3.1, Mistral-7B; Gemma-2
-gated, reports unavailable): **ours 1.00**, IndicBERTv2 (the only real
-rival) 1.31, the rest 3.31-11.08. IndicBERTv2 still fragments 3 of the 13
-words; ours never does, by construction. Full per-word, per-tokenizer
-table and reproduce command: [`benchmarks/hard-words.md`](benchmarks/hard-words.md).
+Average tokens/word over all 13 words, all 19 tokenizers measured (ours x2,
+BanglaBERT, BanglaT5, IndicBERTv2, SUTRA, Sarvam-1, Param2-17B, BrahmicTokenizer-131K,
+XLM-RoBERTa, mBERT, GPT-4o, DeepSeek-V3, Krutrim, Qwen2.5, GPT-4 cl100k,
+Llama-3.1, Mistral-7B, Gemma-2): **ours, BanglaBERT, and BanglaT5 all tie at
+1.00**; IndicBERTv2 is the closest tokenizer not tied (1.31, still fragments
+3 of 13); the rest run 3.31-11.08, with Gemma-2 (now measurable - access was
+gated until 2026-08-18) at 5.69. Full per-word, per-tokenizer table and
+reproduce command: [`benchmarks/hard-words.md`](benchmarks/hard-words.md).
 
 ## `bn-bpe-64k` (v1, previous, stable, unchanged)
 

@@ -10,6 +10,18 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Added
+- **Full benchmark refresh across six registers**, both tokenizers (v1 and
+  BMBT) shown as separate rows everywhere rather than merged into one "ours"
+  row. Real findings, corrected across every public surface: the closest
+  rival is now BanglaBERT, not IndicBERTv2; BanglaBERT/BanglaT5 also tie our
+  tokenizers on the hard-words list (a retraction of an earlier "ours alone"
+  claim, kept visible rather than silently edited away - ours remains the
+  only one that guarantees it by construction); v1 and BMBT differ by 0.001
+  fertility on FLORES+, the first non-identical register found, reported
+  rather than smoothed over. New FLORES+ register measures directly on the
+  exact corpus an external tokenizer-fertility paper's own numbers come
+  from. Full detail: `bengali-tokenizer/CHANGELOG.md`,
+  `bengali-tokenizer/benchmarks/bengali-comparison.md`.
 - **BMBT (Bornomala's Bengali Tokenizer)**: the v2 tokenizer, now built and
   the recommended/primary tokenizer of the project. Parses Bengali's akshara
   grammar directly (a finite-state machine) instead of discovering structure

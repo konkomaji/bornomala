@@ -7,6 +7,34 @@ All notable changes to the Track A tokenizer are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- **Graded fragmentation metric wired into `scripts/compare.py`** (`bntok/fragmentation.py`,
+  previously only used by `evaluate.py`). New `destructive_rate`/`any_split_rate`
+  fields alongside the legacy binary `conjunct_fragmentation` field, not
+  replacing it, so every already-published number stays comparable.
+- **FLORES+ (`openlanguagedata/flores_plus`) and Banglish as new held-out
+  registers** in `compare.py` (`--register flores` / `--register banglish`).
+  FLORES+ measures directly on the exact corpus an external tokenizer-fertility
+  paper's own published numbers come from, closing a gap flagged since an
+  earlier cross-walk comparison. Banglish deliberately measures our tokenizers
+  raw on Latin-script romanized text (both score worst on purpose - this is
+  the motivating measurement for the Banglish transliteration pipeline, not a
+  regression).
+- **Full benchmark refresh across all six registers**, both `bn-bpe-64k` and
+  `bmbt-64k` shown as separate rows everywhere (not merged into one "ours"
+  row): `benchmarks/comparison-*.json`, `benchmarks/bengali-comparison.md`,
+  `benchmarks/hard-words.md`, both READMEs, the HF model card, and the
+  website. Real findings from the refresh, reported honestly:
+  - **The closest rival is now BanglaBERT, not IndicBERTv2** - BanglaBERT and
+    BanglaT5 (added 2026-08-17) beat IndicBERTv2 on every core register.
+  - **BanglaBERT and BanglaT5 also tie our tokenizers on the hard-words list**
+    (perfect 1.00 avg tokens/word) - corrects an earlier claim across every
+    surface that ours was the only tokenizer to achieve this. Ours remains
+    the only one that guarantees it by construction, not empirical coverage.
+  - v1 and BMBT tie exactly on five of six registers; on FLORES+ they differ
+    by 0.001 fertility (BMBT very slightly ahead) - the first non-identical
+    register measured, reported rather than smoothed away.
+  - Gemma-2 access was granted to this project's account 2026-08-18 (was
+    gated); its row is now real everywhere it previously said "unavailable".
 - **Vectorized akshara segmentation (`bntok/akshara_vec.py`), optional via
   `pip install "bntok[speed]"`.** The akshara grammar is regular, so the
   parse state at any position is determined by two segmented reductions (a

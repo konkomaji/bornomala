@@ -23,9 +23,9 @@ metrics:
 - name: Fertility (tokens per word, held-out Bengali Wikipedia)
   type: fertility
   value: 1.524
-- name: Conjunct fragmentation
+- name: Destructive fragmentation rate (corrected measure)
   type: fragmentation
-  value: 0.0001
+  value: 0.0004
 ---
 
 # Bornomala Bengali Tokenizer
@@ -63,21 +63,30 @@ fully reproducible benchmark comparing modern Bengali tokenizers across
 compression, word preservation, and conjunct fragmentation using a common
 evaluation pipeline.
 
-| Tokenizer | Fertility | STRR | Bytes/token | Conjunct fragmentation |
+| Tokenizer | Fertility | STRR | Bytes/token | Destructive rate |
 |---|--:|--:|--:|--:|
-| **Bornomala (this model)** | **1.524** | **0.722** | **11.38** | **0.0001** |
-| IndicBERTv2 (AI4Bharat) | 1.652 | 0.612 | 10.50 | 0.0440 |
-| XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.1019 |
-| Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.1191 |
+| **Bornomala (this model)** | **1.524** | **0.722** | **11.38** | **0.0004** |
+| BanglaBERT (csebuetnlp) | 1.625 | 0.649 | 10.67 | 0.0162 |
+| IndicBERTv2 (AI4Bharat) | 1.652 | 0.612 | 10.50 | 0.0191 |
+| BanglaT5 (csebuetnlp) | 1.669 | 0.628 | 10.39 | 0.0088 |
+| XLM-RoBERTa (Meta) | 2.464 | 0.363 | 7.04 | 0.0627 |
+| Sarvam-1 (Sarvam AI) | 2.593 | 0.415 | 6.69 | 0.0364 |
 | GPT-4o (OpenAI o200k) | 2.608 | 0.111 | 6.65 | n/a |
-| BrahmicTokenizer-131K (TSAI) | 2.620 | 0.154 | 6.62 | 0.2209 |
-| mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1800 |
-| DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.2845 |
+| BrahmicTokenizer-131K (TSAI) | 2.620 | 0.154 | 6.62 | 0.0820 |
+| mBERT (Google) | 2.777 | 0.385 | 6.25 | 0.1552 |
+| DeepSeek-V3 | 2.994 | 0.089 | 5.79 | 0.1031 |
 
-Lower fertility and lower fragmentation are better; higher STRR and bytes per
-token are better. Fewer tokens per word means lower cost and more usable context.
-Every general tokenizer breaks between 4.4% and 28.5% of Bengali conjuncts on
-this held-out set; this one breaks 0.01%.
+Lower fertility and lower destructive rate are better; higher STRR and bytes
+per token are better. Fewer tokens per word means lower cost and more usable
+context. Destructive rate counts only splits that sever something real (a
+stranded virama, a detached nukta), not a harmless consonant-cluster/vowel-sign
+seam - the corrected replacement for a cruder binary fragmentation count.
+Every general tokenizer breaks between 0.9% and 15.5% of Bengali conjuncts
+destructively on this held-out set; this one breaks 0.04%. Also measured on
+literary/formal, general web, news, romanized Banglish, and FLORES+ (the
+exact corpus an external tokenizer-fertility paper's own numbers come from):
+see `benchmarks/bengali-comparison.md` in the repository for all six
+registers and the BMBT sibling tokenizer's numbers alongside this one.
 
 ## Hard words: conjuncts and Bengali place names
 
@@ -86,26 +95,31 @@ load-bearing words. A fixed list of 13 - deity names, the national poet
 Rabindranath Tagore, well-known West Bengal places, all conjunct-dense -
 measured on every tokenizer this project tracks (16 total).
 
-**This model tokenizes every one of the 13 words as exactly one token.**
-No exception, including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara
-রবীন্দ্রনাথ.
+**This model tokenizes every one of the 13 words as exactly one token**,
+including the triple-conjunct আকাঙ্ক্ষা and the multi-akshara রবীন্দ্রনাথ.
+**Correction to an earlier version of this card**: this used to say "no
+exception" as if this model were the only one - BanglaBERT and BanglaT5
+(csebuetnlp, added 2026-08-17) also score a perfect 1.00 average here. What
+still sets this model apart: it guarantees the result by construction
+(grammar cannot split a grapheme cluster), not by whatever a vocabulary
+happened to cover on these 13 specific words.
 
-| Word | Meaning | Ours | IndicBERTv2 (best rival) | GPT-4o |
-|---|---|--:|--:|--:|
-| স্ত্রী | wife/woman | **1** | 1 | 2 |
-| আকাঙ্ক্ষা | aspiration | **1** | 1 | 6 |
-| রবীন্দ্রনাথ | Rabindranath (Tagore) | **1** | 1 | 7 |
-| পশ্চিমবঙ্গ | West Bengal | **1** | 1 | 5 |
-| বিষ্ণুপুর | Bishnupur | **1** | 2 | 5 |
-| শান্তিনিকেতন | Santiniketan | **1** | 3 | 5 |
+| Word | Meaning | Ours | BanglaBERT/BanglaT5 | IndicBERTv2 | GPT-4o |
+|---|---|--:|--:|--:|--:|
+| স্ত্রী | wife/woman | **1** | 1 / 1 | 1 | 2 |
+| আকাঙ্ক্ষা | aspiration | **1** | 1 / 1 | 1 | 6 |
+| রবীন্দ্রনাথ | Rabindranath (Tagore) | **1** | 1 / 1 | 1 | 7 |
+| পশ্চিমবঙ্গ | West Bengal | **1** | 1 / 1 | 1 | 5 |
+| বিষ্ণুপুর | Bishnupur | **1** | 1 / 1 | 2 | 5 |
+| শান্তিনিকেতন | Santiniketan | **1** | 1 / 1 | 3 | 5 |
 
-Average tokens/word over all 13 words, all 16 tokenizers measured: **ours
-1.00**, IndicBERTv2 (the only real rival) 1.31, the rest (SUTRA, Sarvam-1,
-Param2-17B, XLM-RoBERTa, mBERT, GPT-4o, DeepSeek-V3, Krutrim, Qwen2.5,
-GPT-4 cl100k, Llama-3.1, Mistral-7B) 3.31-11.08; Gemma-2 gated, reports
-unavailable. IndicBERTv2 still fragments 3 of the 13 words; this model
-never does, by construction, not luck. Full per-word table and the
-reproduce command:
+Average tokens/word over all 13 words, all 19 tokenizers measured: **ours,
+BanglaBERT, and BanglaT5 all tie at 1.00**; IndicBERTv2, the closest
+tokenizer not tied, averages 1.31 and still fragments 3 of the 13 words; the
+rest (SUTRA, Sarvam-1, Param2-17B, BrahmicTokenizer-131K, XLM-RoBERTa, mBERT,
+GPT-4o, DeepSeek-V3, Krutrim, Gemma-2, Qwen2.5, GPT-4 cl100k, Llama-3.1,
+Mistral-7B) run 3.31-11.08 (Gemma-2 5.69 - real now, access was gated until
+2026-08-18). Full per-word table and the reproduce command:
 [`benchmarks/hard-words.md`](https://github.com/konkomaji/bornomala/blob/main/bengali-tokenizer/benchmarks/hard-words.md).
 
 ## Usage

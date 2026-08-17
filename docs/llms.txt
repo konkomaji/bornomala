@@ -37,18 +37,24 @@
   at all. Both the legacy and corrected figures are published.
 - Method: trained on a literary-weighted corpus including the first 15,000
   Bengali Wikipedia articles; evaluated on 828 held-out lines from later
-  articles, plus three further disjoint held-out registers (literary/formal,
-  general web, news); every other tokenizer is its real public tokenizer on
-  the same text. Nothing is estimated or fabricated. To our knowledge, this is
-  the first fully reproducible benchmark comparing modern Bengali tokenizers
-  across compression, word preservation, and conjunct fragmentation using a
-  common evaluation pipeline.
+  articles, plus five further disjoint held-out registers (literary/formal,
+  general web, news, romanized Banglish, FLORES+ - the exact corpus an
+  external tokenizer-fertility paper's own numbers come from); every other
+  tokenizer is its real public tokenizer on the same text. Nothing is
+  estimated or fabricated. The closest rival is BanglaBERT (csebuetnlp), not
+  IndicBERTv2 - added 2026-08-17, it beats IndicBERTv2 on every core
+  register. To our knowledge, this is the first fully reproducible benchmark
+  comparing modern Bengali tokenizers across compression, word preservation,
+  and conjunct fragmentation using a common evaluation pipeline.
 - Hard-words showcase: a fixed set of 13 conjunct-dense, culturally load-bearing
   words (deity names, the national poet Rabindranath Tagore, West Bengal place
-  names) measured on 16 tokenizers. Ours (v1 and BMBT) tokenizes every one of
-  the 13 as exactly one token, no exception. IndicBERTv2, the closest rival,
-  averages 1.31 tokens/word here and still splits 3 of the 13; every other
-  system averages 3.3 to 11.1 tokens/word.
+  names) measured on 19 tokenizers. Ours (v1 and BMBT) tokenizes every one of
+  the 13 as exactly one token - so do BanglaBERT and BanglaT5 (added
+  2026-08-17), a correction from an earlier claim that ours was the only one;
+  ours is the only one that guarantees it by construction rather than
+  empirical vocabulary coverage. IndicBERTv2, the closest tokenizer not
+  tied, averages 1.31 tokens/word here and still splits 3 of the 13; every
+  other system averages 3.3 to 11.1 tokens/word.
 
 ## Values
 
