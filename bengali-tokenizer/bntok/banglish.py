@@ -31,7 +31,7 @@ from __future__ import annotations
 import math
 import os
 import re
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 
 _WORD_RE = re.compile(r"[a-zA-Z']+")
@@ -104,7 +104,7 @@ class NgramClassifier:
         return grams
 
     @classmethod
-    def train(cls, banglish_words: list[str], english_words: list[str]) -> "NgramClassifier":
+    def train(cls, banglish_words: list[str], english_words: list[str]) -> NgramClassifier:
         counts: dict[str, Counter] = {"banglish": Counter(), "english": Counter()}
         totals: dict[str, list[str]] = {"banglish": banglish_words, "english": english_words}
         vocab: set[str] = set()
@@ -154,7 +154,7 @@ class NgramClassifier:
             }, f)
 
     @classmethod
-    def load(cls, path: str) -> "NgramClassifier":
+    def load(cls, path: str) -> NgramClassifier:
         import json
         with open(path, encoding="utf-8") as f:
             data = json.load(f)

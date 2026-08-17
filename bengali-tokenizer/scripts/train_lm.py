@@ -37,8 +37,8 @@ import time
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -67,7 +67,7 @@ class GPT(nn.Module):
         self.register_buffer("causal_mask", torch.triu(torch.ones(block_size, block_size) * float("-inf"), diagonal=1))
 
     def forward(self, idx: torch.Tensor) -> torch.Tensor:
-        b, t = idx.shape
+        _, t = idx.shape
         pos = torch.arange(t, device=idx.device)
         x = self.drop(self.tok_embed(idx) + self.pos_embed(pos))
         x = self.blocks(x, mask=self.causal_mask[:t, :t])
@@ -162,10 +162,10 @@ def main(argv=None) -> int:
     train_ds = BinaryTokenDataset(os.path.join(args.tokens_dir, "train.bin"), args.block_size)
     held_out_path = os.path.join(args.tokens_dir, "held_out.bin")
 
-    model_config = dict(
-        vocab_size=meta["vocab_size"], block_size=args.block_size, d_model=args.d_model,
-        nhead=args.nhead, num_layers=args.num_layers, dim_ff=args.dim_ff,
-    )
+    model_config = {
+        "vocab_size": meta["vocab_size"], "block_size": args.block_size, "d_model": args.d_model,
+        "nhead": args.nhead, "num_layers": args.num_layers, "dim_ff": args.dim_ff,
+    }
     model = GPT(**model_config).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"model parameters: {n_params:,}", file=sys.stderr)

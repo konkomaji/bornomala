@@ -85,8 +85,8 @@ def main(argv=None) -> int:
 
     meta = {
         "vocab_size": int(vocab_size),
-        "train_tokens": int(len(train_ids)),
-        "held_out_tokens": int(len(held_out_ids)),
+        "train_tokens": len(train_ids),
+        "held_out_tokens": len(held_out_ids),
         "held_out_bytes": int(held_out_bytes),
         "tokenizer_path": args.tokenizer,
         "bmbt": args.bmbt,

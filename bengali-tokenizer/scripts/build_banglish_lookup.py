@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import random
 import sys
 from collections import Counter, defaultdict
 
@@ -149,7 +148,7 @@ def main(argv=None) -> int:
     # Gap-fill from our own corpus: split real Bengali lines into words,
     # dedup, so each synthetic-augmentation candidate is a single word (this
     # table is word-level), not a full sentence.
-    from bntok.corpus import stream_wikipedia, is_clean_bengali_line
+    from bntok.corpus import is_clean_bengali_line, stream_wikipedia
     from bntok.normalize import normalize
     log("streaming our own corpus for gap-fill candidate words ...")
     raw_lines = stream_wikipedia(lang="bn", limit=3000)
@@ -173,8 +172,7 @@ def main(argv=None) -> int:
 
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
-        for latin, (bengali, cnt, source, runner_up) in sorted(table.items()):
-            f.write(f"{latin}\t{bengali}\t{cnt}\t{source}\t{runner_up}\n")
+        f.writelines(f"{latin}\t{bengali}\t{cnt}\t{source}\t{runner_up}\n" for latin, (bengali, cnt, source, runner_up) in sorted(table.items()))
     log(f"wrote {args.out}")
     return 0
 

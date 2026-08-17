@@ -288,7 +288,7 @@ def is_clean_bengali_line(line: str, min_ratio: float = 0.75, min_len: int = 4) 
 _BANGLISH_MARKERS = frozenset({
     "ami", "amar", "amake", "amra", "amader", "tumi", "tomar", "tomake",
     "tomra", "tomader", "apni", "apnar", "apnake", "she", "tini", "ora",
-    "era", "eta", "ota", "eita", "oita", "amake", "ei", "oi", "ache",
+    "era", "eta", "ota", "eita", "oita", "ei", "oi", "ache",
     "achi", "achen", "achis", "chilo", "chilam", "hobe", "hoyeche",
     "hoise", "hocche", "hoyese", "korbo", "korchi", "korche", "korchen",
     "korlam", "korlo", "korbe", "korte", "korar", "bhalo",

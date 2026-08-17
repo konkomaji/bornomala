@@ -51,8 +51,8 @@ from __future__ import annotations
 
 import random
 
-from .bmbt import AksharaFeatures, featurize
 from .akshara import Akshara
+from .bmbt import AksharaFeatures, featurize
 from .errors import NormalizationError
 
 # --- reverse phonetic table -------------------------------------------------
