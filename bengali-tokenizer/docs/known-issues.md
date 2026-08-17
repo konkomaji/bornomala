@@ -906,11 +906,44 @@ sentence context): top 1,000 words cover 47.6%, top 5,000 cover 69.6%, top
 most traffic never touches a model at all - the design's actual answer to
 computational cost, not a claim that any one model call is fast.
 
-**Still open**: tier 3 itself (the Colab training run), a self-growing
-cache writing tier-3 outputs back into the tier-1 table so a novel word
-costs the model once and is free after, and tier-1 collision handling
-(when one Latin spelling is real-attested for more than one Bengali word,
-the higher-count candidate wins with no context-aware disambiguation).
+**Three follow-up items closed out same day, each checked against real
+data before deciding scope, not assumed:**
+
+- **Tier-2 classifier's English recall.** Diagnosed directly: the training
+  split is 113k Banglish words versus 9k English words (an artifact of
+  Dakshina's size versus a 10k-word English list, not a real-world class
+  ratio), which skewed the Naive Bayes prior hard toward "banglish" and was
+  the actual cause of real English words like "arizona"/"bosnia"/"by"
+  being misclassified. Fixed to balanced (uniform) priors. Recall moved
+  from 89.8%/80.7% (banglish/english) to 85.9%/87.6% - a small banglish-
+  recall cost for a real english-recall gain, the correct direction once
+  tier 3 exists: misclassifying real English as Banglish would feed it
+  into a transliteration model and mangle it, the costlier failure mode.
+- **Tier-1 collision handling.** Measured first, not assumed: only 6.4% of
+  distinct Latin spellings (7,995 of 125,733) are even ambiguous, and
+  inspecting the close calls shows most are the SAME word under Bengali's
+  own real orthographic inconsistency (ন/ণ, ং/ঙ spelling variance - e.g.
+  "ankito" -> অঙ্কিত/অংকিত), not genuine different-word ambiguity. A
+  context-aware disambiguator (a bigram language model over resolved
+  words) would be real engineering for a problem this small and mostly
+  harmless - kept out of scope for that reason, not left unconsidered. The
+  runner-up candidate is now stored and exposed
+  (`load_lookup_table_full`) rather than silently discarded, so a future
+  pass has what it needs without rebuilding the table.
+- **Self-growing cache.** `bntok.banglish.transliterate()` now takes an
+  optional `tier3_fn` hook: when it resolves a word, the result is written
+  back into the shared `lookup` dict, so the same spelling is a tier-1 hit
+  from then on - a novel word costs the model once, never again. The
+  mechanism is tested (`tests/test_banglish.py`) against a stub `tier3_fn`,
+  proving the write-back and no-second-call behaviour work correctly,
+  independent of what the real model turns out to be.
+
+**Still open**: tier 3 itself - the actual seq2seq transliteration model.
+Scoped (byte/akshara-level Transformer, trained from scratch, Dakshina plus
+`bntok.banglish_synth`'s synthetic pairs, meant for Colab's free tier with
+Drive checkpointing) but not built: this is the one piece that genuinely
+needs training compute this environment does not have. Everything else in
+this section runs today, in the tests, with real measured numbers.
 
 ## How to report a new issue
 

@@ -48,16 +48,35 @@ def load_lookup_table(path: str = _DEFAULT_LOOKUP_PATH) -> dict[str, tuple[str, 
     it, `transliterate()` below does not distinguish for substitution
     purposes - both are used, since the synthetic-gap-fill validation
     (docs/known-issues.md) showed real hits and synthetic hits are both
-    genuine table entries, just with different provenance.
+    genuine table entries, just with different provenance. This loader
+    drops the 5th (runner-up) column - use `load_lookup_table_full` for
+    that; kept separate so the common case (just resolve a word) stays a
+    simple 2-tuple.
     """
-    table: dict[str, tuple[str, str]] = {}
+    return {latin: (bengali, source) for latin, (bengali, _cnt, source, _ru)
+            in load_lookup_table_full(path).items()}
+
+
+def load_lookup_table_full(path: str = _DEFAULT_LOOKUP_PATH) -> dict[str, tuple[str, int, str, str]]:
+    """Load the tier-1 table with everything scripts/build_banglish_lookup.py
+    writes: latin -> (bengali_word, count, source, runner_up).
+
+    `runner_up` is `"bengali_word:count"` when the Latin spelling was
+    attested for more than one real Bengali word (6.4% of real entries -
+    see the table-building docstring for why most of these are harmless
+    same-word orthographic variants, not genuine ambiguity), or "" when
+    there was none. Not consumed by `transliterate()` yet - exposed so a
+    future disambiguation pass has what it needs without rebuilding the
+    table from source data again.
+    """
+    table: dict[str, tuple[str, int, str, str]] = {}
     with open(path, encoding="utf-8") as f:
         for line in f:
             parts = line.rstrip("\n").split("\t")
-            if len(parts) != 4:
+            if len(parts) != 5:
                 continue
-            latin, bengali, _count, source = parts
-            table[latin] = (bengali, source)
+            latin, bengali, count, source, runner_up = parts
+            table[latin] = (bengali, int(count), source, runner_up)
     return table
 
 
@@ -101,12 +120,16 @@ class NgramClassifier:
             denom = total + vocab_size  # Laplace (add-1) smoothing
             log_probs[label] = {g: math.log((c + 1) / denom) for g, c in counts[label].items()}
             log_probs[label]["__unseen__"] = math.log(1 / denom)
-        n_bang, n_eng = len(banglish_words), len(english_words)
-        n_total = n_bang + n_eng
-        log_prior = {
-            "banglish": math.log(n_bang / n_total),
-            "english": math.log(n_eng / n_total),
-        }
+        # Balanced (uniform) priors, not proportional-to-training-set-size:
+        # the real Dakshina word list and the English wordlist differ in
+        # size by an artifact of how each was collected (125k vs 10k), not
+        # by any known real-world ratio of English-to-Banglish words in
+        # code-mixed chat text. A proportional prior pushed the decision
+        # boundary hard toward "banglish" and was the main cause of real
+        # English words being misclassified (checked directly: "a", "by",
+        # "ad", "arizona", "bosnia" - short/ambiguous words - were the
+        # majority of the errors before this fix).
+        log_prior = {"banglish": math.log(0.5), "english": math.log(0.5)}
         return cls(log_probs=log_probs, log_prior=log_prior, vocab_size=vocab_size)
 
     def classify(self, word: str) -> str:
@@ -145,27 +168,44 @@ class TransliterationResult:
     text: str
     tier1_hits: int
     tier2_english: int
-    tier3_unresolved: int  # classified Banglish, no tier-1 hit, tier 3 not built: passed through unchanged
+    tier3_hits: int         # resolved by tier3_fn, if one was supplied
+    tier3_unresolved: int   # classified Banglish, no tier-1 hit, no tier3_fn (or it declined): passed through unchanged
     total_latin_words: int
+    cache_growth: int       # new entries tier3_fn's output added to `lookup` this call
 
 
-def transliterate(text: str, lookup: dict[str, tuple[str, str]], classifier: NgramClassifier) -> TransliterationResult:
-    """Run tiers 0-2 over `text`. Bengali-script and non-alphabetic spans
-    pass through untouched (tier 0). Each Latin word is tried against the
-    tier-1 lookup table first (O(1)); on a miss, the tier-2 classifier
+def transliterate(text: str, lookup: dict[str, tuple[str, str]], classifier: NgramClassifier,
+                   tier3_fn=None) -> TransliterationResult:
+    """Run the full cascade over `text`. Bengali-script and non-alphabetic
+    spans pass through untouched (tier 0). Each Latin word is tried against
+    the tier-1 lookup table first (O(1)); on a miss, the tier-2 classifier
     decides whether to leave it alone (real English) or mark it unresolved
-    Banglish. Tier 3 is not built yet (see module docstring): unresolved
-    Banglish words pass through unchanged, same as an untransliterated
-    baseline, and are counted separately so the caller can see the honest
-    remaining gap rather than a silently-inflated coverage number.
+    Banglish, which then falls to `tier3_fn`.
+
+    `tier3_fn`, an optional `str -> str | None` callable, is the pluggable
+    slot for the actual seq2seq transliteration model (not built yet - see
+    module docstring). When it resolves a word, that result is used AND
+    written back into `lookup` in place: the self-growing cache. A novel
+    word costs `tier3_fn` once; every later occurrence of the same spelling,
+    in this call or a future one sharing the same `lookup` dict, is a tier-1
+    hit from then on. `tier3_fn` returning None means "I can't resolve this
+    either" - the word passes through unchanged, same as when no `tier3_fn`
+    is supplied at all, and is still counted in `tier3_unresolved`.
+
+    The cache-growth mechanism itself is tested (tests/test_banglish.py)
+    against a stub `tier3_fn`, since no trained model exists yet to test it
+    against for real; the mechanism does not depend on what tier3_fn's real
+    implementation turns out to be.
     """
-    tier1_hits = tier2_english = tier3_unresolved = total = 0
+    tier1_hits = tier2_english = tier3_hits = tier3_unresolved = total = 0
+    cache_growth = 0
 
     def repl(m: re.Match) -> str:
-        nonlocal tier1_hits, tier2_english, tier3_unresolved, total
+        nonlocal tier1_hits, tier2_english, tier3_hits, tier3_unresolved, total, cache_growth
         word = m.group(0)
         total += 1
-        entry = lookup.get(word.lower())
+        key = word.lower()
+        entry = lookup.get(key)
         if entry is not None:
             tier1_hits += 1
             bengali, _source = entry
@@ -174,11 +214,19 @@ def transliterate(text: str, lookup: dict[str, tuple[str, str]], classifier: Ngr
         if label == "english":
             tier2_english += 1
             return word  # leave real English untouched
+        if tier3_fn is not None:
+            resolved = tier3_fn(word)
+            if resolved:
+                tier3_hits += 1
+                lookup[key] = (resolved, "tier3")
+                cache_growth += 1
+                return resolved
         tier3_unresolved += 1
-        return word  # Banglish, but no tier-3 model yet: pass through unchanged
+        return word  # Banglish, unresolved: pass through unchanged
 
     out = _WORD_RE.sub(repl, text)
     return TransliterationResult(
         text=out, tier1_hits=tier1_hits, tier2_english=tier2_english,
-        tier3_unresolved=tier3_unresolved, total_latin_words=total,
+        tier3_hits=tier3_hits, tier3_unresolved=tier3_unresolved,
+        total_latin_words=total, cache_growth=cache_growth,
     )
