@@ -285,6 +285,75 @@ def is_clean_bengali_line(line: str, min_ratio: float = 0.75, min_len: int = 4) 
     return (matches / len(line)) >= min_ratio
 
 
+_BANGLISH_MARKERS = frozenset({
+    "ami", "amar", "amake", "amra", "amader", "tumi", "tomar", "tomake",
+    "tomra", "tomader", "apni", "apnar", "apnake", "she", "tini", "ora",
+    "era", "eta", "ota", "eita", "oita", "amake", "ei", "oi", "ache",
+    "achi", "achen", "achis", "chilo", "chilam", "hobe", "hoyeche",
+    "hoise", "hocche", "hoyese", "korbo", "korchi", "korche", "korchen",
+    "korlam", "korlo", "korbe", "korte", "korar", "bhalo",
+    "valo", "bhalobasha", "kharap", "sundor", "kemon", "keno", "kivabe",
+    "kothay", "kobe", "koto", "kotota", "ki", "kina", "naki", "na", "hae",
+    "haan", "jani", "jano", "jane", "bujhi", "bujho", "bujhte", "dekhi",
+    "dekho", "shuni", "shono", "bolo", "bolchi", "bolte", "jabo", "jacchi",
+    "jachhi", "asche", "eshechi", "gesi", "gesilo", "khub", "onek",
+    "kichu", "shob", "sob", "kotha", "din", "raat", "sokal", "bikel",
+    "ajke", "kalke", "porshu", "bhai", "apu", "dada", "didi", "bondhu",
+})
+
+
+def is_clean_banglish_line(line: str, min_len: int = 20, min_markers: int = 2,
+                            min_marker_ratio: float = 0.06) -> bool:
+    """Heuristic filter for genuine romanized-Bengali (Banglish) chat text
+    inside a noisy web-crawl source.
+
+    CC-100's `bn_rom` config is entirely Latin-script, so the script-ratio
+    trick `is_clean_bengali_line` uses does not apply: everything here already
+    passes an ASCII check. What actually separates real Banglish ("tumi kemon
+    acho") from the English/business/news boilerplate that dominates a 2018
+    CommonCrawl dump in this language slot is vocabulary, so this checks for a
+    minimum count and share of common romanized Bengali function words and
+    pronouns against a fixed marker list. Coarse, lexicon-based, not a
+    language-ID model: it favours precision (real Banglish) over recall (it
+    will miss valid Banglish that happens to avoid every marker word), which
+    is the right trade-off for a held-out evaluation set, where a few clean
+    lines are worth more than a large noisy one. Same honesty standard as
+    `is_clean_bengali_line`: this reduces noise, it does not remove all of it.
+    """
+    if len(line) < min_len:
+        return False
+    words = re.findall(r"[a-zA-Z']+", line.lower())
+    if not words:
+        return False
+    hits = sum(1 for w in words if w in _BANGLISH_MARKERS)
+    return hits >= min_markers and (hits / len(words)) >= min_marker_ratio
+
+
+def build_banglish_held_out(limit_lines: int = 2000, scan_lines: int = 60_000,
+                             log=lambda msg: None) -> list[str]:
+    """Held-out romanized-Bengali (Banglish) chat-style text, filtered from
+    CC-100's `bn_rom` config (Wenzek et al., 2020).
+
+    Never used anywhere in `build_configured_corpus` or any training config in
+    this repository (checked directly, not assumed), so there is no training
+    corpus to stay disjoint from and no offset bookkeeping is needed, unlike
+    `build_register_held_out`'s three registers. `bn_rom` is 2018-vintage
+    CommonCrawl and mostly non-Bengali (English news/business text that
+    happened to be crawled under this language code): `scan_lines` bounds how
+    many raw rows are pulled and filtered through `is_clean_banglish_line`
+    before giving up, so a request for more clean lines than the source
+    actually contains fails loudly (`EmptyCorpusError` via `stream_cc100`)
+    rather than hanging.
+    """
+    log(f"held-out: CC-100 bn_rom (banglish), scanning up to {scan_lines} raw lines ...")
+    raw = stream_cc100(lang="bn_rom", limit_lines=scan_lines, offset_lines=0)
+    out = [ln for ln in raw if is_clean_banglish_line(ln)][:limit_lines]
+    log(f"  banglish: {len(out)}/{len(raw)} raw lines passed the filter")
+    if not out:
+        raise EmptyCorpusError("no clean Banglish lines found in the scanned CC-100 bn_rom sample")
+    return out
+
+
 def _list_hf_parquet_files(repo_id: str, prefix: str, revision: str | None = None) -> list[str]:
     try:
         from huggingface_hub import HfApi

@@ -83,6 +83,13 @@ from bntok.graphemes import grapheme_clusters
 # benchmarks/bengali-comparison.md rather than left for a reader to notice:
 # BrahmicTokenizer has 131,072 tokens to our 64,000, but spreads them across
 # 12 Brahmic-script languages, where ours are spent entirely on Bengali.
+#
+# 2026-08-17: BanglaBERT and BanglaT5 (csebuetnlp, BUET CSE NLP group) added.
+# Both are Bengali-monolingual models, not multilingual, so this is the first
+# monolingual-vs-monolingual comparison in the table rather than a monolingual
+# vs multilingual one - a genuinely harder bar. Verified loadable directly:
+# csebuetnlp/banglabert (ElectraTokenizerFast, 32k vocab) and
+# csebuetnlp/banglat5 (T5TokenizerFast, 32,100 vocab).
 HF_MODELS = [
     ("Sarvam-1 (Sarvam AI)", "sarvamai/sarvam-1"),
     ("SUTRA (TWO AI)", "TWO/sutra-mlt256-v2"),
@@ -90,6 +97,8 @@ HF_MODELS = [
     ("Krutrim (Krutrim AI)", "krutrim-ai-labs/Krutrim-2-instruct"),
     ("Param2-17B (BharatGen)", "bharatgenai/Param2-17B-A2.4B-Thinking"),
     ("IndicBERTv2 (AI4Bharat)", "ai4bharat/IndicBERTv2-MLM-only"),
+    ("BanglaBERT (csebuetnlp)", "csebuetnlp/banglabert"),
+    ("BanglaT5 (csebuetnlp)", "csebuetnlp/banglat5"),
     ("mBERT (Google)", "google-bert/bert-base-multilingual-cased"),
     ("XLM-RoBERTa (Meta)", "FacebookAI/xlm-roberta-base"),
     ("DeepSeek-V3", "deepseek-ai/DeepSeek-V3"),
@@ -119,17 +128,25 @@ def held_out(skip: int, limit: int) -> list[str]:
     return out
 
 
-REGISTER_HELD_OUT_SOURCES = {"literary_formal", "general_web", "news"}
+REGISTER_HELD_OUT_SOURCES = {"literary_formal", "general_web", "news", "banglish"}
 
 
 def register_held_out(register: str, limit_docs: int) -> list[str]:
-    """Held-out text for a non-Wikipedia register, disjoint from training.
+    """Held-out text for a non-Wikipedia register.
 
-    Uses bntok.corpus.build_register_held_out, which reads Sangraha/XL-Sum
-    starting exactly where build_configured_corpus's training budget ends.
+    literary_formal/general_web/news use bntok.corpus.build_register_held_out,
+    which reads Sangraha/XL-Sum starting exactly where build_configured_corpus's
+    training budget ends, disjoint from training by construction. banglish is
+    different in kind: it is romanized-script CC-100 bn_rom, never used in any
+    training config in this repository, so there is no training range to stay
+    disjoint from and bntok.corpus.build_banglish_held_out is used directly.
     """
+    log = lambda m: print(m, file=sys.stderr)
+    if register == "banglish":
+        from bntok.corpus import build_banglish_held_out
+        return build_banglish_held_out(limit_lines=limit_docs, log=log)
     from bntok.corpus import build_register_held_out
-    slices = build_register_held_out(limit_docs=limit_docs, log=lambda m: print(m, file=sys.stderr))
+    slices = build_register_held_out(limit_docs=limit_docs, log=log)
     return slices[register]
 
 

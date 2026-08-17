@@ -798,6 +798,120 @@ translated/parallel-constructed rather than authored Bengali-native, but
 it is a real, immediately available generation-quality signal - not yet
 wired into anything, correctly, since no model exists to run it against.
 
+## Banglish: a real gap found, measured, and partially closed
+
+Both tokenizers (v1 and BMBT, tied) were checked against romanized Bengali
+chat text (\"tumi kemon acho\" - the WhatsApp/social-media register most real
+Bengali internet writing actually happens in) and measured, not assumed, to
+be dead last: 17th of 17 loadable tokenizers on a real held-out set,
+including behind BanglaBERT and BanglaT5. This section records what was
+found and what was built in response.
+
+**The held-out set.** `scripts/compare.py --register banglish` streams
+CC-100's `bn_rom` config (Wenzek et al., 2020 - real, verified present on
+the Hub, 2 shards), filtered by `bntok.corpus.is_clean_banglish_line`
+(a lexicon-based heuristic: rejects lines without a minimum count and share
+of common romanized Bengali function words, since the script-ratio trick
+`is_clean_bengali_line` uses does not apply to text that is already all
+Latin script). Never used in any training config in this repository, so
+there is no offset/disjointness bookkeeping needed the way the other three
+registers require (`bntok.corpus.build_banglish_held_out`).
+
+**Baseline, measured 2026-08-17, 2000 filtered real lines, 33,560 Latin
+words:** our tokenizer (v1 and BMBT identically, since BMBT's grammar is
+Bengali-script-only and gets no edge here) scored fertility 2.827, worse
+than every other tokenizer measured, including Sarvam-1 (2.596), BanglaBERT
+(2.381), and BanglaT5 (2.266); SUTRA led at 1.850. Cause: this tokenizer's
+64k vocabulary is spent entirely on Bengali script by design, so it has
+learned essentially no Latin-script merges, where every competitor's
+training mix has at least incidental English/multilingual exposure.
+
+**The fix does not compete on raw Latin-script BPE.** Throwing more
+`bn_rom` corpus at BPE would mean fighting corpus-scale battles against
+groups with larger crawls, and would dilute the Bengali-script vocabulary
+budget that is this project's actual advantage. Instead: transliterate
+Banglish to real Bengali script first, then hand the result to the
+tokenizer that already wins by a wide margin on Bengali script (1.140-1.524
+fertility across all four registers, see the comparison table above). A
+frequency-tiered cascade does this cheaply, the same grammar/frequency-
+first-then-statistics philosophy BMBT already applies to script itself,
+one layer up:
+
+- **Tier 0** - Bengali-script text passes through untouched, zero new cost.
+- **Tier 1** - a real-word lookup table (`bntok/data` conceptually,
+  currently `artifacts/banglish-lookup.tsv`, built by
+  `scripts/build_banglish_lookup.py`): 155,615 entries, 125,733 from real
+  Dakshina v1.0 data (Google Research, MIT-licensed - the official
+  `storage.googleapis.com/gresearch/dakshina` release, verified directly,
+  word lexicon train+dev splits plus the natural-sentence word alignment;
+  the lexicon test split is reserved, untouched, for future honest
+  evaluation) and 29,882 synthetic gap-fill entries for words absent from
+  Dakshina (real entries never overwritten by synthetic ones). O(1) dict
+  lookup, no model.
+- **Tier 2** - `bntok.banglish.NgramClassifier`, a character-bigram/trigram
+  Naive Bayes classifier trained from scratch (no pretrained model, no
+  fine-tuning) on the tier-1 table's real Banglish words versus a public
+  10,000-word English list (`first20hours/google-10000-english`, verified
+  reachable), deciding whether a word tier 1 missed is real English (leave
+  untouched - real code-mixed English inside Banglish sentences is common)
+  or unresolved Banglish. Held-out accuracy: 89.8% on Banglish words, 80.7%
+  on English words.
+- **Tier 3** - the actual seq2seq transliteration model for whatever tiers
+  1-2 leave unresolved. **Not built yet.** Scoped: byte/akshara-level
+  Transformer, trained from scratch (no fine-tuning, per design decision),
+  on Dakshina plus `bntok.banglish_synth`'s synthetic pairs, meant to run on
+  Colab's free tier (small model, checkpointed to Drive for session-limit
+  resilience). Until it exists, `bntok.banglish.transliterate()` passes
+  unresolved words through unchanged and reports the count honestly rather
+  than hiding the gap.
+
+**`bntok/banglish_synth.py`**: generates synthetic (noisy_latin,
+canonical_bengali) training pairs from real Bengali text already in this
+repository's corpus, via a reverse phonetic table (Avro-Phonetic-convention
+spellings) reusing BMBT's own `featurize()` output (onset/vowel/modifiers)
+rather than a new parser. Deliberately does NOT invent digit-substitution
+slang rules (e.g. \"kor6o\") - those patterns are not verifiable as
+systematic without real examples, so inventing them would be exactly the
+kind of fabricated pattern this document exists to flag, not fix. Validated
+against Dakshina's real lexicon (a 3000-word sample, 15-seed coverage per
+word), not assumed correct:
+
+| Table state | Word-level hit rate vs real Dakshina spellings |
+|---|--:|
+| First cut | 62.6% |
+| + inherent vowel reweighted (medial "o" preferred over dropping it) | 69.5% |
+| + word-final inherent-vowel drop + positional য (glide vs onset) fix | **75.2%** |
+
+Each fix was traced to a concrete real mismatch (e.g. \"protyahar\" render-
+ing as \"protzahar\"/\"protjahar\" before the positional য fix; \"smorthoner\"
+instead of \"shomorthoner\" before the inherent-vowel reweight), not tuned
+blind. Remaining gaps are lexical (loanwords with fixed English spellings,
+e.g. ঈদ - \"Eid\", not phonetic \"id\"/\"ii\") or rare special ligatures
+(ক্ষ), not systematic rule bugs - not chased further, matching this
+table's documented scope (\"heuristic approximation, not authoritative\").
+
+**End-to-end result, tiers 0-2 only, no model, measured on the same 2000-
+line held-out set the 2.827 baseline came from:** of 33,560 Latin words,
+79.5% resolved at tier 1, 6.1% correctly left alone as real English, 14.4%
+remain unresolved (passed through raw, tier 3 not built). Fertility on the
+transliterated output: **1.740** - better than every tokenizer on the
+17-way leaderboard, including the previous leader SUTRA (1.850), achieved
+with zero GPU and zero trained model. Tier 3 has only upside from here: it
+targets exactly the remaining 14.4%.
+
+**Efficiency, measured not asserted.** The lookup table's coverage follows
+a real Zipfian curve on Dakshina's 100,483 real word occurrences (natural
+sentence context): top 1,000 words cover 47.6%, top 5,000 cover 69.6%, top
+20,000 cover 89.8%. Most real Banglish traffic resolves at tier 1, meaning
+most traffic never touches a model at all - the design's actual answer to
+computational cost, not a claim that any one model call is fast.
+
+**Still open**: tier 3 itself (the Colab training run), a self-growing
+cache writing tier-3 outputs back into the tier-1 table so a novel word
+costs the model once and is free after, and tier-1 collision handling
+(when one Latin spelling is real-attested for more than one Bengali word,
+the higher-count candidate wins with no context-aware disambiguation).
+
 ## How to report a new issue
 
 Open an issue on the repository with the exact input, the command, and the
