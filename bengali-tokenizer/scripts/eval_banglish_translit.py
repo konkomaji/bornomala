@@ -17,7 +17,12 @@ Usage:
   python scripts/eval_banglish_translit.py \
     --dakshina-dir <path to dakshina_dataset_v1.0/bn> \
     --data-dir artifacts/banglish-translit-data \
-    --ckpt <path to step-N.pt> --device cuda
+    --ckpt <path to step-N.pt> --device cuda --beam-size 5
+
+--beam-size 1 (default) is greedy decoding, unchanged from before. Beam
+search costs no retraining - it changes only how the trained model is
+queried - so it's always worth trying against an existing checkpoint before
+deciding a bigger/longer training run is needed.
 """
 
 from __future__ import annotations
@@ -70,6 +75,8 @@ def main(argv=None) -> int:
     p.add_argument("--ckpt", required=True)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--batch-size", type=int, default=256)
+    p.add_argument("--beam-size", type=int, default=1, help="1 = greedy (default), >1 = beam search")
+    p.add_argument("--length-penalty", type=float, default=0.6, help="beam search only")
     args = p.parse_args(argv)
 
     device = torch.device(args.device)
@@ -94,6 +101,8 @@ def main(argv=None) -> int:
     test_pairs = load_test_pairs(test_path)
     latin_words = list(test_pairs.keys())
     print(f"{len(latin_words)} distinct Latin spellings in the reserved test split", file=sys.stderr)
+    decoder = "greedy" if args.beam_size <= 1 else f"beam (size {args.beam_size})"
+    print(f"decoding: {decoder}", file=sys.stderr)
 
     exact = 0
     total_cer_num = total_cer_den = 0
@@ -105,7 +114,11 @@ def main(argv=None) -> int:
             for k, c in enumerate(w):
                 src[j, k] = src_stoi.get(c, src_stoi[UNK])
         src = src.to(device)
-        pred = model.greedy_decode(src, bos_id, eos_id, max_len=max_len + 8)
+        if args.beam_size <= 1:
+            pred = model.greedy_decode(src, bos_id, eos_id, max_len=max_len + 8)
+        else:
+            pred = model.beam_decode_batch(src, bos_id, eos_id, beam_size=args.beam_size,
+                                            max_len=max_len + 8, length_penalty=args.length_penalty)
         for j, w in enumerate(batch_words):
             hyp_ids = [c for c in pred[j].tolist() if c not in (tgt_pad, bos_id, eos_id)]
             hyp = "".join(tgt_vocab[c] for c in hyp_ids)
