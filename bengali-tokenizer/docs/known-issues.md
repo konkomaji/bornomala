@@ -938,12 +938,55 @@ data before deciding scope, not assumed:**
   proving the write-back and no-second-call behaviour work correctly,
   independent of what the real model turns out to be.
 
-**Still open**: tier 3 itself - the actual seq2seq transliteration model.
-Scoped (byte/akshara-level Transformer, trained from scratch, Dakshina plus
-`bntok.banglish_synth`'s synthetic pairs, meant for Colab's free tier with
-Drive checkpointing) but not built: this is the one piece that genuinely
-needs training compute this environment does not have. Everything else in
-this section runs today, in the tests, with real measured numbers.
+**Tier 3, fully scoped and ready to run, blocked only on training compute
+this environment does not have:**
+
+- `scripts/assemble_banglish_translit_dataset.py`: builds train/dev/test-
+  ready data. train.tsv (Dakshina lexicon train split + the aligned
+  natural-sentence pairs + large-scale `bntok.banglish_synth` synthetic
+  augmentation from our own corpus) and dev.tsv (Dakshina lexicon dev
+  split, real only, deliberately no synthetic, so checkpoint selection is
+  judged against real human spellings). The lexicon TEST split stays
+  untouched, reserved since the tier-1 table was first built, for the one
+  honest blind evaluation.
+  A first, naive assembly run measured a target (Bengali) vocabulary of
+  1,077 symbols spanning a dozen foreign scripts, emoji, and control
+  characters - real contamination in Dakshina's Wikipedia-sourced data and
+  this project's own corpus (both legitimately quote foreign-script text
+  inside otherwise-clean Bengali lines; `is_clean_bengali_line`'s line-
+  level ratio filter correctly lets those lines through, but a single
+  contaminated word from within one still is not a valid training pair).
+  Caught by inspecting the output before ever starting a Colab run, not
+  after: `_is_valid_pair` now requires pure-Latin source and pure-Bengali-
+  block target, dropping 354,197 of 733,908 raw pairs (contamination and
+  duplicates together) to a clean 379,711-pair train set. Final vocabulary:
+  33 source symbols, 78 target symbols - the expected range for character-
+  level Latin/Bengali.
+- `scripts/train_banglish_translit.py`: a small (~5-10M parameter)
+  character-level Transformer encoder-decoder, trained fully from scratch
+  (random init, no fine-tuning), own PyTorch training loop, checkpointed
+  every `--save-every` steps to survive Colab's session limits - re-running
+  with the same `--ckpt-dir` resumes automatically. Verified end to end on
+  a tiny CPU smoke-test dataset: loss drops, checkpointing and resume both
+  work correctly (confirmed a resumed run picks up at the exact saved
+  step), dev exact-match accuracy climbs as expected. A real bug was caught
+  in this pass too: the model's hyperparameters were not saved with the
+  checkpoint, so evaluating a checkpoint trained with non-default settings
+  failed to load. Fixed by saving the full model config inside every
+  checkpoint.
+- `scripts/eval_banglish_translit.py`: the honest blind evaluation against
+  Dakshina's reserved test split, reporting two numbers deliberately (not
+  one) - strict word-level exact-match, and character error rate for
+  partial credit on close-but-wrong output, since fertility or accuracy
+  alone can hide a model that looks plausible but is not actually correct.
+- `colab/train_banglish_tier3.ipynb`: mounts Drive, clones the repo,
+  trains, evaluates, points at where to wire the trained checkpoint into
+  `bntok.banglish.transliterate()`'s already-tested `tier3_fn` hook.
+
+**What genuinely remains**: running the notebook. That step needs real GPU
+training time this environment does not have - everything upstream of it
+(data, contamination fix, model code, checkpoint/resume, evaluation) is
+built, tested, and verified correct on real (if small-scale) runs.
 
 ## How to report a new issue
 
