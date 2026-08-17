@@ -1042,6 +1042,103 @@ at real scale - two real GPU training runs, longer than tier 3's single
 run, real compute this environment does not have. Everything upstream is
 built, tested, and now verified correct end to end.
 
+## MorphScore: attempted, Bengali sample too small to be a benchmark
+
+MorphScore (Arnett, Hudspeth & O'Connor, ICML 2025 Tokenization Workshop,
+https://arxiv.org/abs/2507.06378) scores how well a tokenizer's boundaries
+line up with real morpheme boundaries in Universal Dependencies data, across
+70+ languages. It looked like the fastest route to a downstream-quality claim
+that isn't fertility, since fertility ties between `bn-bpe-64k` and BMBT (see
+the BMBT section above). Run via `scripts/morphscore_eval.py`, results in
+`benchmarks/morphscore.json`. The honest conclusion: **it doesn't work for
+Bengali, and the reason is structural, not a bug on our side.**
+
+**The data is too thin before any filtering happens.** MorphScore's own
+README lists a 70-language headline table with an explicit cutoff (>=100
+items after filtering) - Bengali is not in that table. Checked why directly
+against the HF dataset (`catherinearnett/morphscore`) rather than assumed:
+`ben_beng` has only 102 raw rows total. After MorphScore's own filtering
+chain (unique wordforms only, stem must equal lemma, single-token and
+single-morpheme words excluded by default since they're not a real boundary
+decision), the number of items MorphScore can actually SCORE per tokenizer
+ranges from 1 to 15 across everyone tested. `bn-bpe-64k` and BMBT both land
+at n=2. A tokenizer's real-world Bengali morphological alignment cannot be
+concluded from 2 data points, in either direction, regardless of what the
+number says.
+
+**Two real methodology bugs were caught before trusting any of these
+numbers**, neither hypothetical:
+
+1. MorphScore reconstructs each predicted morpheme boundary by summing
+   decoded-token character lengths and comparing against the gold wordform's
+   own length. Our tokenizers recompose decomposed consonant+nukta sequences
+   (ড়/ঢ়/য়) to their NFC-excluded singleton inside `normalize()` (see point
+   in the earlier bugs section above) - so feeding an unnormalized UD
+   wordform through our tokenizer and comparing lengths against the
+   unnormalized gold text silently misaligns every boundary in a word
+   containing those letters. Fixing this by normalizing the wordform/stem/
+   lemma/preceding_part/following_part fields before scoring was the right
+   call for our own two tokenizers, since that's exactly what their
+   `encode()` does internally regardless of what's fed in.
+
+   Applying that SAME fix to every EXTERNAL tokenizer was a second, separate
+   bug, caught by checking the raw UD source text directly rather than
+   trusting the first fix: every raw `ben_beng` wordform containing this
+   letter uses the DECOMPOSED spelling (verified: U+09AF U+09BC, never the
+   singleton U+09DF). Our singleton recomposition is not standard Unicode
+   NFC - it's a deliberate, documented exception to a real NFC composition
+   exclusion, specific to this project's own normalize() - so no external
+   tokenizer's vocabulary was ever built expecting it. Force-normalizing
+   external tokenizers' input to our singleton made every word containing
+   that letter fully out-of-vocabulary for them, an artifact of this
+   script's own preprocessing, not a real property of their tokenizers.
+   Fixed by scoring our two tokenizers against a normalized copy of the
+   dataset and every external tokenizer against the untouched raw copy.
+
+2. MorphScore filters decoded tokens against `tokenizer.special_tokens_map`
+   by STRING equality - which also strips a genuine `[UNK]` token whenever a
+   whole word is out-of-vocabulary for a given tokenizer. A fully-OOV word
+   then decodes to zero non-special tokens, and MorphScore's own
+   macro-average divides by that zero: a real `ZeroDivisionError` inside
+   MorphScore's own code, first mistaken for "these two tokenizers are
+   unavailable" before being traced to its actual cause. Fixed in
+   `scripts/morphscore_eval.py` by detecting fully-OOV wordforms per
+   tokenizer beforehand and excluding just those from that tokenizer's
+   scoring run, logged and disclosed (`রিক্সায়` for mBERT, 13 words
+   containing ড়/য় for BanglaBERT), rather than silently swallowed as
+   "unavailable."
+
+**Result, all real, all with the small-N caveat that governs everything
+here** (`benchmarks/morphscore.json` has the full per-model breakdown
+including precision, micro/macro F1, and token-char-ratio):
+
+| Tokenizer | recall | n |
+|---|---|---|
+| bn-bpe-64k / BMBT (tied) | 0.500 | 2 |
+| XLM-RoBERTa | 0.667 | 12 |
+| Krutrim | 0.467 | 15 |
+| mBERT | 0.500 | 14 |
+| IndicBERTv2 | 0.500 | 4 |
+| BrahmicTokenizer-131K | 0.429 | 14 |
+| Sarvam-1 | 0.125 | 8 |
+| SUTRA | 0.000 | 15 |
+| BanglaT5 | 1.000 | 1 |
+| BanglaBERT | 0.000 | 1 |
+
+Every row here is a genuinely computed number, not fabricated or estimated -
+but n=1 through n=15 means none of them, including ours, should be read as a
+real ranking. BanglaT5's "1.000" is one single word scored correctly, not a
+claim BanglaT5 is the best morphological tokenizer for Bengali. This section
+exists to record that MorphScore was tried, why it doesn't produce a usable
+number here, and the two real bugs the attempt caught - not to promote a
+result. Not added to either README, the paper, or the website: nothing here
+clears the bar of being a real finding worth propagating, per the precedent
+set by the BMBT-Hybrid and unigram-vs-BPE experiments above.
+
+**What would change this**: a bigger Bengali sample. MorphScore's dataset is
+generated from Universal Dependencies treebanks; Bengali's own UD treebank
+coverage is exactly this thin industry-wide, not a MorphScore-specific gap.
+
 ## How to report a new issue
 
 Open an issue on the repository with the exact input, the command, and the
