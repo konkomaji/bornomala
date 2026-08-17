@@ -1,0 +1,3 @@
+id,standard_bengali,dialect_text,dialect_group,district,collector,second_annotator,phonological_notes,lexical_notes,syntactic_notes
+example-001,আমি ভাত খাচ্ছি,আমি ভাত খাইতাসি,manbhumi,Purulia,YOUR_NAME,,progressive marker realised as -তাসি not -চ্ছি,,
+example-002,তুমি কোথায় যাচ্ছ,তুই কোনদিকে যাস,rarhi,Hooghly,YOUR_NAME,,,কোনদিকে for কোথায়,

@@ -620,6 +620,10 @@ If measured fertility for Gemma 3 or IndicSuperTokenizer on Bengali is already w
 
 Open state of the art on Bengali document OCR, with explicit coverage of pre-1950 West Bengal letterpress, and with **hallucination measured rather than ignored**.
 
+This is a co-equal goal of the programme, not merely instrumental to Track E. A large share of West Bengal's pre-1950 literary and periodical output exists only as physical print - decaying, scattered, and in many cases held in a single fragile copy. A general-purpose Bengali OCR system that handles historic letterpress accurately, with hallucination measured and controlled, is a genuine preservation contribution on its own: it lets that text be recovered and archived efficiently and reliably, for anyone digitising Bengali print, independent of whether any of it ever trains a model. The corpus this produces for Track A/E is real and valuable, but it is the second reason this track exists, not the first.
+
+**Relationship to near-term data collection.** Building the two model tiers below (10.4) is a real, separate undertaking - months of synthetic-data engineering and real annotation before either tier exists. It does not need to wait on that to start recovering text: `data-collection/`'s `ocr_ground_truth` record type (shared with Track C's collection tooling, see section 11) is the practical entry point right now - existing OCR tools or a frontier VLM, human-corrected, produces exactly the same NFC-normalised, categorised ground truth format this track's own stage 2 (10.3) needs. Every page digitised this way today is both a preserved text now and a training/eval example for the custom models later - not two separate efforts.
+
 ### 10.2 Stage 1 — Synthetic data engine (CPU-only, months 2–6)
 
 This stage runs entirely on commodity CPU hardware and is the highest-leverage stage in the programme.

@@ -1,0 +1,3 @@
+id,image_path,transcript,category,source,annotator,double_annotated,second_annotator,hallucination_flag
+example-001,scans/tagore_gitanjali_p012.jpg,আমার এই পথ চাওয়াতেই আনন্দ,letterpress_1880_1950,public-domain scan,YOUR_NAME,no,,
+example-002,scans/anandabazar_2026_08_01_p01.jpg,আজকের প্রধান খবর,newspaper_multicolumn,licensed archive,YOUR_NAME,yes,SECOND_ANNOTATOR,

@@ -1,0 +1,2 @@
+id,audio_path,transcript,dialect_group,district,speaker_age_band,speaker_gender,speaker_education,first_language,self_reported_dialect,urban_rural,consent_ref,topic_stimulus,clip_seconds,annotator
+example-001,audio/purulia_001.wav,আমরা এইখানে ধান চাষ করি,manbhumi,Purulia,40-49,female,secondary,bengali,manbhumi/jhargram-influenced,rural,CONSENT-2026-001,agriculture,18,YOUR_NAME
