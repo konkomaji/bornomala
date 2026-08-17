@@ -60,27 +60,37 @@ preservation carried out with modern tools.
 Measured on held-out Bengali, it needs the fewest tokens per word and almost
 never breaks a conjunct, where every other system breaks many.
 
-| Tokenizer | Tokens per word | Whole words kept | Bytes per token | Broken conjuncts |
+| Tokenizer | Tokens per word | Whole words kept | Bytes per token | Broken conjuncts (destructive) |
 |---|--:|--:|--:|--:|
-| **Bornomala (ours)** | **1.52** | **72%** | **11.38** | **0.01%** |
-| IndicBERTv2 (AI4Bharat) | 1.65 | 61% | 10.50 | 4.4% |
-| SUTRA (TWO AI) | 2.22 | 42% | 7.82 | 15.8% |
-| XLM-RoBERTa (Meta) | 2.46 | 36% | 7.04 | 10.2% |
-| Sarvam-1 (Sarvam AI) | 2.59 | 42% | 6.69 | 11.9% |
+| **Bornomala v1 / BMBT (ours)** | **1.52** | **72%** | **11.38** | **0.04%** |
+| BanglaBERT (csebuetnlp) | 1.63 | 65% | 10.67 | 1.6% |
+| IndicBERTv2 (AI4Bharat) | 1.65 | 61% | 10.50 | 1.9% |
+| BanglaT5 (csebuetnlp) | 1.67 | 63% | 10.39 | 0.9% |
+| SUTRA (TWO AI) | 2.22 | 42% | 7.82 | 5.0% |
+| XLM-RoBERTa (Meta) | 2.46 | 36% | 7.04 | 6.3% |
+| Sarvam-1 (Sarvam AI) | 2.59 | 42% | 6.69 | 3.6% |
 | GPT-4o (OpenAI) | 2.61 | 11% | 6.65 | not measurable |
-| BrahmicTokenizer-131K | 2.62 | 15% | 6.62 | 22.1% |
-| mBERT (Google) | 2.78 | 39% | 6.25 | 18.0% |
-| DeepSeek-V3 | 2.99 | 9% | 5.79 | 28.5% |
-| Krutrim (Krutrim AI) | 3.21 | 8% | 5.41 | 28.6% |
+| BrahmicTokenizer-131K | 2.62 | 15% | 6.62 | 8.2% |
+| mBERT (Google) | 2.78 | 39% | 6.25 | 15.5% |
 
-This holds up beyond Wikipedia, too: measured separately on literary/formal,
-general web, and news held-out text, ours needs the fewest tokens per word,
-keeps the most whole words, and breaks the fewest conjuncts against IndicBERTv2
-on every one of those registers as well (fragmentation stays at essentially
-zero, 0.00-0.01%, on all four), not only the one shown above. **These exact
-numbers are shared by two architectures now** - `bn-bpe-64k` (v1) and BMBT
-(v2, see below) tie on every register, so the table above holds for either.
-Full per-register numbers:
+"Broken conjuncts" is the corrected, graded measure (destructive splits only -
+a stranded virama or detached nukta, not a harmless consonant-cluster/vowel-sign
+seam), not the older binary count; both are defined precisely and both
+reported in the full benchmark doc.
+
+This holds up beyond Wikipedia, too: measured across six registers now
+(literary/formal, general web, news, Banglish, and FLORES+ - the exact
+corpus an external tokenizer-fertility paper's own numbers come from - in
+addition to Wikipedia), ours needs the fewest tokens per word and breaks the
+fewest conjuncts on every one of them. **The closest rival is BanglaBERT, not
+IndicBERTv2** - a correction from earlier versions of this page, once
+BanglaBERT and BanglaT5 (both Bengali-monolingual) were added to the
+comparison and turned out to beat IndicBERTv2 on every register. **These
+numbers are shared by two architectures**: `bn-bpe-64k` (v1) and BMBT (v2,
+see below) tie exactly on five of six registers and differ by 0.001 fertility
+on the sixth (FLORES+, BMBT very slightly ahead) - reported exactly as
+measured, not smoothed into "identical." Full per-register numbers, both
+tokenizers shown separately throughout:
 [`bengali-tokenizer/benchmarks/bengali-comparison.md`](bengali-tokenizer/benchmarks/bengali-comparison.md).
 
 > **How this was measured, so anyone can check.** Our tokenizer was trained on
@@ -101,11 +111,16 @@ Full per-register numbers:
 tokenizer treats specific, culturally load-bearing words. We measured a
 fixed list of 13 - deity names, a national poet, well-known West Bengal
 places, all conjunct-dense - on every tokenizer we track. **Ours (v1 and
-BMBT) tokenizes every one of the 13 as exactly one token**, no exception,
-including the triple-conjunct আকাঙ্ক্ষা (aspiration) and রবীন্দ্রনাথ
-(Rabindranath Tagore). IndicBERTv2, the only real rival, averages 1.31
-tokens/word here and still splits 3 of the 13; every other system averages
-3.3-11.1. Full per-word table, every tokenizer, reproduce command:
+BMBT) tokenizes every one of the 13 as exactly one token**, including the
+triple-conjunct আকাঙ্ক্ষা (aspiration) and রবীন্দ্রনাথ (Rabindranath
+Tagore) - **BanglaBERT and BanglaT5 tie us here too**, a correction from an
+earlier version of this page that claimed this was ours alone. What still
+sets ours apart: we guarantee it by construction (grammar-first parsing
+cannot split a written unit), not by whatever a vocabulary happened to
+cover on these 13 words. IndicBERTv2, the closest tokenizer not tied,
+averages 1.31 tokens/word here and still splits 3 of the 13; every other
+system averages 3.3-11.1. Full per-word table, every tokenizer, reproduce
+command:
 [`bengali-tokenizer/benchmarks/hard-words.md`](bengali-tokenizer/benchmarks/hard-words.md).
 
 ## Beyond BPE: BMBT, Bornomala's Bengali Tokenizer
@@ -131,17 +146,19 @@ its replacement:
 |---|---|---|
 | Finds structure by | counting | parsing the script's grammar |
 | Depends on | a third-party Unicode library | its own finite-state machine |
-| Tokens per word | 1.524 / 1.320 / 1.201 / 1.140 | **identical** |
+| Tokens per word (Wiki/lit/web/news/FLORES+) | 1.524/1.320/1.195/1.142/1.241 | identical on the first four, **1.240** on FLORES+ |
 | Never breaks a conjunct | yes | yes |
 | Structural output per syllable | none | onset, vowel, modifiers |
 | Morpheme-aligned boundaries | none | **100% of seams reachable** |
 | Segmentation speed | 2.72 M chars/sec | **6.20 M chars/sec** |
 
 **Measured, reported honestly, not the outcome we assumed going in: BMBT ties
-v1 on compression, it does not beat it.** On Wikipedia held-out the two are
-identical down to the raw token count. That matches the formal spec's own proof
-that a grammar-constrained BPE cannot beat an unconstrained one on raw token
-count, so the tie was predicted rather than disappointing. What BMBT adds is
+v1 on compression on five of six registers, and edges it by 0.001 fertility on
+the sixth (FLORES+) - not a meaningful win, but a real, small, measured
+difference, reported rather than rounded away.** On Wikipedia held-out the two
+are identical down to the raw token count. That matches the formal spec's own
+proof that a grammar-constrained BPE cannot beat an unconstrained one on raw
+token count, so the tie was predicted rather than disappointing. What BMBT adds is
 everything the count cannot see: a grammar you can argue with instead of a
 library you must trust, a real structural decomposition of every syllable,
 boundaries that fall where Bengali's morphemes fall, and, since the segmenter
