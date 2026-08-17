@@ -190,3 +190,29 @@ than a surprise.
 ```bash
 python -m bntok bmbt-train --corpus-config configs/bpe-64k.json --morphology --out artifacts/bmbt-64k-morph
 ```
+
+## Trained (session 9, 2026-08-18)
+
+`artifacts/bmbt-64k-morph` now exists: full 64,000 vocab, same corpus mix as
+`bn-bpe-64k`/`bmbt-64k` (1,500,000 weighted lines). On the training run's own
+2,000-text held-out sample:
+
+| | Value |
+|---|--:|
+| Legacy fragmentation (`conjunct_fragmentation_rate`) | 3.399% |
+| Destructive rate | 0.004% (5 of 121,136 splittable clusters) |
+| Any-split rate | 8.620% |
+| Fertility | 1.704 |
+
+The legacy-fragmentation number **cross-validates the advance prediction
+above almost exactly** (3.349%, measured by running the morphology layer
+directly on held-out text before any artifact existed) - a real trained BPE
+model, independently, landed within 0.05 points of a prediction made before
+it was trained. Destructive rate confirms the design intent directly: onset/
+rime splits (10,434) outnumber destructive ones (5) by roughly 2000:1 - the
+layer is doing what it was built to do, not incidentally damaging conjuncts
+it happens to also split.
+
+Not yet run through the standard 4-register `compare.py` benchmark (only
+this training-time sample so far) - a natural next measurement. Not yet
+published to Hugging Face.

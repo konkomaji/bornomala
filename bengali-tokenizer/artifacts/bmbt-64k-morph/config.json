@@ -1,0 +1,11 @@
+{
+  "algo": "bpe",
+  "morphology": true,
+  "vocab_size": 64000,
+  "actual_vocab_size": 64000,
+  "min_atom_freq": 2,
+  "zwnj_policy": "preserve",
+  "num_atoms": 12827,
+  "num_cluster_atoms": 10556,
+  "format": "bornomala-bmbt/1"
+}
