@@ -1005,8 +1005,30 @@ section, not yet run: beam search alone already moved the number
 substantially, and that was tried first per its zero cost.
 
 Neither checkpoint's weights are committed to the repo (too large for git) -
-they live on Drive and on a local machine. Not yet wired into
-`bntok.banglish.transliterate()`'s `tier3_fn` hook.
+they live on Drive and on a local machine.
+
+**Wired into `transliterate()` for real (session 9, same day).**
+`bntok.banglish_tier3.load_tier3_fn(ckpt_path, vocab_path)` loads a trained
+checkpoint and returns a real `str -> str | None` callable, beam search
+(size 5) by default - the better decoder should be the default for anyone
+just wiring this in, not an opt-in they have to know to ask for. Required
+moving `TranslitTransformer` out of `scripts/train_banglish_translit.py`
+(where it was first written) into `bntok/banglish_tier3.py`: the library
+needs the model class too, and a library should not import from `scripts/`,
+so this is the correct direction, not a shortcut - both training/eval
+scripts now import the class from `bntok` instead of each carrying their
+own copy that could drift apart. torch stays an optional dependency of
+this one module (lazily imported), not of `bntok` as a whole.
+
+Verified against the real local checkpoint, not just that it imports:
+`load_tier3_fn()` loads `step-20000.pt` successfully, and resolves real
+out-of-lookup words correctly in isolation (`ghurte` -> `ঘুরতে`, `notun` ->
+`নতুন`) and honestly imperfectly where the measured 53.9% accuracy predicts
+it should be (`shopno` -> `শপন`, wrong - should be `স্বপ্ন`). Full pipeline
+integration verified too: `transliterate("... ghurte jabo", lookup,
+classifier, tier3_fn=tier3_fn)` correctly routes the out-of-lookup word to
+tier3, resolves it, and grows the shared cache (`tier3_hits=1,
+cache_growth=1`) exactly as designed.
 
 ## BMBT downstream eval: scoped and built, the actual unmeasured bet
 

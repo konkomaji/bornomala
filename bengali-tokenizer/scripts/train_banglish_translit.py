@@ -24,17 +24,23 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import sys
 import time
 
 import torch
 import torch.nn.functional as F
-from torch import nn
 from torch.utils.data import DataLoader, Dataset
 
-PAD, BOS, EOS, UNK = "<pad>", "<bos>", "<eos>", "<unk>"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from bntok.banglish_tier3 import BOS, EOS, PAD, UNK, _build_model_classes
+
+# PositionalEncoding/TranslitTransformer live in bntok.banglish_tier3 now -
+# bntok (the library) needs the model class too, for load_tier3_fn(), so
+# there is exactly one definition instead of this script's copy and the
+# library's copy silently drifting apart.
+PositionalEncoding, TranslitTransformer = _build_model_classes()
 
 
 class TranslitDataset(Dataset):
@@ -72,140 +78,6 @@ def make_collate(src_pad: int, tgt_pad: int):
             tgt_batch[i, :len(t)] = t
         return src_batch, tgt_batch
     return collate
-
-
-class PositionalEncoding(nn.Module):
-    def __init__(self, d_model: int, max_len: int = 512):
-        super().__init__()
-        pe = torch.zeros(max_len, d_model)
-        pos = torch.arange(0, max_len).unsqueeze(1).float()
-        div = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
-        pe[:, 0::2] = torch.sin(pos * div)
-        pe[:, 1::2] = torch.cos(pos * div)
-        self.register_buffer("pe", pe.unsqueeze(0))
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x + self.pe[:, :x.size(1)]
-
-
-class TranslitTransformer(nn.Module):
-    """A small from-scratch Transformer encoder-decoder. Character-level
-    both sides: no subword vocabulary, so no OOV problem on noisy Latin
-    spelling variance or digit-substitution slang.
-    """
-
-    def __init__(self, src_vocab_size: int, tgt_vocab_size: int, d_model: int = 256,
-                 nhead: int = 8, num_layers: int = 4, dim_ff: int = 1024, dropout: float = 0.1,
-                 src_pad: int = 0, tgt_pad: int = 0):
-        super().__init__()
-        self.d_model = d_model
-        self.src_pad = src_pad
-        self.tgt_pad = tgt_pad
-        self.src_embed = nn.Embedding(src_vocab_size, d_model, padding_idx=src_pad)
-        self.tgt_embed = nn.Embedding(tgt_vocab_size, d_model, padding_idx=tgt_pad)
-        self.pos_enc = PositionalEncoding(d_model)
-        self.transformer = nn.Transformer(
-            d_model=d_model, nhead=nhead, num_encoder_layers=num_layers,
-            num_decoder_layers=num_layers, dim_feedforward=dim_ff, dropout=dropout,
-            batch_first=True,
-        )
-        self.out_proj = nn.Linear(d_model, tgt_vocab_size)
-
-    def forward(self, src: torch.Tensor, tgt_in: torch.Tensor) -> torch.Tensor:
-        src_key_padding = (src == self.src_pad)
-        tgt_key_padding = (tgt_in == self.tgt_pad)
-        tgt_mask = nn.Transformer.generate_square_subsequent_mask(tgt_in.size(1)).to(src.device)
-        s = self.pos_enc(self.src_embed(src) * math.sqrt(self.d_model))
-        t = self.pos_enc(self.tgt_embed(tgt_in) * math.sqrt(self.d_model))
-        out = self.transformer(
-            s, t, tgt_mask=tgt_mask,
-            src_key_padding_mask=src_key_padding, tgt_key_padding_mask=tgt_key_padding,
-            memory_key_padding_mask=src_key_padding,
-        )
-        return self.out_proj(out)
-
-    @torch.no_grad()
-    def greedy_decode(self, src: torch.Tensor, bos_id: int, eos_id: int, max_len: int = 32) -> torch.Tensor:
-        self.eval()
-        device = src.device
-        batch = src.size(0)
-        src_key_padding = (src == self.src_pad)
-        s = self.pos_enc(self.src_embed(src) * math.sqrt(self.d_model))
-        memory = self.transformer.encoder(s, src_key_padding_mask=src_key_padding)
-        ys = torch.full((batch, 1), bos_id, dtype=torch.long, device=device)
-        done = torch.zeros(batch, dtype=torch.bool, device=device)
-        for _ in range(max_len):
-            tgt_mask = nn.Transformer.generate_square_subsequent_mask(ys.size(1)).to(device)
-            t = self.pos_enc(self.tgt_embed(ys) * math.sqrt(self.d_model))
-            out = self.transformer.decoder(t, memory, tgt_mask=tgt_mask, memory_key_padding_mask=src_key_padding)
-            logits = self.out_proj(out[:, -1, :])
-            next_tok = logits.argmax(-1, keepdim=True)
-            ys = torch.cat([ys, next_tok], dim=1)
-            done = done | (next_tok.squeeze(1) == eos_id)
-            if done.all():
-                break
-        return ys
-
-    @torch.no_grad()
-    def beam_decode(self, src_row: torch.Tensor, bos_id: int, eos_id: int,
-                     beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6) -> list[int]:
-        """Beam search for ONE example (src_row: shape (1, src_len)). Greedy
-        commits to the single best character at each step and can't recover
-        from an early wrong pick; beam search keeps `beam_size` candidate
-        sequences alive and picks the best-scoring complete one at the end.
-        Done per-example, not batched across the beam dimension: eval runs
-        once over ~9k words, correctness matters more than decode speed here.
-        """
-        self.eval()
-        device = src_row.device
-        src_key_padding = (src_row == self.src_pad)
-        s = self.pos_enc(self.src_embed(src_row) * math.sqrt(self.d_model))
-        memory = self.transformer.encoder(s, src_key_padding_mask=src_key_padding)
-
-        def norm_score(item):
-            score, seq, _ = item
-            return score / (len(seq) ** length_penalty)
-
-        beams = [(0.0, [bos_id], False)]
-        for _ in range(max_len):
-            candidates = []
-            for score, seq, finished in beams:
-                if finished:
-                    candidates.append((score, seq, finished))
-                    continue
-                ys = torch.tensor([seq], dtype=torch.long, device=device)
-                tgt_mask = nn.Transformer.generate_square_subsequent_mask(ys.size(1)).to(device)
-                t = self.pos_enc(self.tgt_embed(ys) * math.sqrt(self.d_model))
-                out = self.transformer.decoder(t, memory, tgt_mask=tgt_mask, memory_key_padding_mask=src_key_padding)
-                logprobs = F.log_softmax(self.out_proj(out[:, -1, :]), dim=-1).squeeze(0)
-                topk_logprobs, topk_ids = logprobs.topk(min(beam_size, logprobs.size(-1)))
-                for lp, tid in zip(topk_logprobs.tolist(), topk_ids.tolist()):
-                    candidates.append((score + lp, seq + [tid], tid == eos_id))
-            candidates.sort(key=norm_score, reverse=True)
-            beams = candidates[:beam_size]
-            if all(b[2] for b in beams):
-                break
-
-        beams.sort(key=norm_score, reverse=True)
-        return beams[0][1]
-
-    def beam_decode_batch(self, src: torch.Tensor, bos_id: int, eos_id: int,
-                           beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6) -> torch.Tensor:
-        """Beam search over a batch, one example at a time (see beam_decode),
-        padded back into a single tensor with the same (batch, seq_len) shape
-        and pad/bos/eos semantics greedy_decode returns, so callers don't need
-        to know which decoder produced the result.
-        """
-        seqs = [
-            self.beam_decode(src[i:i + 1], bos_id, eos_id, beam_size=beam_size,
-                              max_len=max_len, length_penalty=length_penalty)
-            for i in range(src.size(0))
-        ]
-        max_seq_len = max(len(s) for s in seqs)
-        out = torch.full((len(seqs), max_seq_len), self.tgt_pad, dtype=torch.long, device=src.device)
-        for i, s in enumerate(seqs):
-            out[i, :len(s)] = torch.tensor(s, dtype=torch.long, device=src.device)
-        return out
 
 
 def find_latest_checkpoint(ckpt_dir: str) -> str | None:
