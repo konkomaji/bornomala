@@ -80,9 +80,14 @@ from bntok.graphemes import grapheme_clusters
 # transformers.AutoTokenizer before being added here - see
 # docs/known-issues.md for the checked-but-excluded list (Hanooman/SML: no
 # public HF tokenizer repo found as of this check; Gemini: no open tokenizer
-# release, Gemma family used as the closest open proxy but is gated and
-# reports unavailable without a HF auth token, which this repo does not
-# assume the user has configured).
+# release, Gemma family used as the closest open proxy).
+#
+# 2026-08-18: Gemma-2 access request accepted on this project's HF account -
+# loads and measures fine now (fertility 3.732 on FLORES+, far behind ours).
+# This row still requires a logged-in huggingface_hub session with that
+# account's access grant, so a CI run or a different machine/account without
+# it will correctly report this row as unavailable rather than fail loudly -
+# expected, not a regression.
 #
 # 2026-08-16: BrahmicTokenizer-131K added. It is the third and last baseline
 # named in the whitepaper's own Gate G2 list, and unlike IndicSuperTokenizer
