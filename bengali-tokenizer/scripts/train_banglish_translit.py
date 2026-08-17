@@ -30,9 +30,9 @@ import sys
 import time
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch import nn
+from torch.utils.data import DataLoader, Dataset
 
 PAD, BOS, EOS, UNK = "<pad>", "<bos>", "<eos>", "<unk>"
 
@@ -159,7 +159,6 @@ def find_latest_checkpoint(ckpt_dir: str) -> str | None:
 
 def evaluate(model, dev_loader, vocab, device, max_batches: int = 20) -> float:
     model.eval()
-    tgt_itos = vocab["tgt_vocab"]
     bos_id, eos_id, pad_id = vocab["tgt_stoi"][BOS], vocab["tgt_stoi"][EOS], vocab["tgt_stoi"][PAD]
     correct = total = 0
     for i, (src, tgt) in enumerate(dev_loader):
@@ -209,11 +208,11 @@ def main(argv=None) -> int:
     print(f"train pairs: {len(train_ds)}, dev pairs: {len(dev_ds)}, "
           f"src vocab: {len(vocab['src_vocab'])}, tgt vocab: {len(vocab['tgt_vocab'])}", file=sys.stderr)
 
-    model_config = dict(
-        src_vocab_size=len(vocab["src_vocab"]), tgt_vocab_size=len(vocab["tgt_vocab"]),
-        d_model=args.d_model, nhead=args.nhead, num_layers=args.num_layers,
-        dim_ff=args.dim_ff, src_pad=src_pad, tgt_pad=tgt_pad,
-    )
+    model_config = {
+        "src_vocab_size": len(vocab["src_vocab"]), "tgt_vocab_size": len(vocab["tgt_vocab"]),
+        "d_model": args.d_model, "nhead": args.nhead, "num_layers": args.num_layers,
+        "dim_ff": args.dim_ff, "src_pad": src_pad, "tgt_pad": tgt_pad,
+    }
     model = TranslitTransformer(**model_config).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"model parameters: {n_params:,}", file=sys.stderr)

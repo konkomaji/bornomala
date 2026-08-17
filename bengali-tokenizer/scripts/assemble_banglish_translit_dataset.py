@@ -51,9 +51,7 @@ def _is_valid_pair(latin: str, native: str) -> bool:
     """
     if not latin or not all(c.isascii() and (c.isalpha() or c == "'") for c in latin):
         return False
-    if not native or not all(0x0980 <= ord(c) <= 0x09FF for c in native):
-        return False
-    return True
+    return bool(native) and all(0x0980 <= ord(c) <= 0x09FF for c in native)
 
 
 def load_lexicon_pairs(path: str) -> list[tuple[str, str]]:
@@ -86,9 +84,9 @@ def build_synthetic_pairs(n_words: int, log=lambda m: None) -> list[tuple[str, s
     Latin renderings via bntok.banglish_synth, reusing the same validated
     (against Dakshina, see docs/known-issues.md) reverse phonetic table.
     """
-    from bntok.corpus import stream_wikipedia, stream_sangraha, is_clean_bengali_line
-    from bntok.normalize import normalize
     from bntok.banglish_synth import generate_pairs
+    from bntok.corpus import is_clean_bengali_line, stream_sangraha, stream_wikipedia
+    from bntok.normalize import normalize
 
     words: set[str] = set()
     log(f"streaming real corpus for up to {n_words} candidate words ...")
@@ -139,8 +137,7 @@ def build_char_vocab(pairs: list[tuple[str, str]]) -> dict:
 
 def write_pairs(path: str, pairs: list[tuple[str, str]]) -> None:
     with open(path, "w", encoding="utf-8") as f:
-        for latin, native in pairs:
-            f.write(f"{latin}\t{native}\n")
+        f.writelines(f"{latin}\t{native}\n" for latin, native in pairs)
 
 
 def main(argv=None) -> int:

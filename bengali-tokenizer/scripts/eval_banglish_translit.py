@@ -31,7 +31,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.train_banglish_translit import TranslitTransformer, PAD, BOS, EOS, UNK  # noqa: E402
+from scripts.train_banglish_translit import BOS, EOS, PAD, UNK, TranslitTransformer
 
 
 def levenshtein(a: str, b: str) -> int:

@@ -44,7 +44,7 @@ def main(argv=None) -> int:
     args = p.parse_args(argv)
     log = lambda m: print(m, file=sys.stderr)
 
-    from bntok.corpus import build_configured_corpus, WIKIPEDIA_TRAIN_ARTICLES
+    from bntok.corpus import WIKIPEDIA_TRAIN_ARTICLES, build_configured_corpus
     from bntok.normalize import normalize
 
     with open(args.config, encoding="utf-8") as f:
