@@ -36,7 +36,9 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.train_banglish_translit import BOS, EOS, PAD, UNK, TranslitTransformer
+from bntok.banglish_tier3 import BOS, EOS, PAD, UNK, _build_model_classes
+
+_, TranslitTransformer = _build_model_classes()
 
 
 def levenshtein(a: str, b: str) -> int:
