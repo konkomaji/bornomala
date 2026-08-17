@@ -147,6 +147,15 @@ def main(argv=None) -> int:
     p.add_argument("--num-layers", type=int, default=6)
     p.add_argument("--dim-ff", type=int, default=1536)
     p.add_argument("--batch-size", type=int, default=64)
+    p.add_argument("--grad-accum-steps", type=int, default=1,
+                    help="micro-batches accumulated per optimizer step. Effective batch = "
+                         "--batch-size * --grad-accum-steps. The 64k-vocab head's logits tensor "
+                         "is batch_size * block_size * vocab_size floats (e.g. 64*256*64000*4 "
+                         "bytes = ~4.2GB at the defaults) - a T4 can OOM on that alone before "
+                         "the rest of the model even factors in. Lower --batch-size and raise "
+                         "this to keep the SAME effective batch size (keeps the two runs' "
+                         "hyperparameters comparable) while shrinking the tensor that actually "
+                         "OOMs.")
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--max-steps", type=int, default=10000)
     p.add_argument("--save-every", type=int, default=500)
@@ -182,21 +191,28 @@ def main(argv=None) -> int:
         step = ckpt["step"]
         print(f"resumed from {latest} at step {step}", file=sys.stderr)
 
+    if args.grad_accum_steps > 1:
+        print(f"effective batch size: {args.batch_size * args.grad_accum_steps} "
+              f"({args.batch_size} x {args.grad_accum_steps} grad-accum steps)", file=sys.stderr)
+
     model.train()
     t0 = time.time()
     while step < args.max_steps:
-        x, y = train_ds.get_batch(args.batch_size, device)
-        logits = model(x)
-        loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), y.reshape(-1))
         optimizer.zero_grad()
-        loss.backward()
+        accum_loss = 0.0
+        for _ in range(args.grad_accum_steps):
+            x, y = train_ds.get_batch(args.batch_size, device)
+            logits = model(x)
+            loss = F.cross_entropy(logits.reshape(-1, logits.size(-1)), y.reshape(-1))
+            (loss / args.grad_accum_steps).backward()
+            accum_loss += loss.item() / args.grad_accum_steps
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         step += 1
 
         if step % args.log_every == 0:
             elapsed = time.time() - t0
-            print(f"step {step}/{args.max_steps}  loss {loss.item():.4f}  "
+            print(f"step {step}/{args.max_steps}  loss {accum_loss:.4f}  "
                   f"({step / elapsed:.1f} steps/s)", file=sys.stderr)
         if step % args.save_every == 0:
             ckpt_path = os.path.join(args.ckpt_dir, f"step-{step}.pt")
