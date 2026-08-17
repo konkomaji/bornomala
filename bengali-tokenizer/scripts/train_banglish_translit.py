@@ -146,6 +146,67 @@ class TranslitTransformer(nn.Module):
                 break
         return ys
 
+    @torch.no_grad()
+    def beam_decode(self, src_row: torch.Tensor, bos_id: int, eos_id: int,
+                     beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6) -> list[int]:
+        """Beam search for ONE example (src_row: shape (1, src_len)). Greedy
+        commits to the single best character at each step and can't recover
+        from an early wrong pick; beam search keeps `beam_size` candidate
+        sequences alive and picks the best-scoring complete one at the end.
+        Done per-example, not batched across the beam dimension: eval runs
+        once over ~9k words, correctness matters more than decode speed here.
+        """
+        self.eval()
+        device = src_row.device
+        src_key_padding = (src_row == self.src_pad)
+        s = self.pos_enc(self.src_embed(src_row) * math.sqrt(self.d_model))
+        memory = self.transformer.encoder(s, src_key_padding_mask=src_key_padding)
+
+        def norm_score(item):
+            score, seq, _ = item
+            return score / (len(seq) ** length_penalty)
+
+        beams = [(0.0, [bos_id], False)]
+        for _ in range(max_len):
+            candidates = []
+            for score, seq, finished in beams:
+                if finished:
+                    candidates.append((score, seq, finished))
+                    continue
+                ys = torch.tensor([seq], dtype=torch.long, device=device)
+                tgt_mask = nn.Transformer.generate_square_subsequent_mask(ys.size(1)).to(device)
+                t = self.pos_enc(self.tgt_embed(ys) * math.sqrt(self.d_model))
+                out = self.transformer.decoder(t, memory, tgt_mask=tgt_mask, memory_key_padding_mask=src_key_padding)
+                logprobs = F.log_softmax(self.out_proj(out[:, -1, :]), dim=-1).squeeze(0)
+                topk_logprobs, topk_ids = logprobs.topk(min(beam_size, logprobs.size(-1)))
+                for lp, tid in zip(topk_logprobs.tolist(), topk_ids.tolist()):
+                    candidates.append((score + lp, seq + [tid], tid == eos_id))
+            candidates.sort(key=norm_score, reverse=True)
+            beams = candidates[:beam_size]
+            if all(b[2] for b in beams):
+                break
+
+        beams.sort(key=norm_score, reverse=True)
+        return beams[0][1]
+
+    def beam_decode_batch(self, src: torch.Tensor, bos_id: int, eos_id: int,
+                           beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6) -> torch.Tensor:
+        """Beam search over a batch, one example at a time (see beam_decode),
+        padded back into a single tensor with the same (batch, seq_len) shape
+        and pad/bos/eos semantics greedy_decode returns, so callers don't need
+        to know which decoder produced the result.
+        """
+        seqs = [
+            self.beam_decode(src[i:i + 1], bos_id, eos_id, beam_size=beam_size,
+                              max_len=max_len, length_penalty=length_penalty)
+            for i in range(src.size(0))
+        ]
+        max_seq_len = max(len(s) for s in seqs)
+        out = torch.full((len(seqs), max_seq_len), self.tgt_pad, dtype=torch.long, device=src.device)
+        for i, s in enumerate(seqs):
+            out[i, :len(s)] = torch.tensor(s, dtype=torch.long, device=src.device)
+        return out
+
 
 def find_latest_checkpoint(ckpt_dir: str) -> str | None:
     if not os.path.isdir(ckpt_dir):
