@@ -354,6 +354,61 @@ def build_banglish_held_out(limit_lines: int = 2000, scan_lines: int = 60_000,
     return out
 
 
+def build_flores_held_out(splits: tuple[str, ...] = ("dev", "devtest"),
+                           log=lambda msg: None) -> list[str]:
+    """Held-out text from FLORES+ (openlanguagedata/flores_plus), the
+    maintained successor to FLORES-200 - professionally translated,
+    domain-diverse (wikinews/wikijunior/wikivoyage) parallel sentences,
+    `ben_Beng` config.
+
+    Motivation: an external paper ("The Tokenizer Tax", Srivastava 2026)
+    measures Bengali fertility on FLORES-200's 997-sentence dev set
+    specifically, and this project's own numbers were cross-walked against
+    theirs (see docs/known-issues.md and _personal/SESSION_LOG.md session 6) -
+    matching almost exactly on three tokenizers, independent corpora. This
+    register lets a future comparison be measured on the SAME corpus their
+    paper uses, instead of relying on that cross-walk.
+
+    Two real access dead ends, checked directly rather than assumed, before
+    this one worked:
+      - facebook/flores and the original FLORES-200 loaders on Hugging Face
+        (Muennighoff/flores200, gsarti/flores_101, facebook-llama/flores) are
+        either manually-gated (needs human approval) or pure Python loading
+        scripts with no underlying data files, which `datasets` no longer
+        executes at all (the same class of break `stream_cc100` hit).
+      - openlanguagedata/flores_plus is "auto-gated": the license auto-grants
+        on the requesting account once accepted on the dataset's HF page (a
+        one-time step; this repository's own huggingface_hub login already
+        had it, verified by successfully loading 997 dev + 1012 devtest
+        Bengali rows). No workaround needed once that page is visited once.
+
+    Never used in `build_configured_corpus` or any training config, so - like
+    `build_banglish_held_out` - there is no training range to stay disjoint
+    from and no offset bookkeeping is needed.
+    """
+    from datasets import load_dataset
+    log(f"held-out: FLORES+ (openlanguagedata/flores_plus), ben_Beng, splits {splits} ...")
+    try:
+        ds = load_dataset("openlanguagedata/flores_plus", "ben_Beng")
+    except Exception as e:
+        raise EmptyCorpusError(
+            f"could not load openlanguagedata/flores_plus (ben_Beng): {type(e).__name__}: {e}. "
+            "This dataset is auto-gated - visit "
+            "https://huggingface.co/datasets/openlanguagedata/flores_plus once, accept the "
+            "license, and make sure `huggingface_hub` is logged in with that account "
+            "(`huggingface-cli login` or HF_TOKEN)."
+        ) from e
+    out = []
+    for split in splits:
+        if split not in ds:
+            continue
+        out.extend(row["text"] for row in ds[split] if row.get("text", "").strip())
+    log(f"  flores: {len(out)} sentences across splits {[s for s in splits if s in ds]}")
+    if not out:
+        raise EmptyCorpusError("openlanguagedata/flores_plus (ben_Beng) loaded but yielded no text rows")
+    return out
+
+
 def _list_hf_parquet_files(repo_id: str, prefix: str, revision: str | None = None) -> list[str]:
     try:
         from huggingface_hub import HfApi

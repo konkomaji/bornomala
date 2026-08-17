@@ -141,7 +141,7 @@ def held_out(skip: int, limit: int) -> list[str]:
     return out
 
 
-REGISTER_HELD_OUT_SOURCES = {"literary_formal", "general_web", "news", "banglish"}
+REGISTER_HELD_OUT_SOURCES = {"literary_formal", "general_web", "news", "banglish", "flores"}
 
 
 def register_held_out(register: str, limit_docs: int) -> list[str]:
@@ -149,15 +149,22 @@ def register_held_out(register: str, limit_docs: int) -> list[str]:
 
     literary_formal/general_web/news use bntok.corpus.build_register_held_out,
     which reads Sangraha/XL-Sum starting exactly where build_configured_corpus's
-    training budget ends, disjoint from training by construction. banglish is
-    different in kind: it is romanized-script CC-100 bn_rom, never used in any
-    training config in this repository, so there is no training range to stay
-    disjoint from and bntok.corpus.build_banglish_held_out is used directly.
+    training budget ends, disjoint from training by construction. banglish and
+    flores are different in kind: banglish is romanized-script CC-100 bn_rom,
+    flores is FLORES+'s professionally translated parallel sentences - neither
+    is used in any training config in this repository, so there is no training
+    range to stay disjoint from and bntok.corpus's own held-out builders are
+    used directly. `limit_docs` is ignored for flores (it has a fixed size,
+    ~2000 sentences across dev+devtest - the point is a same-corpus comparison
+    against a specific external paper's own methodology, not a scalable slice).
     """
     log = lambda m: print(m, file=sys.stderr)
     if register == "banglish":
         from bntok.corpus import build_banglish_held_out
         return build_banglish_held_out(limit_lines=limit_docs, log=log)
+    if register == "flores":
+        from bntok.corpus import build_flores_held_out
+        return build_flores_held_out(log=log)
     from bntok.corpus import build_register_held_out
     slices = build_register_held_out(limit_docs=limit_docs, log=log)
     return slices[register]
