@@ -988,6 +988,60 @@ training time this environment does not have - everything upstream of it
 (data, contamination fix, model code, checkpoint/resume, evaluation) is
 built, tested, and verified correct on real (if small-scale) runs.
 
+## BMBT downstream eval: scoped and built, the actual unmeasured bet
+
+Fertility ties exactly between v1 and BMBT (see the comparison table
+above). The one thing that was never measured is whether BMBT's grammar-
+first structure makes a language model better PER TOKEN, not just tie on
+raw token count - the actual claim the design doc's own risk section
+names as the real bet worth making.
+
+**The controlled experiment**: two small decoder-only Transformers
+(`scripts/train_lm.py`, a from-scratch GPT-style model, no pretrained
+weights), IDENTICAL architecture and hyperparameters, trained on real text
+(`scripts/assemble_lm_corpus.py`, the same literary-weighted source mix as
+`configs/bpe-64k.json`, at a smaller scale for a bounded Colab run) -
+differing only in which tokenizer (`scripts/prepare_lm_tokens.py`, run
+once per tokenizer) produced the input token stream. Compared on held-out
+**bits-per-byte**, not raw per-token perplexity: v1 and BMBT have
+different vocabularies, so cross-entropy is normalized against the held-
+out text's fixed original UTF-8 byte count, the standard way to compare
+language models fairly across tokenizers with different token counts.
+
+**A real disjointness bug caught during this build, not after.** An early
+version of `assemble_lm_corpus.py` built the held-out Wikipedia slice by
+slicing `stream_wikipedia`'s output list at index `WIKIPEDIA_TRAIN_ARTICLES`
+(15,000) - but that function's `limit` parameter counts ARTICLES while its
+return value is a flattened list of LINES (many per article), so the
+slice landed somewhere around line 15,000 (roughly article 500, given
+~29 lines/article), not after article 15,000 at all. This would have
+badly overlapped the held-out set with `build_configured_corpus`'s own
+`bengali_wikipedia` training source. Caught by a smoke-test run producing
+an obviously wrong held-out size (439,303 lines from a 20-article
+request). Fixed by skipping ROWS directly against the streaming dataset,
+mirroring `scripts/compare.py`'s own `held_out()` function, the pattern
+this whole project already relies on successfully for every register
+comparison run this session - not a new invention, the same proven
+approach applied where it had been missed.
+
+**Verification, confirmed live, not just by code inspection.** A rerun of
+the corrected `assemble_lm_corpus.py` (20-article held-out request)
+produced 474 held-out lines (about 23.7 lines/article - sane), not the
+439,303-line result the bug produced. `train_lm.py`'s own mechanics
+(model construction against a real 64,000-entry vocabulary, checkpointing,
+resume, and the bits-per-byte calculation) were separately verified end to
+end on real tokenized data from both `bn-bpe-64k` and `bmbt-64k`
+(identical token counts on the same sample text, consistent with the
+fertility tie), including a correctness sanity check on synthetic random
+data: training loss correctly plateaus at ln(vocab_size) nats, the
+theoretical entropy floor for unlearnable random tokens - confirms the
+cross-entropy path is implemented correctly, not just plausible-looking.
+
+**What genuinely remains**: running `colab/train_bmbt_downstream_eval.ipynb`
+at real scale - two real GPU training runs, longer than tier 3's single
+run, real compute this environment does not have. Everything upstream is
+built, tested, and now verified correct end to end.
+
 ## How to report a new issue
 
 Open an issue on the repository with the exact input, the command, and the
