@@ -8,9 +8,21 @@ held-out Bengali text, with one consistent definition of every metric:
   strr               fraction of words kept as one token
   bytes_per_token    UTF-8 bytes / tokens
   conjunct_fragmentation
-                     fraction of grapheme clusters that a token boundary splits,
-                     computed from each tokenizer's own character offsets. This is
-                     the property no general Indic tokenizer controls for.
+                     LEGACY, kept for continuity with every already-published
+                     number: fraction of grapheme clusters that a token boundary
+                     splits, computed from each tokenizer's own character offsets.
+                     Binary (any split counts the same) and its denominator
+                     includes clusters that could never be split - both defects
+                     are documented in bntok/fragmentation.py.
+  destructive_rate   HEADLINE, the corrected replacement: graded via
+  any_split_rate     bntok.fragmentation.count_splits_from_offsets, denominator
+                     restricted to clusters that COULD be split, and splits
+                     classified by what they actually sever (a stranded virama
+                     or detached nukta vs. a harmless consonant-cluster/matra
+                     seam) rather than counted as one undifferentiated bucket.
+                     destructive_rate is what "conjunct fragmentation" was
+                     always meant to measure. None where no character offsets
+                     were available (tiktoken has none at all).
 
 The whitepaper notes that Bengali does not appear in a single published
 cross-tokenizer fertility comparison (spec section 4.1). This produces exactly
@@ -47,6 +59,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bntok import BengaliTokenizer, normalize
 from bntok.akshara import aksharas
+from bntok.fragmentation import count_splits_from_offsets
 from bntok.graphemes import grapheme_clusters
 
 # HF tokenizers to compare against (all load without auth).
@@ -151,7 +164,15 @@ def register_held_out(register: str, limit_docs: int) -> list[str]:
 
 
 def _frag_from_offsets(nfc: str, offsets: list[tuple[int, int]]) -> tuple[int, int]:
-    """Count grapheme clusters split by any token boundary, using char offsets."""
+    """Count grapheme clusters split by any token boundary, using char offsets.
+
+    This is the LEGACY binary counter (any split counts the same, and the
+    denominator includes clusters that could never be split - see
+    bntok/fragmentation.py's own docstring for both defects). Kept unchanged,
+    not replaced, so every already-published `conjunct_fragmentation` number
+    stays comparable; `_grade_from_offsets` below is the corrected measure,
+    reported alongside it, not instead of it.
+    """
     boundaries = set()
     for s, e in offsets:
         boundaries.add(s)
@@ -169,6 +190,20 @@ def _frag_from_offsets(nfc: str, offsets: list[tuple[int, int]]) -> tuple[int, i
     return frag, total
 
 
+def _grade_from_offsets(nfc: str, offsets: list[tuple[int, int]]):
+    """Graded fragmentation (bntok.fragmentation.count_splits_from_offsets),
+    fed the same union-of-cut-points every measure_* function already builds
+    for the legacy counter above - a cut is a cut whether an offset mapping
+    reports it as a token's start or a token's end, and different
+    tokenizers are not consistent about which they report.
+    """
+    boundaries = set()
+    for s, e in offsets:
+        boundaries.add(s)
+        boundaries.add(e)
+    return count_splits_from_offsets(nfc, boundaries)
+
+
 def measure_hf(name: str, repo: str, texts: list[str]) -> dict | None:
     try:
         from transformers import AutoTokenizer
@@ -177,6 +212,7 @@ def measure_hf(name: str, repo: str, texts: list[str]) -> dict | None:
         return {"model": name, "available": False, "error": f"{type(e).__name__}: {e}"}
 
     n_tok = n_words = n_bytes = single = frag = clusters = 0
+    n_destructive = n_modifier = n_onset_rime = n_splittable = 0
     for raw in texts:
         nfc = normalize(raw)
         words = nfc.split()
@@ -197,8 +233,16 @@ def measure_hf(name: str, repo: str, texts: list[str]) -> dict | None:
             f, c = _frag_from_offsets(nfc, offs)
             frag += f
             clusters += c
+            g = _grade_from_offsets(nfc, offs)
+            n_destructive += g.destructive
+            n_modifier += g.modifier
+            n_onset_rime += g.onset_rime
+            n_splittable += g.splittable_clusters
 
-    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
+    if clusters == 0:
+        return _row(name, n_tok, n_words, n_bytes, single, None, None)
+    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters,
+                n_destructive, n_modifier, n_onset_rime, n_splittable)
 
 
 def measure_tiktoken(name: str, enc_name: str, texts: list[str]) -> dict | None:
@@ -266,6 +310,7 @@ def measure_ours(directory: str, texts: list[str]) -> dict:
     """
     tok = BengaliTokenizer.load(directory)
     n_tok = n_words = n_bytes = single = frag = clusters = 0
+    n_destructive = n_modifier = n_onset_rime = n_splittable = 0
     skipped_for_frag = 0
     for raw in texts:
         nfc = normalize(raw)
@@ -295,11 +340,17 @@ def measure_ours(directory: str, texts: list[str]) -> dict:
         f, c = _frag_from_offsets(nfc, offsets)
         frag += f
         clusters += c
+        g = _grade_from_offsets(nfc, offsets)
+        n_destructive += g.destructive
+        n_modifier += g.modifier
+        n_onset_rime += g.onset_rime
+        n_splittable += g.splittable_clusters
     if skipped_for_frag:
         print(f"  ({skipped_for_frag}/{len(texts)} lines skipped for fragmentation: "
               f"out-of-coverage codepoints, see docs/known-issues.md point 4)", file=sys.stderr)
     name = f"Bornomala Track A ({tok.config['algo']} {tok.config['actual_vocab_size']})"
-    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
+    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters,
+                n_destructive, n_modifier, n_onset_rime, n_splittable)
 
 
 def measure_bmbt(directory: str, texts: list[str]) -> dict:
@@ -316,6 +367,7 @@ def measure_bmbt(directory: str, texts: list[str]) -> dict:
     from bntok.bmbt import BMBT
     tok = BMBT.load(directory)
     n_tok = n_words = n_bytes = single = frag = clusters = 0
+    n_destructive = n_modifier = n_onset_rime = n_splittable = 0
     skipped_for_frag = 0
     for raw in texts:
         nfc = normalize(raw)
@@ -345,11 +397,17 @@ def measure_bmbt(directory: str, texts: list[str]) -> dict:
         f, c = _frag_from_offsets(nfc, offsets)
         frag += f
         clusters += c
+        g = _grade_from_offsets(nfc, offsets)
+        n_destructive += g.destructive
+        n_modifier += g.modifier
+        n_onset_rime += g.onset_rime
+        n_splittable += g.splittable_clusters
     if skipped_for_frag:
         print(f"  ({skipped_for_frag}/{len(texts)} lines skipped for fragmentation: "
               f"out-of-coverage codepoints, see docs/known-issues.md point 4)", file=sys.stderr)
     name = f"Bornomala BMBT ({tok.config['algo']} {tok.config['actual_vocab_size']})"
-    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters)
+    return _row(name, n_tok, n_words, n_bytes, single, frag, clusters,
+                n_destructive, n_modifier, n_onset_rime, n_splittable)
 
 
 def measure_akshara(texts: list[str]) -> dict:
@@ -373,6 +431,7 @@ def measure_akshara(texts: list[str]) -> dict:
     everything else.
     """
     n_tok = n_words = n_bytes = single = frag = clusters = 0
+    n_destructive = n_modifier = n_onset_rime = n_splittable = 0
     for raw in texts:
         nfc = normalize(raw)
         words = nfc.split()
@@ -387,14 +446,21 @@ def measure_akshara(texts: list[str]) -> dict:
         f, c = _frag_from_offsets(nfc, offsets)
         frag += f
         clusters += c
+        g = _grade_from_offsets(nfc, offsets)
+        n_destructive += g.destructive
+        n_modifier += g.modifier
+        n_onset_rime += g.onset_rime
+        n_splittable += g.splittable_clusters
     return _row("Bornomala v2 akshara parser (pre-vocabulary, no merges)",
-                n_tok, n_words, n_bytes, single, frag, clusters)
+                n_tok, n_words, n_bytes, single, frag, clusters,
+                n_destructive, n_modifier, n_onset_rime, n_splittable)
 
 
-def _row(name, n_tok, n_words, n_bytes, single, frag, clusters):
+def _row(name, n_tok, n_words, n_bytes, single, frag, clusters,
+         n_destructive=None, n_modifier=None, n_onset_rime=None, n_splittable=None):
     def d(a, b):
         return a / b if b else 0.0
-    return {
+    row = {
         "model": name, "available": True,
         "tokens": n_tok, "words": n_words,
         "fertility": round(d(n_tok, n_words), 3),
@@ -402,7 +468,18 @@ def _row(name, n_tok, n_words, n_bytes, single, frag, clusters):
         "bytes_per_token": round(d(n_bytes, n_tok), 2),
         "conjunct_fragmentation": None if clusters is None else round(d(frag, clusters), 6),
         "n_fragmented": frag, "n_clusters": clusters,
+        # Graded replacement (bntok/fragmentation.py): destructive_rate is the
+        # HEADLINE ("conjunct fragmentation" was always meant to say this),
+        # any_split_rate is the corrected-denominator counterpart of the
+        # legacy field above. None when no offsets were available (tiktoken).
+        "destructive_rate": None, "any_split_rate": None,
+        "n_destructive": n_destructive, "n_modifier": n_modifier,
+        "n_onset_rime": n_onset_rime, "splittable_clusters": n_splittable,
     }
+    if n_splittable is not None:
+        row["destructive_rate"] = round(d(n_destructive, n_splittable), 6)
+        row["any_split_rate"] = round(d(n_destructive + n_modifier + n_onset_rime, n_splittable), 6)
+    return row
 
 
 def main(argv=None) -> int:
@@ -446,12 +523,18 @@ def main(argv=None) -> int:
         json.dump({"held_out_lines": len(texts), "rows": rows, "akshara_v2": akshara_row},
                    f, ensure_ascii=False, indent=2)
 
-    # Markdown table, sorted by fertility (best first).
-    print("\n| Tokenizer | Fertility | STRR | Bytes/tok | Conjunct frag. |")
-    print("|---|---:|---:|---:|---:|")
+    # Markdown table, sorted by fertility (best first). Both fragmentation
+    # measures shown, per bntok/fragmentation.py's own instruction: reporting
+    # only the legacy binary field would hide the graded cost/benefit split
+    # (e.g. a morphology-enabled artifact's onset/rime splits by design);
+    # reporting only destructive_rate would silently change what every
+    # already-published "conjunct fragmentation" number means.
+    print("\n| Tokenizer | Fertility | STRR | Bytes/tok | Conjunct frag. (legacy) | Destructive rate |")
+    print("|---|---:|---:|---:|---:|---:|")
     for r in avail:
         frag = "n/a" if r["conjunct_fragmentation"] is None else f"{r['conjunct_fragmentation']:.4f}"
-        print(f"| {r['model']} | {r['fertility']:.3f} | {r['strr']:.3f} | {r['bytes_per_token']:.2f} | {frag} |")
+        destr = "n/a" if r["destructive_rate"] is None else f"{r['destructive_rate']:.4f}"
+        print(f"| {r['model']} | {r['fertility']:.3f} | {r['strr']:.3f} | {r['bytes_per_token']:.2f} | {frag} | {destr} |")
     for r in rows:
         if not r.get("available"):
             print(f"| {r['model']} | unavailable: {r.get('error','')} |", file=sys.stderr)
@@ -459,7 +542,8 @@ def main(argv=None) -> int:
     print("\nv2 akshara parser (roadmap step 4, NOT a like-for-like row above -- "
           "no vocabulary or merges yet, see measure_akshara()'s docstring):")
     print(f"| {akshara_row['model']} | {akshara_row['fertility']:.3f} | {akshara_row['strr']:.3f} | "
-          f"{akshara_row['bytes_per_token']:.2f} | {akshara_row['conjunct_fragmentation']:.4f} |")
+          f"{akshara_row['bytes_per_token']:.2f} | {akshara_row['conjunct_fragmentation']:.4f} | "
+          f"{akshara_row['destructive_rate']:.4f} |")
     return 0
 
 
