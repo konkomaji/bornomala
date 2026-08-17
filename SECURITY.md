@@ -29,9 +29,3 @@ chance to address the issue before public disclosure.
 - **Untrusted training corpora.** `bntok train` reads arbitrary text files you
   point it at; treat corpus files from unknown sources the way you would any
   other untrusted input to a data pipeline.
-
-## Other repositories
-
-[MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), the
-multilingual tokenizer-efficiency analyzer, is now a separate repository with
-its own security policy.

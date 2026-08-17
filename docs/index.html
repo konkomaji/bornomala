@@ -194,10 +194,6 @@
     <div class="note">
       <b>Exactly how this was measured, so anyone can check.</b> Our tokenizer was trained on a literary-weighted corpus mixing Wikisource public-domain text, Sangraha verified Bengali (formal and general register), Bengali Wikipedia, and XL-Sum news. It was then tested, along with every other tokenizer, on 828 held-out lines from Bengali Wikipedia articles never seen in training; three further held-out sets (literary/formal, general web, news) confirm the same ranking beyond Wikipedia. Every other tokenizer is its real, official public tokenizer, run on the same text. Fewer tokens per word is better; a broken conjunct is a written unit split across a boundary, computed from each tokenizer's own character offsets. GPT-4o exposes no offsets, so its conjunct figure is left unmeasured rather than guessed. Full method and raw numbers are in the repository, and the comparison reruns with a single command. To our knowledge, this is the first fully reproducible benchmark comparing modern Bengali tokenizers across compression, word preservation, and conjunct fragmentation using a common evaluation pipeline. <b>BMBT (v2, below) was trained on the identical corpus and measured the same way: it ties every number in this table</b>, exactly, on every register tested.
     </div>
-
-    <h3>And an open tool that makes the inequity visible</h3>
-    <p>MotherTongueIndex, a tool that grew out of this programme and now has its own repository, lets anyone paste text in any language and see how many more tokens it costs than English across 28 model tokenizers, and the reasoning cost that follows. It is how we hold ourselves, and everyone else, to measured claims.</p>
-    <p><a class="btn btn-outline" href="https://github.com/konkomaji/mothertongueindex">Explore MotherTongueIndex</a></p>
   </div>
 </section>
 

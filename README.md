@@ -108,12 +108,6 @@ tokens/word here and still splits 3 of the 13; every other system averages
 3.3-11.1. Full per-word table, every tokenizer, reproduce command:
 [`bengali-tokenizer/benchmarks/hard-words.md`](bengali-tokenizer/benchmarks/hard-words.md).
 
-**An open tool that makes the inequity visible.**
-[MotherTongueIndex](https://github.com/konkomaji/mothertongueindex), a tool
-that grew out of this programme and now has its own repository, lets anyone
-paste text in any language and see how many more tokens it costs than English
-across 28 model tokenizers, and the reasoning cost that follows.
-
 ## Beyond BPE: BMBT, Bornomala's Bengali Tokenizer
 
 The tokenizer above led the field by retraining BPE, a statistical compressor,

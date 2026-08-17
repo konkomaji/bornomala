@@ -56,10 +56,3 @@ section 16. Do not contribute scraped personal data.
 ## Conduct
 
 By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
-
-## MotherTongueIndex
-
-The multilingual tokenizer-efficiency analyzer that used to live in this
-repository (`mothertongueindex/`) is now its own project:
-**[github.com/konkomaji/mothertongueindex](https://github.com/konkomaji/mothertongueindex)**.
-Contribute there for anything related to it.

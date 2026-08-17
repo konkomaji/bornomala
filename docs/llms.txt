@@ -43,8 +43,6 @@
   the first fully reproducible benchmark comparing modern Bengali tokenizers
   across compression, word preservation, and conjunct fragmentation using a
   common evaluation pipeline.
-- MotherTongueIndex: an open tool measuring the token cost of any language versus
-  English across 28 model tokenizers.
 - Hard-words showcase: a fixed set of 13 conjunct-dense, culturally load-bearing
   words (deity names, the national poet Rabindranath Tagore, West Bengal place
   names) measured on 16 tokenizers. Ours (v1 and BMBT) tokenizes every one of

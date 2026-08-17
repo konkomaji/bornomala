@@ -303,7 +303,6 @@ First working version of the Project Bornomala Track A tokenizer. CPU only.
 ### Notes
 - Induction is CPU-bound and runs anywhere. Large corpus assembly and the full
   ablation grid run on the training machine.
-- This is the tokenizer itself (Track A). It is distinct from the
-  MotherTongueIndex subproject, which benchmarks tokenizers.
+- This is the tokenizer itself (Track A).
 
 [0.1.0]: https://github.com/konkomaji/bornomala/tree/main/bengali-tokenizer

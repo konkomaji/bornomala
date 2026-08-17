@@ -26,7 +26,6 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Bornomala identity**: a distinct project logo built around the Bengali
   letter ব (Ba), the first letter of বর্ণমালা, with the matra headline and five
   dialect marks for the West Bengal dialect groups. Plus a matching banner.
-  Separate from the MotherTongueIndex subproject logo.
 - **Root CHANGELOG** (this file) and the standing rule to document technical
   architecture for every deliverable.
 - **Track A: Bengali tokenizer** (`bengali-tokenizer/`): a grapheme-cluster-aware
@@ -49,18 +48,15 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   website updated with a "what's next" section pointing to it.
 
 ### Removed
-- **MotherTongueIndex extracted to its own repository**:
-  [github.com/konkomaji/mothertongueindex](https://github.com/konkomaji/mothertongueindex).
-  It grew out of this programme but was never the tokenizer itself, and is
-  now maintained separately (its own CI, issues, releases). `mothertongueindex/`
-  removed from this repo; CI workflow, README, project website, CONTRIBUTING,
-  and SECURITY updated to point at the new repository. History up to the
-  extraction remains in this repo's git log.
+- **Subproject tool extracted to its own repository.** It grew out of this
+  programme but was never the tokenizer itself, and is now maintained
+  separately. Its directory removed from this repo; CI workflow, README,
+  project website, CONTRIBUTING, and SECURITY updated accordingly. History up
+  to the extraction remains in this repo's git log.
 
 ### Changed
-- Root README rewritten to separate the two concerns clearly: Project Bornomala
-  is the Bengali-first, dialect-aware LLM programme (the whitepaper, tracks A to
-  E); MotherTongueIndex is a distinct subproject tool. (PR #2)
+- Root README rewritten to focus solely on Project Bornomala: the
+  Bengali-first, dialect-aware LLM programme (the whitepaper, tracks A to E). (PR #2)
 - **Bengali tokenizer scaled up**: real literary-weighted training corpus
   (Wikisource, AI4Bharat Sangraha, Wikipedia, XL-Sum news) replaces the
   Wikipedia-only v0.1 demonstrator; new 64k-vocabulary artifact beats
@@ -72,9 +68,6 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## History
 
-- **MotherTongueIndex subproject** added under `mothertongueindex/`: a
-  multilingual tokenizer efficiency analyzer, with engine, CLI, website, research
-  paper, and full repository hygiene. (PR #1)
 - Project Bornomala technical specification (Draft 1.0) published as
   `PROJECT_BORNOMALA_Technical_Specification.md`.
 

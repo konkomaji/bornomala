@@ -344,7 +344,7 @@ The dependency order is clear, and it lets us prove the thesis early with a smal
 1. **Unicode substrate.** The ground truth every later stage sits on.
 2. **The atoms.** Vowels, consonants, matras, with codepoints, positions, and reorder flags.
 3. **The akshara finite-state parser.** Roughly 150 lines. It reads the codepoint stream, groups it into aksharas by the virama grammar, handles matra reordering and unbounded conjuncts, and round-trips losslessly. This is the foundation stone, and it is testable immediately on the hard words: স্ত্রী, ক্ষ্ম, আকাঙ্ক্ষা, ঋত্বিক.
-4. **Measurement.** Benchmark the parser's atoms against the current BPE-based tokenizer and against the published baselines, Sarvam-1 (Bengali fertility about 2.05), SUTRA, IndicSuperTokenizer, and BengaliBPE, on the MotherTongueIndex metrics: fertility, byte premium, and downstream task score. Prove the native atom is competitive before building anything on top of it.
+4. **Measurement.** Benchmark the parser's atoms against the current BPE-based tokenizer and against the published baselines, Sarvam-1 (Bengali fertility about 2.05), SUTRA, IndicSuperTokenizer, and BengaliBPE, on fertility, byte premium, and downstream task score. Prove the native atom is competitive before building anything on top of it.
 5. **Featural encoding and morphology.** Only once steps 1 through 4 stand.
 
 The discipline in this order is deliberate. Each stage is verifiable on its own, and the whole approach is falsifiable at step 4. If the native atom does not beat the strong baselines on the numbers, we will know before we have invested in the morphology, and we can say so.
