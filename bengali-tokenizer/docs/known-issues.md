@@ -983,10 +983,30 @@ this environment does not have:**
   trains, evaluates, points at where to wire the trained checkpoint into
   `bntok.banglish.transliterate()`'s already-tested `tier3_fn` hook.
 
-**What genuinely remains**: running the notebook. That step needs real GPU
-training time this environment does not have - everything upstream of it
-(data, contamination fix, model code, checkpoint/resume, evaluation) is
-built, tested, and verified correct on real (if small-scale) runs.
+**Trained and measured (session 9, 2026-08-17/18).** The notebook ran on a
+real Colab T4: 20,000 steps, small model (d_model=256, 4 layers). Blind eval
+against Dakshina's reserved test split (9,146 distinct Latin spellings, never
+touched by training/dev):
+
+| Decoder | Exact-match | CER |
+|---|--:|--:|
+| Greedy | 45.1% (4,126/9,146) | 16.9% |
+| Beam search (size 5) | **53.9% (4,929/9,146)** | **13.5%** |
+
+Beam search added afterward (`TranslitTransformer.beam_decode`/
+`beam_decode_batch`, per-example, `--beam-size` on `eval_banglish_translit.py`)
+once the greedy result was in - a real +8.8pp exact-match / -3.4pp CER lift
+on the exact same checkpoint, zero retraining. Verified as a genuine decoder
+change and not a fluke: `beam_size=1` produces token-for-token identical
+output to `greedy_decode` on an untrained model (both always argmax at each
+step). A second lever - a bigger model (d_model 384, 6 layers) and longer
+training (30k steps) - is built and ready in the notebook's optional
+section, not yet run: beam search alone already moved the number
+substantially, and that was tried first per its zero cost.
+
+Neither checkpoint's weights are committed to the repo (too large for git) -
+they live on Drive and on a local machine. Not yet wired into
+`bntok.banglish.transliterate()`'s `tier3_fn` hook.
 
 ## BMBT downstream eval: scoped and built, the actual unmeasured bet
 
