@@ -1040,18 +1040,23 @@ cache_growth=1`) exactly as designed.
 ## BMBT downstream eval: scoped and built, the actual unmeasured bet
 
 Fertility ties exactly between v1 and BMBT (see the comparison table
-above). The one thing that was never measured is whether BMBT's grammar-
-first structure makes a language model better PER TOKEN, not just tie on
-raw token count - the actual claim the design doc's own risk section
-names as the real bet worth making.
+above); `bmbt-64k-morph` costs +21.7% to +42.1% fertility on top of that,
+depending on register (see "BMBT morphology" section). The one thing that
+was never measured for either variant is whether the grammar-first
+structure - and, for BMBT-morph, the added morphology layer - makes a
+language model better PER TOKEN, not just tie (or lose) on raw token
+count. That is the actual claim the design doc's own risk section names
+as the real bet worth making, and it is the only way to know if
+BMBT-morph's fertility cost buys back anything downstream.
 
-**The controlled experiment**: two small decoder-only Transformers
+**The controlled experiment**: three small decoder-only Transformers
 (`scripts/train_lm.py`, a from-scratch GPT-style model, no pretrained
 weights), IDENTICAL architecture and hyperparameters, trained on real text
 (`scripts/assemble_lm_corpus.py`, the same literary-weighted source mix as
 `configs/bpe-64k.json`, at a smaller scale for a bounded Colab run) -
 differing only in which tokenizer (`scripts/prepare_lm_tokens.py`, run
-once per tokenizer) produced the input token stream. Compared on held-out
+once per tokenizer: `bn-bpe-64k`, `bmbt-64k`, `bmbt-64k-morph`) produced
+the input token stream. Compared on held-out
 **bits-per-byte**, not raw per-token perplexity: v1 and BMBT have
 different vocabularies, so cross-entropy is normalized against the held-
 out text's fixed original UTF-8 byte count, the standard way to compare
@@ -1087,9 +1092,16 @@ theoretical entropy floor for unlearnable random tokens - confirms the
 cross-entropy path is implemented correctly, not just plausible-looking.
 
 **What genuinely remains**: running `colab/train_bmbt_downstream_eval.ipynb`
-at real scale - two real GPU training runs, longer than tier 3's single
-run, real compute this environment does not have. Everything upstream is
-built, tested, and now verified correct end to end.
+at real scale - three real GPU training runs (v1, BMBT, BMBT-morph),
+longer than tier 3's single run, real compute this environment does not
+have. Everything upstream is built, tested, and now verified correct end
+to end - the notebook was extended 2026-08-18 to add BMBT-morph as a
+third arm (was v1-vs-BMBT only) once BMBT-morph existed as a real
+trained artifact; `prepare_lm_tokens.py`/`train_lm.py` needed no code
+changes, `bmbt-64k-morph` loads through the same `BMBT.load()`/`--bmbt`
+path as `bmbt-64k` since it is the same artifact format
+(`bornomala-bmbt/1`), verified by loading it directly before touching
+the notebook.
 
 ## MorphScore: attempted, Bengali sample too small to be a benchmark
 
