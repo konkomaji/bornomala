@@ -4,7 +4,7 @@ Shared record schema for every dataset this project collects by hand
 curated text supplementing the automated web/Wikipedia/Sangraha corpus).
 
 Fields here are not invented: they come directly from
-`PROJECT_BORNOMALA_Technical_Specification.md` section 10.3 (Track B
+`PROJECT_BORNOMALA.md` section 10.3 (Track B
 annotation protocol) and section 11.3 (Track C method, dialect metadata
 list, transcription convention). One schema, four record types, so a
 single validator/ingestion path works for all of it and nothing drifts

@@ -7,13 +7,14 @@
 | | |
 |---|---|
 | **Programme** | Project Bornomala (বর্ণমালা) |
-| **Principal Investigator** | Konko Maji |
-| **Document** | Technical and Scientific Specification, Draft 1.0 |
-| **Date** | 10 July 2026 |
-| **Status** | Internal planning. Not for external circulation. |
-| **Naming** | "Project Bornomala" is the only fixed name in this document. All sub-component, model, dataset, and benchmark names are marked `[TBD]` and will be assigned later. |
+| **Author** | Konko Maji |
+| **Document** | Technical and Scientific Notes, kept current as the work progresses |
+| **Originally drafted** | 10 July 2026 |
+| **Revised** | 18 August 2026 |
+| **Status** | Public. This is a living document: the plan I wrote in July, plus an honest record of what I have actually built and measured since. |
+| **Naming** | "Project Bornomala" is fixed, and has been from the start. The Track A tokenizer is built and named: `bn-bpe-64k` (v1) and BMBT, `bmbt-64k` (v2). Everything else below the programme name is still undecided and marked `[TBD]`. I would rather leave a name blank than invent one for something I have not built yet. |
 
-> **Verification note.** Every citation, dataset link, and reported metric in this document was checked against a publicly accessible source at time of writing. Figures that could not be verified are explicitly labelled *estimate*. No benchmark score is reported as measured unless it appears in a cited source. No keyword volumes, corpus sizes, or performance numbers are fabricated.
+> **Verification note.** This is my own document, in my own voice, and I hold it to one standard: every citation, dataset link, and reported metric was checked against a source I can point to, at the time I wrote it. Figures I could not verify are labelled *estimate*. No benchmark score is reported as measured unless it appears in a cited source, or in this repository's own benchmark files, which anyone can rerun themselves. Everything added since the original 10 July draft is held to the same rule, checked against the actual measured numbers in `bengali-tokenizer/benchmarks/` and `bengali-tokenizer/docs/known-issues.md`, not against what I originally intended to build. Where a track has made no real progress, I say so plainly rather than dressing up a plan as a result. No keyword volumes, corpus sizes, or performance numbers are fabricated.
 
 ---
 
@@ -47,19 +48,27 @@
 
 ## 1. Abstract
 
-Project Bornomala is a multi-year programme to construct a Bengali-first language technology stack. It rests on a single empirical claim, stated here so that it can be attacked:
+Project Bornomala is my multi-year research programme to build a Bengali-first language technology stack. I am doing this on my own, based in West Bengal, and it rests on a single empirical claim, stated here so that it can be attacked:
 
 > **The binding constraint on Bengali language modelling is neither compute nor architecture. It is (i) the absence of a large, clean, high-register Bengali corpus, because that corpus exists only as page images, and (ii) the total absence of any computational resource for the Bengali dialects spoken in West Bengal.**
 
 Two consequences follow.
 
-First, optical character recognition is not an application built on top of the language model. It is the instrument that manufactures the language model's training corpus. The causal arrow runs OCR → corpus → model, not model → OCR.
+First, optical character recognition is not an application built on top of the language model. It is the instrument that manufactures the language model's training corpus. The causal arrow runs OCR to corpus to model, not model to OCR.
 
 Second, dialect documentation is not a cultural gesture appended to the research programme. It is the only asset in the programme that a better-capitalised competitor cannot acquire by spending money, because it requires physical presence, local trust, and native competence in five dialect groups that no lab outside West Bengal can access.
 
 Everything else in the programme (the tokenizer, the speech stack, the foundation model) is downstream of solving those two data problems.
 
-Total GPU compute across all five tracks is estimated at **USD 5,000 to 10,000** over 33 months. This is not a compute-constrained programme. It is a data-labour and data-licensing programme. The compute figure is stated precisely because overstating it is the fastest way to be dismissed by a technically literate reviewer.
+Total GPU compute across all five tracks is estimated at **USD 5,000 to 10,000** over 33 months. This is not a compute-constrained programme. It is a data-labour and data-licensing programme. I am stating the compute figure precisely because overstating it is the fastest way to be dismissed by a technically literate reviewer.
+
+### Where things actually stand, six weeks in
+
+I drafted the plan below on 10 July 2026, as an internal document for myself. I am publishing this revision because the plan has now been tested against real work, and I think the result is worth reporting honestly rather than leaving a month-old plan sitting in a public repository as if nothing had happened since.
+
+Track A (tokenization) is the one track where I have real, measured results, reported in full in section 9. I built and shipped a Bengali-only tokenizer, `bn-bpe-64k`, that beats every publicly measurable competitor I could find, including AI4Bharat's IndicBERTv2 and Bangladesh's BanglaBERT, on token efficiency, whole-word retention, and conjunct integrity, across six held-out registers rather than one. I built a second-generation tokenizer, BMBT, that parses Bengali's own script grammar instead of discovering structure statistically; measured honestly, it ties v1 on raw token count rather than beating it, and I report that as the tie it is. Adding a morphology-aware layer on top of BMBT closes almost all of the remaining gap between token boundaries and real morpheme boundaries, at a real, measured fertility cost, not a free win. I also found a real gap I had not planned for: both tokenizers came in dead last on romanized Bengali chat text ("Banglish"), and I built a transliteration pipeline in response that now beats every tokenizer I track on that register too, mostly without touching a GPU. Track A2, the corpus dedup and quality-filtering gate, is measured against real data and clears with a comfortable margin.
+
+Tracks B (OCR) and C (dialect documentation) have working data-collection tooling and a shared ground-truth schema, and that is where they stand: no OCR model has been trained, and no dialect text or speech has actually been collected yet. I say so plainly in the relevant sections rather than let the tooling stand in for progress it has not yet produced. Tracks D (speech) and E (foundation model) are exactly as far along as the original plan: not started, gated on Track B and Track C by design, and the plan for them below is unchanged from July because there is nothing yet to report against it.
 
 ---
 
@@ -239,9 +248,9 @@ STRR(T, D) = |{w ∈ words(D) : |T(w)| = 1}| / |words(D)|
 | Corpus | Origin | Scale | Bengali share | Status |
 |---|---|---|---|---|
 | **Sangraha** (IndicLLMSuite) | AI4Bharat | 251B tokens / 22 languages | **~30B tokens** | Open, HF |
-| — Sangraha Verified | | 64.3B tokens, 2.6× IndicCorp v2 | | Scraped from human-verified sites, OCR-extracted from Indic PDFs, transcribed from Indic video/podcast |
-| — Sangraha Unverified | | | | Extracted from existing multilingual corpora; perplexity-filtered with n-gram LMs trained on Verified, extending CCNet |
-| — Sangraha Synthetic | | | | English Wikimedia translated into 14 Indic languages, plus romanised transliteration |
+| - Sangraha Verified | | 64.3B tokens, 2.6× IndicCorp v2 | | Scraped from human-verified sites, OCR-extracted from Indic PDFs, transcribed from Indic video/podcast |
+| - Sangraha Unverified | | | | Extracted from existing multilingual corpora; perplexity-filtered with n-gram LMs trained on Verified, extending CCNet |
+| - Sangraha Synthetic | | | | English Wikimedia translated into 14 Indic languages, plus romanised transliteration |
 | **IndicAlign** | AI4Bharat | 74.7M instruction pairs, 20 languages | | Open |
 | **Bangla2B+** | BUET CSE | 27.5 GB, crawled from 110 Bengali sites | 100 percent | BanglaBERT pretraining set |
 | **IndicCorp v2** | AI4Bharat | Superseded by Sangraha | | Open |
@@ -300,14 +309,14 @@ STRR(T, D) = |{w ∈ words(D) : |T(w)| = 1}| / |words(D)|
 | Resource | Type | Scale | Reported result | Status |
 |---|---|---|---|---|
 | **BN-HTRd** (arXiv:2206.08977) | Handwritten, document level | 788 pages, 150 writers, 108,147 words, 13,867 lines, 23,115 unique words, 574,203 characters; ground truth from BBC Bangla News corpus | Benchmark dataset | Public, Mendeley |
-| **BanglaWriting** | Handwritten, word level | ~21,234 words; dual-channel scanner + smartphone | — | Public |
+| **BanglaWriting** | Handwritten, word level | ~21,234 words; dual-channel scanner + smartphone | n/a | Public |
 | **End-to-End OCR for Bengali Handwritten Words** (arXiv:2105.04020) | Method | Evaluated on BanglaWriting | **0.091 CER, 0.273 WER** (DenseNet121 + GRU) | Published |
 | **BN-DRISHTI** | Line/word segmentation | 786 full pages, extended BN-HTRd | **F 99.97% line, 98% word** (YOLO + Hough + affine skew correction) | Springer |
 | **BnGraphemizer** (PLATTER / CHIPS line) | Trie-based grapheme tokenizer | Method | Outperforms character-based tokenizers on Bengali HTR | **Adopt directly** |
 | **CHIPS** | Page-level Indic handwritten OCR | 10 Indic languages, detection + recognition labels | PLATTER framework, 6 HTR models compared | Public, code + models |
-| **Boise State Bangla Handwriting** | Isolated characters | — | Baseline recognizer | Public |
-| **BanglaLekha-Isolated** | Isolated characters | — | Classification baselines | Public |
-| **Tesseract Bengali** | Printed OCR engine | — | Weighted F1 **84.96%**, raised to **87.26%** by Levenshtein post-correction + character grouping | Public. Unusable for production. |
+| **Boise State Bangla Handwriting** | Isolated characters | n/a | Baseline recognizer | Public |
+| **BanglaLekha-Isolated** | Isolated characters | n/a | Classification baselines | Public |
+| **Tesseract Bengali** | Printed OCR engine | n/a | Weighted F1 **84.96%**, raised to **87.26%** by Levenshtein post-correction + character grouping | Public. Unusable for production. |
 
 #### 4.5.3 Transferable precedents from adjacent scripts
 
@@ -404,42 +413,42 @@ Legend: ● exists ◐ partial ○ **none**
 
 Each hypothesis is stated so that it can be falsified, with the falsifying observation named.
 
-### RQ1 — Tokenization
+### RQ1: Tokenization
 
 **H1.** A Bengali-only BPE vocabulary induced with a grapheme-cluster-aware pre-tokenizer and a literary-weighted induction corpus achieves fertility ≤ 1.8 and STRR strictly greater than Sarvam-1 and IndicSuperTokenizer on held-out Bengali literary text.
 
 - **Falsified if:** IndicSuperTokenizer or Gemma 3 achieves within 15 percent of the Bornomala tokenizer on both metrics.
 - **Consequence of falsification:** Adopt IndicSuperTokenizer. Reallocate Track A effort to Track C. Publish the negative result; it is informative.
 
-### RQ2 — The grapheme-cluster hypothesis
+### RQ2: The grapheme-cluster hypothesis
 
 **H2.** Reporting GCER rather than codepoint CER materially changes the ranking of existing Bengali OCR systems.
 
 - **Falsified if:** Rank correlation between GCER and codepoint CER across ≥ 8 systems exceeds Spearman ρ = 0.95.
 - **Consequence of falsification:** The metric argument weakens. GCER remains correct but ceases to be a contribution.
 
-### RQ3 — The corpus hypothesis (central)
+### RQ3: The corpus hypothesis (central)
 
 **H3.** Continued pretraining on an OCR-recovered Bengali literary corpus (1850–1950) improves a base model's performance on Bengali literary-register, idiom, and cultural-knowledge tasks by a margin exceeding that obtained from an equivalent token budget of Bengali web text.
 
 - **Falsified if:** With token budget held constant, literary-corpus continued pretraining does not outperform web-corpus continued pretraining on the cultural-register benchmark.
 - **Consequence of falsification:** **This falsifies the central premise of Project Bornomala.** Publish it. It is a real and publishable negative result about Bengali, and it would redirect the field.
 
-### RQ4 — The letterpress gap
+### RQ4: The letterpress gap
 
 **H4.** The performance gap between frontier VLMs and a Bengali-specialised model is small on modern print and large on pre-1950 letterpress.
 
 - **Falsified if:** Frontier VLMs achieve GCER < 5 percent on historic Bengali letterpress in the month-12 pilot.
 - **Consequence of falsification:** Track B narrows to a benchmark plus a cheap on-device tier. The corpus recovery still proceeds, using frontier APIs.
 
-### RQ5 — Dialect transfer
+### RQ5: Dialect transfer
 
 **H5.** ASR fine-tuned on West Bengal dialect speech transfers positively to Bangladesh dialects, and vice versa, indicating a shared dialect-invariant acoustic representation.
 
 - **Falsified if:** Cross-training degrades WER on either side relative to in-domain training.
 - **Consequence of falsification:** The pan-Bengali resource argument weakens. Partnership pitch to Hishab and BUET must be reframed around data complementarity rather than model transfer.
 
-### RQ6 — Small-model domain dominance
+### RQ6: Small-model domain dominance
 
 **H6.** A 2 to 4B Bengali-specialised model outperforms frontier models on the cultural-register benchmark.
 
@@ -460,15 +469,15 @@ Applied:
 
 | Component | Decision | (a) Wrong assumption? | (b) Cheap to retrain? | Base if adapting |
 |---|---|---|---|---|
-| **Tokenizer** | **FROM SCRATCH** | Yes. Every existing vocabulary is English-first or pan-Indic-average. | Yes. CPU, hours. | — |
-| **OCR fast tier** (line recogniser) | **FROM SCRATCH** | Yes. No pretrained artifact encodes Bengali grapheme structure. | Yes. One 4090, ~30h, < USD 50. | — |
-| **OCR layout detector** | ADAPT | No. YOLO-class detectors transfer across scripts. | — | YOLOv8/v11, DocLayout-YOLO |
+| **Tokenizer** | **FROM SCRATCH** | Yes. Every existing vocabulary is English-first or pan-Indic-average. | Yes. CPU, hours. | n/a |
+| **OCR fast tier** (line recogniser) | **FROM SCRATCH** | Yes. No pretrained artifact encodes Bengali grapheme structure. | Yes. One 4090, ~30h, < USD 50. | n/a |
+| **OCR layout detector** | ADAPT | No. YOLO-class detectors transfer across scripts. | n/a | YOLOv8/v11, DocLayout-YOLO |
 | **OCR accurate tier** (VLM) | ADAPT | No. Vision encoders transfer. | No. Requires billions of image-text pairs. | Qwen3-VL 2B, dots.ocr 1.7B, Surya 2 650M |
 | **ASR** | ADAPT | No. The gap is data (dialect, spontaneity), not architecture. | No. | IndicConformer, Whisper-large-v3 |
 | **TTS** | ADAPT | No. Same reasoning. | No. | IndicF5, F5-TTS |
 | **LLM base** | ADAPT (vocab surgery + continued pretraining) | Partially. Mitigated by vocabulary surgery. | No. See §7.2. | Sarvam-1 2B, BharatGen Param-1 2.9B, Gemma 3 4B |
-| **Instruction tuning** | ADAPT (LoRA) | — | — | PEFT |
-| **Preference alignment** | ADAPT (DPO, not RLHF) | — | — | TRL |
+| **Instruction tuning** | ADAPT (LoRA) | n/a | n/a | PEFT |
+| **Preference alignment** | ADAPT (DPO, not RLHF) | n/a | n/a | TRL |
 
 ### 7.2 Why from-scratch pretraining is *deleted*, not deprioritised
 
@@ -511,10 +520,10 @@ Assuming `MFU = 0.40`, effective `1.25 × 10^14` FLOP/s per A100, spot price USD
 | Continued pretrain, small | 2B | 10B | 1.2 × 10²⁰ | 100–150 | **USD 180–270** |
 | Continued pretrain, mid | 4B | 20B | 4.8 × 10²⁰ | 400–600 | **USD 720–1,080** |
 | Continued pretrain, large | 7B | 20B | 8.4 × 10²⁰ | 700–1,050 | **USD 1,260–1,890** |
-| OCR VLM LoRA fine-tune | 2B | 5–10M samples | — | 400–800 | **USD 720–1,440** |
-| OCR CTC recogniser | 650M | 20M synthetic lines | — | 1× RTX 4090, ~30h | **< USD 50** |
-| ASR fine-tune | 1.5B | 500–1,000 h audio | — | 100–200 | **USD 180–360** |
-| DPO | 2–4B | 2,000 pairs | — | 8–16 | **< USD 30** |
+| OCR VLM LoRA fine-tune | 2B | 5–10M samples | n/a | 400–800 | **USD 720–1,440** |
+| OCR CTC recogniser | 650M | 20M synthetic lines | n/a | 1× RTX 4090, ~30h | **< USD 50** |
+| ASR fine-tune | 1.5B | 500–1,000 h audio | n/a | 100–200 | **USD 180–360** |
+| DPO | 2–4B | 2,000 pairs | n/a | 8–16 | **< USD 30** |
 
 Multiply by **2×** for failed runs, restarts, checkpoint storage, and hyperparameter search.
 
@@ -530,101 +539,105 @@ Total GPU compute:  USD 5,000 – 10,000  over 33 months
 
 ## 9. Track A: Tokenization
 
-**Sub-project name:** `[TBD]`
+**Sub-project name:** `bn-bpe-64k` (v1) and BMBT, `bmbt-64k` (v2). Both built, both shipped, both named. This is the one track where the rest of this section is no longer a plan I intend to carry out. It is a record of what I actually did, and what it actually measured.
 
 ### 9.1 Objective
 
 A Bengali-only subword vocabulary that (i) respects grapheme cluster boundaries, (ii) preserves conjunct integrity, and (iii) allocates vocabulary across the tatsama and tadbhava strata proportionally to their use in *literary and formal* Bengali rather than in web text.
 
-### 9.2 Method
+### 9.2 Method, as actually implemented
 
-#### Step 1 — Induction corpus
+#### Step 1: induction corpus
 
-Assemble 5 to 20 GB of Bengali text, **deliberately over-weighted toward literary and formal register** relative to the natural web distribution.
+The plan called for 5 to 20 GB of Bengali text, deliberately over-weighted toward literary and formal register. What I actually assembled is close to that plan but not identical to it, and I would rather say exactly where it diverges than let the target table above stand in for what was built.
 
-| Source | Target share | Rationale |
-|---|---|---|
-| Public-domain Bengali literature | 30% | Tatsama-dense; conjunct-dense |
-| Sangraha Bengali (Verified split) | 35% | Highest-quality available |
-| Bengali Wikipedia | 10% | Encyclopaedic register |
-| Government / administrative Bengali | 10% | Formal register, Perso-Arabic stratum |
-| Contemporary news | 10% | Modern usage, named entities |
-| Code-mixed Bengali-English | 5% | Realistic contemporary usage |
+Two of the six planned sources, government/administrative Bengali and code-mixed Bengali-English, have no clean, licensable public Bengali dataset as of 2026-07. I dropped them rather than fake a substitute, and renormalised the remaining sources' weights. Public-domain Bengali literature is itself a compromise: genuine Wikisource Bengali public-domain text exists but is tiny (about 90 lines in the current Wikimedia snapshot), so I combined it with Sangraha's verified, PDF-typed documents (OCR-noise-filtered) as a formal/book-register proxy. Those PDFs are genuinely old-orthography Bengali, spot-checked as 19th and 20th century novel prose and a Mahabharata translation, but I have not confirmed they are pre-1950 or public domain, only that their register is formal and archaic. The actual shipped corpus is roughly 1.5 million weighted lines: Wikisource, Sangraha (verified PDF-typed as the literary proxy, and web-typed for general register), the first 15,000 Bengali Wikipedia articles, XL-Sum Bengali news, and, added later, AI4Bharat's IndicCorp v2 to skew provenance toward an India-based pipeline. Full accounting, including what was substituted and why: `bengali-tokenizer/docs/known-issues.md`, point 6.
 
-#### Step 2 — Normalisation and pre-tokenization
+#### Step 2: normalisation and pre-tokenization
 
 ```
 raw → NFC normalise → ZWJ/ZWNJ policy → grapheme cluster segmentation → pre-token boundaries
 ```
 
-Requirements:
+Built as specified: NFC normalisation before any processing, a documented preserve-by-default ZWJ/ZWNJ policy, and a grapheme-cluster atom scheme that guarantees a conjunct, reph, phala, or matra is never split from its base, for any cluster that clears a frequency threshold in the corpus. Below that threshold, a cluster decomposes to its codepoints and can be split there; this is a deliberate efficiency trade, measured and reported per register rather than hidden, and it is the reason the shipped fragmentation rate is near zero rather than exactly zero.
 
-- **NFC normalise** before any processing.
-- Adopt an explicit, documented ZWJ/ZWNJ policy. Do not silently strip them; they carry ligature-formation intent.
-- **Never split a conjunct, a reph, a phala, or a matra from its base.** Adopt or extend the trie-based **BnGraphemizer** approach, which was designed for exactly this failure mode in Bengali HTR.
-- Emit pre-token boundaries only at grapheme cluster boundaries, whitespace, and script transitions (Bengali ↔ Latin ↔ digit).
+#### Step 3: vocabulary induction
 
-#### Step 3 — Vocabulary induction
+Ablated as planned, across algorithm (BPE vs Unigram), vocabulary size (16k/32k/48k/64k), and corpus mix. The vocabulary-size axis mattered more than I expected going in: at the original 32k target, the literary-weighted corpus measured *worse* fertility than a Wikipedia-only demonstrator I had trained first (1.952 vs 1.568). The same fixed token budget spread across four registers instead of one is sharper nowhere. Fertility recovered monotonically as vocabulary size increased (1.482 to 1.375 to 1.319 in-sample across 32k/48k/64k), and 64k is the smallest size that beats every external baseline tested on every register. That is the artifact I shipped as `bn-bpe-64k`.
 
-Ablate:
+#### Step 4: evaluation
 
-| Axis | Values |
-|---|---|
-| Algorithm | BPE, Unigram (SentencePiece) |
-| Vocabulary size | 16k, 32k, 48k, 64k |
-| Superword stage | off, on (two-stage subword→superword, per SuperBPE / IndicSuperTokenizer) |
-| Induction corpus | web-natural distribution vs literary-weighted |
-
-The last axis is itself an experiment: it directly tests whether corpus composition, not algorithm, drives tatsama coverage.
-
-#### Step 4 — Evaluation
-
-Report **fertility** and **STRR** on a **held-out corpus not seen during induction**, disaggregated by register:
-
-- Modern news
-- Literary prose (Tagore, Bankim, Bibhutibhushan, Sarat Chandra)
-- Formal administrative Bengali
-- Code-mixed Bengali-English
-- Each of the five dialect groups, once Track C data exists
-
-Compare against: **Llama 3.1, Llama 4, GPT-4o, Gemma 3, Sarvam-1, IndicSuperTokenizer, BrahmicTokenizer-131K, Tesseract-adjacent baselines, BengaliBPE.**
-
-Also report:
-- **Bytes per token** (script-independent compression)
-- **Conjunct fragmentation rate**: fraction of grapheme clusters split across token boundaries. Target: **0**.
+Built as `scripts/compare.py`. Reports fertility, STRR, bytes per token, and conjunct fragmentation (both a legacy binary measure, kept for continuity with earlier-published numbers, and a corrected destructive-rate measure that only counts a split that actually severs something real). Measured across six disjoint held-out registers not seen during training: Wikipedia, literary/formal, general web, news, FLORES+, and Banglish. Section 9.6 below has the numbers. The dialect-group breakdown the original plan called for is not measurable yet, honestly: Track C has not collected any dialect text (section 11).
 
 ### 9.3 Hard requirement: shaping validation
 
 > **Requirement A-1.** Validate glyph shaping by rendering with HarfBuzz and reading the grapheme clusters back. Assert `𝒢(render_and_read(s)) == 𝒢(NFC(s))` for a large sample.
 
-Naive rendering produces incorrect conjuncts. An incorrectly shaped induction corpus silently poisons the vocabulary and every downstream model. This is the **most common failure mode in Indic tokenizer and synthetic-data pipelines** and it is Gate G1 in §15.
+Built as `shaping.py`, with HarfBuzz coverage and cluster-correspondence checking and system-font auto-detection. This is Gate G1 in §15, and it passed before any tokenizer was trained on the corpus it validates.
 
 ### 9.4 Deliverables
 
-1. Open-weight tokenizer (`[TBD]` name), HuggingFace `tokenizers` format.
-2. **The first Bengali entry in a cross-tokenizer fertility and STRR comparison table.** Currently no such entry exists in any paper.
-3. Grapheme-cluster pre-tokenizer, released as a standalone library.
-4. Workshop paper.
+1. Open-weight tokenizer, HuggingFace `tokenizers` format. Shipped as `bn-bpe-64k`, checked in at `artifacts/bn-bpe-64k/`.
+2. **The first Bengali entry in a cross-tokenizer fertility and STRR comparison table.** This no longer needs to be a future deliverable: it exists, measured against 18 real external tokenizers across six registers, at `bengali-tokenizer/benchmarks/bengali-comparison.md`.
+3. A grapheme-cluster and akshara-grammar pre-tokenizer, shipped as part of the `bengali-tokenizer` package (`bntok`), not yet split out as a standalone library.
+4. A second-generation tokenizer, BMBT, that was not in the original plan at all (section 9.6). An arXiv preprint (`bengali-tokenizer/paper/`) and a Hugging Face release are prepared, version 0.1, to be updated as the corpus grows further.
 
-### 9.5 Decision gate
+### 9.5 Decision gate, and its actual result
 
-If measured fertility for Gemma 3 or IndicSuperTokenizer on Bengali is already within ~15 percent of the Bornomala tokenizer, **H1 is falsified**. Adopt IndicSuperTokenizer and reallocate. Determine this on a CPU, in weeks, before spending any money.
+H1 (RQ1, section 6) is falsified if IndicSuperTokenizer or Gemma 3 comes within about 15 percent of the Bornomala tokenizer's fertility and STRR. I could not test IndicSuperTokenizer directly: I looked for a public code or tokenizer release and found none, so it is reported as unavailable rather than faked with a similarly named stand-in. Gemma 3's own tokenizer is also unpublished; the closest open proxy, Gemma-2, measured fertility 3.841 on Wikipedia held-out against `bn-bpe-64k`'s 1.524, nowhere near the 15 percent band. **H1 is not falsified by either of its named comparators.** The closest real rival, once I widened the comparison to Bengali-monolingual encoders (added 2026-08-17), turned out to be BanglaBERT, not IndicBERTv2: BanglaBERT reaches within about 7 percent on raw fertility, but still trails by an order of magnitude on conjunct destructive rate (0.0162 vs `bn-bpe-64k`'s 0.0004 on Wikipedia). I report that closeness rather than bury it under the two named-but-untestable comparators; it is the honest state of the gate.
+
+### 9.6 What is actually built and measured, as of 18 August 2026
+
+This subsection did not exist in the 10 July draft. It exists now because a plan without a result attached to it is not a contribution, and I have results.
+
+**v1, `bn-bpe-64k`.** A 64,000-vocabulary BPE tokenizer over grapheme-cluster atoms, trained on the corpus described in 9.2. Measured against 18 real external tokenizers (Sarvam-1, SUTRA, BrahmicTokenizer-131K, Krutrim, BharatGen's Param2-17B, IndicBERTv2, BanglaBERT, BanglaT5, mBERT, XLM-RoBERTa, DeepSeek-V3, Llama-3.1, Gemma-2, Mistral-7B, Qwen2.5, and GPT-4/GPT-4o via tiktoken) across six held-out registers, it leads on fertility, STRR, and destructive fragmentation on every single one:
+
+| Register | Fertility (ours) | Closest rival | Destructive rate (ours) | Closest rival |
+|---|--:|--:|--:|--:|
+| Wikipedia | 1.524 | BanglaBERT 1.625 | 0.0004 | BanglaBERT 0.0162 |
+| Literary / formal | 1.319 | BanglaBERT 1.488 | 0.0003 | BanglaBERT 0.0169 |
+| General web | 1.195 | BanglaBERT 1.324 | 0.0002 | BanglaBERT 0.0045 |
+| News | 1.142 | BanglaBERT 1.259 | 0.0001 | BanglaBERT 0.0031 |
+| FLORES+ | 1.241 | BanglaBERT 1.341 | 0.0001 | BanglaBERT 0.0066 |
+
+Full tables, every tokenizer, every register, and the reproduction command: `bengali-tokenizer/benchmarks/bengali-comparison.md`. On a fixed list of 13 conjunct-dense, culturally load-bearing words (deity names, Rabindranath Tagore, well-known West Bengal places), `bn-bpe-64k` and two others, BanglaBERT and BanglaT5, all tokenize every word as exactly one token. That tie corrects an earlier, now-retracted claim on this project's own public surfaces that it held this property alone; what genuinely still sets it apart is that it holds by grammatical construction, not by whatever a statistical vocabulary happened to cover on that particular list.
+
+**v2, BMBT (`bmbt-64k`).** Instead of retraining BPE and hoping it discovers Bengali's structure from byte counts, BMBT parses the akshara, Bengali's orthographic syllable, with a finite-state grammar first, and only falls back to statistics for what the grammar cannot explain: loanwords, code-mixing, noise. It also emits a real featural decomposition (`featurize()`: onset consonant, vowel, modifiers) as an actual tokenizer output, not an embedding-layer afterthought. Measured honestly against the design's own formal proof that a grammar-constrained BPE cannot beat an unconstrained one on raw token count: **BMBT ties v1 on five of six registers down to the fourth decimal, and edges it by 0.001 fertility on the sixth (FLORES+, 1.240 vs 1.241).** I am reporting a tie as a tie. It is not a win, and I said so before I had the FLORES+ number, not after. What BMBT adds regardless of the tie: a provable, Unicode-library-independent grammar instead of delegated trust in a third-party regex engine, the featural output, and, after a vectorised rewrite, more than twice the segmentation throughput of the library it was built to stop depending on.
+
+**BMBT with morphology (`bmbt-64k-morph`), and the honest cost.** A rule-based suffix layer factors an akshara at a morpheme seam, but only where doing so cannot also sever a conjunct, raising the share of real morpheme boundaries that fall on a reachable token boundary from 62.4 percent (plain aksharas) to **100 percent**, while keeping conjunct-destructive splits at zero. This does not come for free, and I am not going to present it as though it does: a trained `bmbt-64k-morph` measures legacy fragmentation of 3.399 percent (all of it harmless onset/rime seams, not severed conjuncts) and **fertility of 1.704, roughly 12 percent worse than v1/BMBT's 1.524.** This is the result the design's own formal spec predicted in advance, that a BPE constrained to respect additional boundaries cannot beat an unconstrained one on raw token count, and a real trained model landed within 0.05 points of a prediction made before it was trained. Morphology buys generalisation (a rare inflected form now shares token boundaries with its stem), not compression, and I have no downstream model yet to show whether that generalisation is worth the fertility it costs. Full account: `bengali-tokenizer/docs/bmbt-morphology.md`.
+
+**Negative results, kept rather than deleted.** Not everything I tried worked, and I am recording the failures for the same reason the design doc records the successes.
+
+- **BMBT-Hybrid**, an attempt to split a rare akshara into a shareable onset atom and tail atom, was removed from the codebase entirely. The idea was sound on paper; in production it broke the conjunct guarantee (fragmentation got 20 to 70 times worse), the obvious fix was unsound (real BPE merges by global rank, not left to right, so a predicted re-fusion chain could be pre-empted), and the working fix re-spent exactly the vocabulary the factoring had saved. A fair, vocabulary-matched rerun showed BMBT-Hybrid 2 to 9 percent *worse* on fertility than v1/BMBT on every register. Structural, not a tuning failure.
+- **An India-provenance-skewed corpus variant** (halving the Bangladesh-sourced news share, adding IndicCorp v2 at a higher weight) measured a wash to slight regression against the default corpus, not a win. Kept as a labelled alternative artifact, not promoted.
+- **Unigram versus BPE**: Unigram measured worse than BPE by 2.5 to 5.5 percent on every register, for both v1 and BMBT. BPE remains the shipped algorithm.
+
+**The Banglish gap: found, measured, and mostly closed.** Both tokenizers, checked against romanized Bengali chat text (the register most real Bengali internet writing actually happens in), measured dead last: 17th of 17 loadable tokenizers on a real held-out set, behind BanglaBERT and BanglaT5, at fertility 2.827 to 2.906. The cause is structural, not a bug: 64,000 tokens spent entirely on Bengali script leaves essentially no Latin-script coverage, where every competitor's training mix has at least incidental English exposure. Rather than compete on raw Latin-script BPE against corpora far larger than mine, I built a tiered transliteration pipeline that converts Banglish to real Bengali script first, then hands the result to the tokenizer that already wins by a wide margin there:
+
+- **Tier 0**: Bengali-script text passes through untouched.
+- **Tier 1**: a 155,615-entry lookup table, built mostly (125,733 entries) from the real Dakshina v1.0 dataset (Google Research, MIT-licensed), with a synthetic gap-fill for words Dakshina does not cover.
+- **Tier 2**: a character n-gram Naive Bayes classifier, trained from scratch, deciding whether a word tier 1 missed is real code-mixed English or unresolved Banglish (85.9 percent / 87.6 percent recall after a balanced-prior fix).
+- **Tier 3**: a small, from-scratch trained sequence-to-sequence Transformer for whatever tiers 1 and 2 leave unresolved.
+
+**Tiers 0 to 2 alone, no trained model, no GPU, push end-to-end fertility on the same held-out set to 1.740, better than every tokenizer on the 17-way leaderboard, including the previous leader, SUTRA, at 1.850.** Tier 3 exists and is trained: a small character-level Transformer, trained on a Colab T4, reaches **53.9 percent exact-match and 13.5 percent character error rate** with beam search, against Dakshina's held-out test split it never saw during training. That is real and it is imperfect, and I am reporting both numbers rather than the flattering one. Further improvement on tier 3 is scoped and ready to run; it is blocked on GPU compute this environment does not have, not on missing design work. Full account, including the honest failure cases (`shopno` decoding to the wrong but plausible `শপন` instead of `স্বপ্ন`): `bengali-tokenizer/docs/known-issues.md`, the Banglish section.
+
+**Track A2: corpus dedup and quality filtering, Gate G3.** The roadmap's own "first 30 days" plan (section 15.3) calls for measuring what fraction of raw Bengali web text survives dedup and quality filtering, and whether the surviving corpus clears 5 billion clean tokens. I measured this on four real sources, not a synthetic estimate: Bengali Wikipedia, Sangraha (raw, no pre-filter), AI4Bharat's IndicCorp v2 at 2 million lines, and CC-100 at 1 million lines as the genuine raw-web proxy, since the other three all turned out to be curated or verified corpora rather than raw crawl text. Survival ranges from a low of 63.2 percent lines / 79.6 percent words (CC-100, the real outlier, with no AI4Bharat or Wikimedia curation behind it) to a high of 97.9 percent lines / 99.3 percent words (IndicCorp v2). Applying even CC-100's much lower ratio to IndicCorp v2's own published 30.0-billion-token size still projects roughly 23.9 billion surviving tokens, several times the gate's 5-billion threshold. **Gate G3 verdict: high-confidence pass**, now stress-tested against a genuine raw-web proxy rather than only curated corpora. Full writeup, including what "raw" honestly does and does not mean for each source: `bengali-tokenizer/docs/track-a2-corpus-survival.md`.
 
 ---
 
 ## 10. Track B: Bengali Document Recognition
 
-**Sub-project name:** `[TBD]`
+**Sub-project name:** `[TBD]`. **Honest status, 18 August 2026: planning and tooling stage. No OCR model has been trained. No page has been collected as ground truth yet.** I am saying this plainly at the top of the section rather than letting the tooling described below read as if it were progress on the models themselves. Everything from 10.2 onward is still the plan I wrote on 10 July, unchanged, because there is nothing measured yet to update it with.
 
 ### 10.1 Objective
 
 Open state of the art on Bengali document OCR, with explicit coverage of pre-1950 West Bengal letterpress, and with **hallucination measured rather than ignored**.
 
-This is a co-equal goal of the programme, not merely instrumental to Track E. A large share of West Bengal's pre-1950 literary and periodical output exists only as physical print - decaying, scattered, and in many cases held in a single fragile copy. A general-purpose Bengali OCR system that handles historic letterpress accurately, with hallucination measured and controlled, is a genuine preservation contribution on its own: it lets that text be recovered and archived efficiently and reliably, for anyone digitising Bengali print, independent of whether any of it ever trains a model. The corpus this produces for Track A/E is real and valuable, but it is the second reason this track exists, not the first.
+This is a co-equal goal of the programme, not merely instrumental to Track E. A large share of West Bengal's pre-1950 literary and periodical output exists only as physical print, decaying, scattered, and in many cases held in a single fragile copy. A general-purpose Bengali OCR system that handles historic letterpress accurately, with hallucination measured and controlled, is a genuine preservation contribution on its own: it lets that text be recovered and archived efficiently and reliably, for anyone digitising Bengali print, independent of whether any of it ever trains a model. The corpus this produces for Track A/E is real and valuable, but it is the second reason this track exists, not the first.
 
-**Relationship to near-term data collection.** Building the two model tiers below (10.4) is a real, separate undertaking - months of synthetic-data engineering and real annotation before either tier exists. It does not need to wait on that to start recovering text: `data-collection/`'s `ocr_ground_truth` record type (shared with Track C's collection tooling, see section 11) is the practical entry point right now - existing OCR tools or a frontier VLM, human-corrected, produces exactly the same NFC-normalised, categorised ground truth format this track's own stage 2 (10.3) needs. Every page digitised this way today is both a preserved text now and a training/eval example for the custom models later - not two separate efforts.
+**What actually exists right now: tooling, not data.** Building the two model tiers below (10.4) is a real, separate undertaking, months of synthetic-data engineering and real annotation before either tier exists. It does not need to wait on that to start recovering text, so I built `data-collection/`'s `ocr_ground_truth` record type (shared with Track C's collection tooling, see section 11) as the practical entry point: an existing OCR tool or a frontier VLM, human-corrected, produces exactly the same NFC-normalised, categorised ground truth format this track's own stage 2 (10.3) needs. Every page digitised this way would be both a preserved text and a training/eval example for the custom models later, not two separate efforts. What I have not done yet is use it: the tool is validated and ready (`data-collection/validate.py --type ocr_ground_truth`), but no real page has gone through it. I would rather report a working, empty pipeline honestly than round zero pages up to "in progress."
 
-### 10.2 Stage 1 — Synthetic data engine (CPU-only, months 2–6)
+### 10.2 Stage 1: synthetic data engine (CPU-only, months 2 to 6)
 
 This stage runs entirely on commodity CPU hardware and is the highest-leverage stage in the programme.
 
@@ -651,7 +664,7 @@ This stage runs entirely on commodity CPU hardware and is the highest-leverage s
 
 **Tooling.** Pillow + Raqm/HarfBuzz for rendering; `synthtiger` or `TextRecognitionDataGenerator` as scaffold; Albumentations for degradation. Write to WebDataset shards, not loose files.
 
-### 10.3 Stage 2 — Real annotated data (months 4–12)
+### 10.3 Stage 2: real annotated data (months 4 to 12)
 
 Synthetic alone plateaus. The residual error is real-scan distribution shift.
 
@@ -674,7 +687,7 @@ Synthetic alone plateaus. The residual error is real-scan distribution shift.
 4. Double-annotate a 10 percent sample. **Report inter-annotator agreement** at grapheme-cluster level.
 5. Ground truth stored NFC-normalised.
 
-### 10.4 Stage 3 — Models (rented GPU, months 9–14)
+### 10.4 Stage 3: models (rented GPU, months 9 to 14)
 
 Two tiers. Ship both.
 
@@ -713,7 +726,7 @@ For corpus construction (Track E input), Tier 2 output is admitted only if:
 
 Pages failing admission are routed to human review or excluded.
 
-### 10.5 Stage 4 — Bengali OCR benchmark (months 10–14)
+### 10.5 Stage 4: Bengali OCR benchmark (months 10 to 14)
 
 **Sub-project name:** `[TBD]`. Modelled on KITAB-Bench and olmOCR-Bench.
 
@@ -768,7 +781,7 @@ Track B is not a product built on the LLM. It is the instrument that manufacture
 
 ## 11. Track C: West Bengal Dialect Documentation
 
-**Sub-project name:** `[TBD]`
+**Sub-project name:** `[TBD]`. **Honest status, 18 August 2026: tooling stage only. Zero dialect text pairs collected. Zero dialect speech hours collected.** This is, by the programme's own logic in section 5.3, the single most important track for the moat this document argues I actually have, and I have not yet done the fieldwork that would make it real. What exists is the collection infrastructure to do it correctly once fieldwork starts: a shared schema and validator (`data-collection/schema.py`, `data-collection/validate.py`) with `dialect_text` and `dialect_speech` record types built directly from this section's own elicitation protocol and metadata list, so nothing collected later drifts out of the format the rest of the pipeline expects, and a hard, validator-enforced rule that a speaker's name is never recorded. The templates are ready. Nobody has been recorded yet.
 
 ### 11.1 Objective
 
@@ -844,7 +857,7 @@ It is the only asset in this programme that money alone cannot buy.
 
 ## 12. Track D: Speech
 
-**Sub-project name:** `[TBD]`
+**Sub-project name:** `[TBD]`. **Honest status, 18 August 2026: not started, by design.** This track is gated on Track C dialect speech existing (section 15.1 puts it at months 18 to 24, after Track C). Nothing below has changed since the 10 July draft because there is nothing yet to change it with.
 
 ### 12.1 ASR
 
@@ -862,7 +875,7 @@ Stage 2:  → fine-tune on Track C dialect speech
 
 **Reporting.** WER disaggregated by:
 - Dialect group
-- Spontaneous vs read speech (**separately** — aggregating them hides the entire problem)
+- Spontaneous vs read speech (**separately**; aggregating them hides the entire problem)
 - Code-mixing rate bucket
 - Speaker demographic band
 
@@ -896,7 +909,7 @@ streaming ASR (~300M)  +  LLM (2–4B, Q4 GGUF)  +  compact TTS
 
 ## 13. Track E: Foundation Model
 
-**Sub-project name:** `[TBD]`
+**Sub-project name:** `[TBD]`. **Honest status, 18 August 2026: not started, by design.** This track is gated on Track B and Track C both producing usable corpus (section 15.1 puts continued pretraining at months 20 to 26). The vocabulary-surgery step in 13.2 has a real tokenizer to install now (`bn-bpe-64k` or BMBT, section 9), which the 10 July draft did not, but no base model has been touched and no token has been trained on. What follows is still the plan, not a report.
 
 ### 13.1 Base selection
 
@@ -1036,25 +1049,27 @@ Track E (LLM)
 
 ### 15.2 Phase gates
 
-| Gate | Month | Question | If NO |
-|---|---|---|---|
-| **G1** | 3 | Does the synthetic rendering pipeline produce correctly shaped conjuncts, verified by reading grapheme clusters back? | **Halt.** Nothing downstream works. Fix shaping. |
-| **G2** | 4 | Does a Bengali-only tokenizer beat IndicSuperTokenizer and Gemma 3 on Bengali fertility and STRR by > 15 percent? | H1 falsified. Adopt IndicSuperTokenizer. Reallocate Track A to Track C. Publish the negative result. |
-| **G3** | 6 | After dedup and quality filtering, what fraction of raw Bengali web text survives? Is the surviving corpus ≥ 5B clean tokens? | If < 5–10 percent survival and < 5B tokens, **OCR becomes the sole corpus route**, not a supplement. Re-weight the whole programme toward Track B. |
-| **G4** | 12 | On the 50-page pilot benchmark, is the frontier-VLM-versus-Tesseract gap large on modern print but *enormous* on pre-1950 letterpress? | H4 falsified. Track B narrows to a benchmark plus a cheap on-device tier. Corpus recovery proceeds via frontier APIs. |
-| **G5** | 18 | Has the dialect corpus reached 20,000 parallel pairs and 200 hours of speech? | The moat is not forming. Reassess whether field collection is executable at this scale, or partner. |
-| **G6** | 26 | Does continued pretraining on the recovered literary corpus beat an equal-token web-text control on the cultural-register benchmark? | **RQ3 falsified. This is the central premise.** Publish it. It is a real negative result about Bengali and it redirects the field. |
+| Gate | Month | Question | If NO | Status, 18 August 2026 |
+|---|---|---|---|---|
+| **G1** | 3 | Does the synthetic rendering pipeline produce correctly shaped conjuncts, verified by reading grapheme clusters back? | **Halt.** Nothing downstream works. Fix shaping. | **Passed.** Built as `shaping.py`; the corpus and every trained tokenizer sit downstream of it. |
+| **G2** | 4 | Does a Bengali-only tokenizer beat IndicSuperTokenizer and Gemma 3 on Bengali fertility and STRR by > 15 percent? | H1 falsified. Adopt IndicSuperTokenizer. Reallocate Track A to Track C. Publish the negative result. | **Passed, against a narrower comparator set than named.** IndicSuperTokenizer has no public release to test; Gemma 3's own tokenizer is unpublished. Against the closest available real proxies, `bn-bpe-64k` clears the bar easily. Full result: section 9.5. |
+| **G3** | 6 | After dedup and quality filtering, what fraction of raw Bengali web text survives? Is the surviving corpus ≥ 5B clean tokens? | If < 5–10 percent survival and < 5B tokens, **OCR becomes the sole corpus route**, not a supplement. Re-weight the whole programme toward Track B. | **High-confidence pass.** Measured across Wikipedia, Sangraha, IndicCorp v2, and CC-100 as a raw-web proxy: worst case 63.2 percent lines / 79.6 percent words survive, projecting tens of billions of tokens against the 5B floor. Full result: section 9.6, `bengali-tokenizer/docs/track-a2-corpus-survival.md`. |
+| **G4** | 12 | On the 50-page pilot benchmark, is the frontier-VLM-versus-Tesseract gap large on modern print but *enormous* on pre-1950 letterpress? | H4 falsified. Track B narrows to a benchmark plus a cheap on-device tier. Corpus recovery proceeds via frontier APIs. | **Not reached.** No pilot benchmark run yet (section 10). |
+| **G5** | 18 | Has the dialect corpus reached 20,000 parallel pairs and 200 hours of speech? | The moat is not forming. Reassess whether field collection is executable at this scale, or partner. | **Not reached.** Zero pairs, zero hours collected (section 11). |
+| **G6** | 26 | Does continued pretraining on the recovered literary corpus beat an equal-token web-text control on the cultural-register benchmark? | **RQ3 falsified. This is the central premise.** Publish it. It is a real negative result about Bengali and it redirects the field. | **Not reached.** No continued pretraining run has started (section 13). |
 
-### 15.3 First 30 days
+### 15.3 First 30 days, and what actually happened in them
 
-1. Render 10,000 Bengali lines through **HarfBuzz** across 20 fonts. Read the grapheme clusters back. Verify conjunct shaping. **If wrong, nothing downstream works.**
-2. Download Bengali Wikipedia and a Sangraha Bengali shard. Run dedup + quality filtering. **Measure the survival ratio on real data.**
-3. Train a 32k SentencePiece BPE on the surviving text with a grapheme-cluster pre-tokenizer.
-4. Measure **fertility and STRR** against Llama 3.1, Llama 4, Gemma 3, GPT-4o, Sarvam-1, IndicSuperTokenizer, BrahmicTokenizer-131K. **Publish the table. It does not currently exist.**
-5. Assemble 50 real Bengali page scans, half modern print, half pre-1950 letterpress. Run Tesseract, Surya 2, dots.ocr, Gemini 3 Flash, Claude. Score **GCER after NFC normalisation**. Count hallucinated 4-grams.
-6. **Publish that second table.**
+This was my plan for the first month. Steps 1 through 4 are done, and I did them roughly in this order:
 
-> Between them, those two tables are the entire pitch, made with numbers instead of ambition. Neither requires a GPU. Neither costs money. Both can be produced on commodity CPU hardware in under a month.
+1. ~~Render 10,000 Bengali lines through **HarfBuzz** across 20 fonts. Read the grapheme clusters back. Verify conjunct shaping. **If wrong, nothing downstream works.**~~ **Done.** Gate G1 passed (section 15.2).
+2. ~~Download Bengali Wikipedia and a Sangraha Bengali shard. Run dedup + quality filtering. **Measure the survival ratio on real data.**~~ **Done, and extended well past a shard**: measured across Wikipedia, Sangraha, IndicCorp v2 at 2M lines, and CC-100 at 1M lines. Gate G3 passed (section 9.6).
+3. ~~Train a 32k SentencePiece BPE on the surviving text with a grapheme-cluster pre-tokenizer.~~ **Done, then taken further than a single 32k run**: a 16k/32k/48k/64k ablation, shipped at 64k as `bn-bpe-64k`, plus a second-generation grammar-first tokenizer, BMBT, that was not part of this original plan at all (section 9.6).
+4. ~~Measure **fertility and STRR** against Llama 3.1, Llama 4, Gemma 3, GPT-4o, Sarvam-1, IndicSuperTokenizer, BrahmicTokenizer-131K. **Publish the table. It does not currently exist.**~~ **Done.** The table exists now, against 18 real tokenizers across six registers, not the seven named here: `bengali-tokenizer/benchmarks/bengali-comparison.md`. IndicSuperTokenizer remains the one named baseline with no public release to measure.
+5. Assemble 50 real Bengali page scans, half modern print, half pre-1950 letterpress. Run Tesseract, Surya 2, dots.ocr, Gemini 3 Flash, Claude. Score **GCER after NFC normalisation**. Count hallucinated 4-grams. **Not done.** This is Track B's pilot benchmark (Gate G4), and Track B has not started model work (section 10).
+6. **Publish that second table.** **Not done**, for the same reason as step 5.
+
+Two of the two originally promised tables exist. The third table this document did not originally plan for, the Banglish transliteration leaderboard, also exists now, and it was not on this list because I had not yet found the gap it answers (section 9.6). The OCR half of the pitch is still exactly a pitch.
 
 ---
 
@@ -1115,7 +1130,7 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 
 | Order | Output | Venue class | Why it comes when it does |
 |---|---|---|---|
-| 1 | Bengali tokenizer + fertility/STRR table | Workshop (WILDRE, ICON, *ACL workshop) | Cheapest to produce; establishes presence; weeks not months |
+| 1 | Bengali tokenizer + fertility/STRR table | Workshop (WILDRE, ICON, *ACL workshop) | Cheapest to produce; establishes presence; weeks not months. **The table and the preprint draft (`bengali-tokenizer/paper/`) exist; I have not submitted anywhere yet.** |
 | 2 | Bengali OCR benchmark | Dataset track (LREC, ACL Findings) or *Data in Brief* | Benchmarks accrue citations independent of model results |
 | 3 | Bengali document OCR model | ACL, EMNLP, or ICDAR | **Follows the benchmark, not the reverse** |
 | 4 | Dialect corpus | LREC, *Data in Brief* | Direct precedent: Vashantor, BanglaDial, Ben-10, FeniVerse all published exactly here |
@@ -1138,7 +1153,7 @@ A restrictive licence on a cultural corpus produced from community speech is dif
 
 > **Do not pitch "a Bengali LLM."** That pitch invites the immediate and correct rebuttal that Sarvam already ships one.
 >
-> **Pitch this:** "The Bengali literary corpus does not exist in machine-readable form, and the dialects of West Bengal have no computational resource at all. We are building the OCR to recover the first and the fieldwork to create the second. The language model is what those two assets make possible, not the other way around."
+> **Pitch this:** "The Bengali literary corpus does not exist in machine-readable form, and the dialects of West Bengal have no computational resource at all. I am building the OCR to recover the first and the fieldwork to create the second. The language model is what those two assets make possible, not the other way around."
 >
 > **Total compute across the programme is under USD 10,000.** The budget is people, fieldwork, annotation, and archive access. Say this plainly. A funder who hears an honest, small compute number and a large data-labour number is being told the truth about how this class of work actually goes.
 
@@ -1166,7 +1181,7 @@ That is the entire opportunity, **and it is not a competitive opportunity. It is
 | IndicGenBench | [arXiv:2404.16816](https://arxiv.org/abs/2404.16816) | Fertility 4.1 (Pashto) to 19.9 (Tibetan). Shows high fertility → fewer in-context examples fit → degraded performance. |
 | SuperBPE (Liu et al., 2025) | See IndicSuperTokenizer refs | The superword induction mechanism IndicSuperTokenizer builds on |
 | MYTE: Morphology-Driven Byte Encoding (Limisiewicz et al., 2024) | ACL 2024 | Most interesting non-BPE direction. Equitable multilingual byte encoding. |
-| Ahia et al. 2023; Petrov et al. 2023 | — | Tokenizer cost disparity. The economic-inequity framing. Useful for grant narrative. |
+| Ahia et al. 2023; Petrov et al. 2023 | n/a | Tokenizer cost disparity. The economic-inequity framing. Useful for grant narrative. |
 | VerChol: Grammar-First Tokenization for Agglutinative Languages | [arXiv:2603.05883](https://arxiv.org/abs/2603.05883) | Source of the cross-tokenizer fertility table in §4.1 |
 | Regional Tiny Stories: Small Models to Compare Language Learning and Tokenizer Performance | [arXiv:2504.07989](https://arxiv.org/abs/2504.07989) | Method for evaluating tokenizer effects with tiny models. **Directly runnable on the local CPU machine.** |
 
@@ -1371,19 +1386,22 @@ That is the entire opportunity, **and it is not a competitive opportunity. It is
 | Layer | Name | Status |
 |---|---|---|
 | Programme | **Project Bornomala** (বর্ণমালা) | **FIXED** |
-| Track A output (tokenizer) | `[TBD]` | Deferred |
-| Track B output (OCR models) | `[TBD]` | Deferred |
-| Track B output (OCR benchmark) | `[TBD]` | Deferred |
-| Track C output (dialect text corpus) | `[TBD]` | Deferred |
-| Track C output (dialect speech corpus) | `[TBD]` | Deferred |
-| Track C output (dialect benchmark) | `[TBD]` | Deferred |
-| Track D output (ASR, TTS) | `[TBD]` | Deferred |
-| Track E output (foundation model) | `[TBD]` | Deferred |
-| Track E output (cultural benchmark) | `[TBD]` | Deferred |
-| Organisation / repository handle | `[TBD]` | Deferred |
+| Track A output, v1 tokenizer | **`bn-bpe-64k`** | **FIXED. Built, shipped, benchmarked.** |
+| Track A output, v2 tokenizer | **BMBT** (`bmbt-64k`) | **FIXED. Built, shipped, benchmarked.** |
+| Track A output (morphology variant) | **`bmbt-64k-morph`** | **FIXED. Built, measured, not yet in the six-register comparison table.** |
+| Track A output (Banglish transliteration pipeline) | Not yet named beyond `bntok.banglish` | Built and measured; naming deferred |
+| Track B output (OCR models) | `[TBD]` | Deferred. No model built. |
+| Track B output (OCR benchmark) | `[TBD]` | Deferred. No benchmark run. |
+| Track C output (dialect text corpus) | `[TBD]` | Deferred. No data collected. |
+| Track C output (dialect speech corpus) | `[TBD]` | Deferred. No data collected. |
+| Track C output (dialect benchmark) | `[TBD]` | Deferred. No data collected. |
+| Track D output (ASR, TTS) | `[TBD]` | Deferred. Not started. |
+| Track E output (foundation model) | `[TBD]` | Deferred. Not started. |
+| Track E output (cultural benchmark) | `[TBD]` | Deferred. Not started. |
+| Organisation / repository handle | `konkomaji/bornomala` | **FIXED.** The repository has been public since 23 July 2026. |
 
-Romanisation of the programme name is fixed as **Bornomala**, never *Barnamala* or *Bornomala*'s variants. Bengali orthography fixed as **বর্ণমালা**. Do not let either drift across repositories, papers, or slides.
+Romanisation of the programme name is fixed as **Bornomala**, never *Barnamala* or other variants. Bengali orthography fixed as **বর্ণমালা**. I do not let either drift across repositories, papers, or slides.
 
 ---
 
-*End of document. Project Bornomala, Technical and Scientific Specification, Draft 1.0. Konko Maji, 10 July 2026.*
+*This document is mine. I wrote the plan on 10 July 2026 and I am the one reporting, honestly, how much of it is still just a plan. Project Bornomala, Technical and Scientific Notes. Konko Maji. Originally drafted 10 July 2026; this revision 18 August 2026.*

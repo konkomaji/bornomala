@@ -81,6 +81,7 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## History
 
 - Project Bornomala technical specification (Draft 1.0) published as
-  `PROJECT_BORNOMALA_Technical_Specification.md`.
+  `PROJECT_BORNOMALA_Technical_Specification.md`. Rewritten as a public-facing
+  document and renamed to `PROJECT_BORNOMALA.md` on 2026-08-18.
 
 [Unreleased]: https://github.com/konkomaji/bornomala
