@@ -6,7 +6,7 @@ general curated Bengali text. One schema, one validator, so nothing you
 collect drifts out of the format the rest of the pipeline expects.
 
 Fields are not invented - they come directly from
-`PROJECT_BORNOMALA_Technical_Specification.md` section 10.3 (Track B
+`PROJECT_BORNOMALA.md` section 10.3 (Track B
 annotation protocol) and section 11.3 (Track C method and metadata list).
 
 **Track B is not being simplified away here - it stays a real, standalone
