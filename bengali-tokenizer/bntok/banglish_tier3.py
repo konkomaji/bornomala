@@ -22,9 +22,33 @@ from __future__ import annotations
 
 import math
 
+from . import substrate
+from .akshara import aksharas
 from .errors import ConfigError
 
 PAD, BOS, EOS, UNK = "<pad>", "<bos>", "<eos>", "<unk>"
+
+# Diacritics that must be attached to a preceding Consonant/Vowel chunk to be
+# well-formed - a decoded string where one of these starts its own "other"
+# fallback chunk (aksharas() never raises, but records it as a plain
+# grapheme cluster rather than absorbing it into an akshara) is an orphan
+# mark: the model emitted a virama/matra/modifier with no valid base, a
+# structural defect a from-scratch char-level decoder can produce that pure
+# beam score does not penalize. Used by _conjunct_violations below to
+# re-rank otherwise-close beam candidates toward the well-formed one.
+_ORPHAN_STARTERS = substrate.MATRAS | substrate.MODIFIERS | {substrate.VIRAMA, substrate.NUKTA}
+
+
+def _conjunct_violations(text: str) -> int:
+    """Count orphan-diacritic chunks in a decoded string via the same
+    grammar-first parser the rest of this project trusts for Bengali
+    structure (bntok.akshara), not a new ad-hoc validator. Zero for any
+    well-formed Bengali (or non-Bengali) text; only counts real defects.
+    """
+    return sum(
+        1 for a in aksharas(text)
+        if a.kind == "other" and a.text and a.text[0] in _ORPHAN_STARTERS
+    )
 
 
 def _build_model_classes():
@@ -111,11 +135,23 @@ def _build_model_classes():
 
         @torch.no_grad()
         def beam_decode(self, src_row: torch.Tensor, bos_id: int, eos_id: int,
-                         beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6) -> list:
+                         beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6,
+                         tgt_vocab: list | None = None) -> list:
             """Beam search for ONE example (src_row: shape (1, src_len)). Greedy
             commits to the single best character at each step and can't recover
             from an early wrong pick; beam search keeps `beam_size` candidate
             sequences alive and picks the best-scoring complete one at the end.
+
+            `tgt_vocab` (id -> char list), if given, turns on a structural
+            re-rank pass over the surviving beams: among the `beam_size` kept
+            candidates, prefer the one with the fewest orphan-diacritic
+            violations (see _conjunct_violations), breaking ties by the
+            original length-normalized score. Beam score alone has no notion
+            of "valid Bengali conjunct" - this costs nothing extra (no new
+            model calls, just re-ordering candidates already computed) and
+            only changes the pick when it recovers a well-formed runner-up
+            the raw score alone would have passed over. None (default)
+            reproduces the old score-only behavior exactly.
             """
             self.eval()
             device = src_row.device
@@ -148,17 +184,27 @@ def _build_model_classes():
                     break
 
             beams.sort(key=norm_score, reverse=True)
+            if tgt_vocab is None:
+                return beams[0][1]
+
+            def violations(item):
+                seq = item[1]
+                text = "".join(tgt_vocab[i] for i in seq if i not in (bos_id, eos_id))
+                return _conjunct_violations(text)
+
+            beams.sort(key=lambda item: (violations(item), -norm_score(item)))
             return beams[0][1]
 
         def beam_decode_batch(self, src: torch.Tensor, bos_id: int, eos_id: int,
-                               beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6) -> torch.Tensor:
+                               beam_size: int = 5, max_len: int = 32, length_penalty: float = 0.6,
+                               tgt_vocab: list | None = None) -> torch.Tensor:
             """Beam search over a batch, one example at a time (see beam_decode),
             padded back into a single tensor with the same (batch, seq_len) shape
             and pad/bos/eos semantics greedy_decode returns.
             """
             seqs = [
                 self.beam_decode(src[i:i + 1], bos_id, eos_id, beam_size=beam_size,
-                                  max_len=max_len, length_penalty=length_penalty)
+                                  max_len=max_len, length_penalty=length_penalty, tgt_vocab=tgt_vocab)
                 for i in range(src.size(0))
             ]
             max_seq_len = max(len(s) for s in seqs)
@@ -179,6 +225,12 @@ def load_tier3_fn(ckpt_path: str, vocab_path: str, beam_size: int = 5, device: s
     16.9% -> 13.5% on the same checkpoint (docs/known-issues.md) - the
     better decoder should be the default for anyone just wiring this in,
     not an opt-in a caller has to know to ask for.
+
+    The beam's structural re-rank (see TranslitTransformer.beam_decode's
+    `tgt_vocab` argument) is on by default here too, for the same reason:
+    it costs no extra model calls, only reorders candidates already
+    computed, and can only move the pick toward a well-formed conjunct a
+    runner-up beam already reached.
 
     Returns None from the callable (transliterate()'s "I can't resolve
     this either" contract) only on decode failure, never fabricates an
@@ -215,7 +267,8 @@ def load_tier3_fn(ckpt_path: str, vocab_path: str, beam_size: int = 5, device: s
         src_ids = [src_stoi.get(c, src_stoi[UNK]) for c in word]
         src = torch.tensor([src_ids], dtype=torch.long, device=dev)
         try:
-            pred = model.beam_decode_batch(src, bos_id, eos_id, beam_size=beam_size, max_len=len(word) + 8)
+            pred = model.beam_decode_batch(src, bos_id, eos_id, beam_size=beam_size, max_len=len(word) + 8,
+                                            tgt_vocab=tgt_vocab)
         except Exception:  # noqa: BLE001 - a decode failure means "can't resolve", not a crash
             return None
         ids = [c for c in pred[0].tolist() if c not in (pad_id, bos_id, eos_id)]
