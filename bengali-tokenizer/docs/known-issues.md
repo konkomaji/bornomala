@@ -880,7 +880,14 @@ word), not assumed correct:
 |---|--:|
 | First cut | 62.6% |
 | + inherent vowel reweighted (medial "o" preferred over dropping it) | 69.5% |
-| + word-final inherent-vowel drop + positional য (glide vs onset) fix | **75.2%** |
+| + word-final inherent-vowel drop + positional য (glide vs onset) fix | 75.2% |
+| + positional ব (glide vs onset) fix, same pattern as য (2026-08-18) | **77.8%*** |
+
+\* Measured on `artifacts/banglish-translit-data/dev.tsv` (2,500-word sample,
+15 seeds/word) via `scripts/validate_banglish_synth.py`, not a fresh
+3,000-word Dakshina draw like the rows above - close enough in methodology to
+compare directly (same real-spelling-match criterion, same seed count), not
+run on the identical sample.
 
 Each fix was traced to a concrete real mismatch (e.g. \"protyahar\" render-
 ing as \"protzahar\"/\"protjahar\" before the positional য fix; \"smorthoner\"
@@ -1177,9 +1184,48 @@ result. Not added to either README, the paper, or the website: nothing here
 clears the bar of being a real finding worth propagating, per the precedent
 set by the BMBT-Hybrid and unigram-vs-BPE experiments above.
 
-**What would change this**: a bigger Bengali sample. MorphScore's dataset is
-generated from Universal Dependencies treebanks; Bengali's own UD treebank
-coverage is exactly this thin industry-wide, not a MorphScore-specific gap.
+**UPDATE 2026-08-18: two banglish tier-3 fixes attempted, one real gain measured, one honest zero.**
+No GPU available in this environment to retrain (30k-step bigger config timed
+at ~0.1 steps/s on CPU here, ~83 hours - not viable), so this pass targeted
+what CPU-only, no-retrain work could actually move:
+
+- **Real fix, measured**: `bntok/banglish_synth.py`'s reverse phonetic table
+  had the same class of bug already fixed once for য (ya-phala) - ব as a
+  chained (non-initial) conjunct consonant (স্ব, শ্ব, ...) was rendering the
+  literal "b" sound instead of the real labial glide "w" real spellings use
+  (Dakshina dev split: "swamijir"/"biswash", not "sbamijir"/"bisbaas").
+  Fixed the same way (`_BA_GLIDE_LATIN`, `i > 0` special case). Measured with
+  a new `scripts/validate_banglish_synth.py` (reproduces the methodology
+  behind the table above using `artifacts/banglish-translit-data/dev.tsv` as
+  the real-spelling reference instead of re-downloading Dakshina): word-level
+  hit rate **77.0% -> 77.8%** on a 2,500-word sample, 15 seeds each. Small
+  but real and directly traced to a concrete mismatch, same standard as the
+  three fixes already in the table above. Regression tests in
+  `tests/test_banglish_synth.py`.
+- **Real code, zero measured effect**: added a structural re-rank to
+  `TranslitTransformer.beam_decode` (`bntok/banglish_tier3.py`) - among the
+  beam's surviving candidates, prefer the one with fewest orphan-diacritic
+  chunks (a matra/modifier/virama that `bntok.akshara.aksharas()` could not
+  attach to a base consonant/vowel), tie-broken by the original score. Wired
+  on by default in `load_tier3_fn`'s `tier3_fn` (free: re-orders candidates
+  already computed, no new model calls). **Measured on 600 real dev-split
+  words against the surviving `step-20000.pt` checkpoint: 0 words where this
+  changed the output, 0 orphan-diacritic violations found in any of the
+  600 no-rerank outputs to begin with.** Root-caused, not left a mystery: the
+  checkpoint's actual failure mode (e.g. the "shopno -> শপন" case already
+  documented above, correct is স্বপ্ন) is *confidently wrong but
+  structurally well-formed* - it picks a valid, complete, wrong conjunct
+  shape, not a malformed one - so a validity-only re-rank has nothing to
+  correct here. Kept as real, harmless defensive code (a genuinely malformed
+  decode is still possible on other inputs/checkpoints, and this catches it
+  for free), but it is not the fix for the diagnosed root cause. That
+  diagnosis, unchanged by this session: undersized/partly-synthetic training
+  data (379,711 pairs, ~75% of the table's own synthetic feeder verified
+  accurate) plus training fully from scratch with no pretraining, with no
+  akshara/conjunct-aware structural prior in the generation step itself
+  (character-level output, no bias toward valid virama-chains) - the built,
+  unrun bigger config (24.9M params, 30k steps) remains the next real lever,
+  blocked on GPU access this environment does not have.
 
 ## How to report a new issue
 

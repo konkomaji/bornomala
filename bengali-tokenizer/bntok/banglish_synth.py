@@ -71,7 +71,15 @@ _CONSONANT_LATIN: dict[str, list[str]] = {
     # as a rare tail variant rather than removed outright.
     "ট": ["t", "T"], "ঠ": ["th"], "ড": ["d", "D"], "ঢ": ["dh"], "ণ": ["n"],
     "ত": ["t"], "থ": ["th"], "দ": ["d"], "ধ": ["dh"], "ন": ["n"],
-    "প": ["p"], "ফ": ["ph", "f"], "ব": ["b"], "ভ": ["bh", "v"], "ম": ["m"],
+    "প": ["p"], "ফ": ["ph", "f"],
+    # ব is handled specially in render_akshara_latin, not read from this
+    # table directly, when it is a chained (non-initial) conjunct
+    # consonant: as the second member of স্ব/শ্ব/দ্ব-style conjuncts it is
+    # phonetically a labial glide, real spellings render it "w", not "b"
+    # (checked against Dakshina dev split: "swamijir"/"shamijir", not
+    # "sbamijir"; "biswash"/"bishwash", not "bisbaas"). Word-initial/
+    # standalone ব keeps its own sound, "b", from this table.
+    "ব": ["b"], "ভ": ["bh", "v"], "ম": ["m"],
     # য is handled specially in render_akshara_latin, not read from this
     # table directly: word-initial/onset-first it is "j" (its own sound),
     # but as a chained conjunct consonant (ya-phala, e.g. ত্য) it is
@@ -86,6 +94,7 @@ _CONSONANT_LATIN: dict[str, list[str]] = {
     chr(0x09F0): ["r"], chr(0x09F1): ["r"],  # rare Assamese-shared RA variants
 }
 _YA_GLIDE_LATIN = ["y", "j"]  # য as a non-initial (ya-phala) onset consonant
+_BA_GLIDE_LATIN = ["w", "b"]  # ব as a non-initial (conjunct-chained) onset consonant
 
 _INDEPENDENT_VOWEL_LATIN: dict[str, list[str]] = {
     "অ": ["o", "a"], "আ": ["a", "aa"], "ই": ["i"], "ঈ": ["i", "ee"],
@@ -158,6 +167,11 @@ def render_akshara_latin(feat: AksharaFeatures, rng: random.Random, is_word_fina
             # ya-phala: a chained (non-initial) onset consonant is a glide,
             # not the word-initial "j" sound. See _YA_GLIDE_LATIN.
             parts.append(_pick(rng, _YA_GLIDE_LATIN))
+        elif c == "ব" and i > 0:
+            # ba-phala: same pattern as ya-phala above, a chained onset
+            # consonant is a labial glide ("w"), not the standalone "b"
+            # sound. See _BA_GLIDE_LATIN.
+            parts.append(_pick(rng, _BA_GLIDE_LATIN))
         else:
             parts.append(_pick(rng, _CONSONANT_LATIN.get(c, [""])))
     if feat.vowel is not None:
