@@ -213,6 +213,54 @@ rime splits (10,434) outnumber destructive ones (5) by roughly 2000:1 - the
 layer is doing what it was built to do, not incidentally damaging conjuncts
 it happens to also split.
 
+## Standard benchmark, all six registers (2026-08-18, same day)
+
+The table above is the training run's own 2,000-text sample, not the same
+held-out data every other row in `benchmarks/bengali-comparison.md` is
+measured on. Running `bmbt-64k-morph` through the actual `scripts/compare.py`
+pipeline, on all six held-out registers `bn-bpe-64k`/`bmbt-64k` are already
+measured on, gives the real, reportable numbers - these are the ones to cite
+going forward, not the training-sample table above, which is kept for the
+cross-validation story, not as the primary result:
+
+| Register | v1 (`bn-bpe-64k`) fertility | `bmbt-64k-morph` fertility | Cost | Legacy frag. | Destructive rate |
+|---|--:|--:|--:|--:|--:|
+| Wikipedia | 1.524 | 1.855 | +21.7% | 3.81% | 0.03% |
+| Literary / formal | 1.319 | 1.697 | +28.7% | 4.39% | 0.03% |
+| General web | 1.195 | 1.644 | +37.6% | 4.93% | 0.02% |
+| News | 1.142 | 1.623 | +42.1% | 5.19% | 0.01% |
+| FLORES+ | 1.241 | 1.691 | +36.3% | 4.74% | 0.01% |
+| Banglish | 2.906 | 2.780 | -4.3% | 0.00% | 0.00% |
+
+Destructive rate (real conjuncts severed, not deliberate morpheme-seam
+splits) stays close to zero everywhere, never the literal zero the rule
+layer alone guarantees, in the same direction and roughly the same magnitude
+on every register - a real trained BPE model can still, rarely, learn a merge
+that happens to straddle a morpheme-seam marker in a way the rule layer did
+not anticipate, worth investigating further but not a large effect (at most
+0.03% of splittable clusters on any register measured).
+
+The cost is not uniform, and that unevenness is itself informative: it tracks
+how much real Bengali morphology a register actually contains. News and
+general web, the most morphologically dense everyday registers, pay the
+highest cost (+37 to +42%); Wikipedia, more formal and noun-heavy, pays less
+(+22%).
+
+**Banglish is the one register where morphology-aware BMBT reports a *lower*
+fertility than v1, and the honest explanation is that this is not a
+morphology win.** Legacy fragmentation on this register is 0.00%, meaning the
+morphology layer found nothing to split, romanized Banglish text carries
+almost no native Bengali-script morpheme seams for it to act on. The -4.3%
+gap is vocabulary noise from two independently trained 64,000-entry BPE
+tables happening to differ slightly on this register's largely non-Bengali
+content, the same convergence/divergence pattern already documented between
+plain `bn-bpe-64k` and `bmbt-64k` (`docs/known-issues.md`), not a real effect
+of the morphology mechanism. Recorded because it is what was measured, not
+smoothed into "still worse everywhere" to fit the expected pattern.
+
+Full raw output for every register: `benchmarks/comparison-{register}-morph.json`
+(`comparison-wikipedia-morph.json` for the default register).
+
 Not yet run through the standard 4-register `compare.py` benchmark (only
 this training-time sample so far) - a natural next measurement. Not yet
 published to Hugging Face.

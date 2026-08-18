@@ -216,13 +216,39 @@ The v2 design's own roadmap (`docs/design/reading-bengali-on-its-own-terms.md`) 
 
 ## v2 roadmap step 5: BMBT, measured (a genuine like-for-like row)
 
-BMBT (Bornomala's Bengali Tokenizer, `bntok/bmbt.py`) is grammar (the akshara parser above) plus a featural decomposition (`featurize()`) plus a statistical BPE layer over akshara atoms - the same architecture as v1, with the atomic unit swapped from grapheme cluster to akshara. Morphology is now built as well, opt-in, and aligns token boundaries to Bengali's suffix structure: `bmbt-64k-morph` is trained and its own results cross-validate an advance prediction almost exactly (`docs/bmbt-morphology.md`), but is not yet in this comparison table. Full design: `docs/bmbt-architecture.md`.
+BMBT (Bornomala's Bengali Tokenizer, `bntok/bmbt.py`) is grammar (the akshara parser above) plus a featural decomposition (`featurize()`) plus a statistical BPE layer over akshara atoms - the same architecture as v1, with the atomic unit swapped from grapheme cluster to akshara. Morphology is now built as well, opt-in, and aligns token boundaries to Bengali's suffix structure: `bmbt-64k-morph` is trained and its own results cross-validate an advance prediction almost exactly (`docs/bmbt-morphology.md`), now benchmarked on this table's own six registers below. Full design: `docs/bmbt-architecture.md`.
 
 Unlike the raw akshara-parser row above, a trained BMBT has a real vocabulary and real merges the same way `bn-bpe-64k` does, so it is a genuine like-for-like fertility comparison, trained on the identical corpus for a controlled comparison. **Reported exactly as measured, not the outcome anyone assumed going in**: tied on five of six registers down to the fourth decimal, and on the sixth (FLORES+) BMBT edges v1 by 0.001 fertility - real, small, not overclaimed (see the FLORES+ section above).
 
 **Why a tie on almost every register, not a loss**, given `docs/design/FORMAL_SPEC.md`'s own proof that a constrained BPE cannot beat an unconstrained one on raw token count: akshara-grammar boundaries are already nearly identical to `\X`'s grapheme-cluster boundaries on well-formed Bengali (the akshara-parser measurement above), so constraining BPE to akshara boundaries instead of grapheme-cluster boundaries barely constrains anything further in practice - the two atom schemes are close to isomorphic on real text.
 
-**What BMBT adds, independent of the fertility tie**: a provable, Unicode-library-independent grammar instead of delegated trust in `regex`'s own `\X`, `featurize()` - a real, tested structural decomposition (onset/vowel/modifier per akshara) v1 never had, at zero fertility cost - and now morphology, which trades a small, measured, deliberate fertility cost (`bmbt-64k-morph`, not yet benchmarked on this table) for token boundaries that fall where Bengali's morphemes fall.
+**What BMBT adds, independent of the fertility tie**: a provable, Unicode-library-independent grammar instead of delegated trust in `regex`'s own `\X`, `featurize()` - a real, tested structural decomposition (onset/vowel/modifier per akshara) v1 never had, at zero fertility cost - and now morphology, which trades a measured, deliberate fertility cost (below) for token boundaries that fall where Bengali's morphemes fall.
+
+### Morphology (`bmbt-64k-morph`), all six registers
+
+The cost stated qualitatively above, quantified. `bmbt-64k-morph` measured on the same six held-out registers as v1/BMBT (full detail and the honest per-register discussion: `docs/bmbt-morphology.md`):
+
+| Register | v1 (`bn-bpe-64k`) fertility | `bmbt-64k-morph` fertility | Cost | Legacy frag. | Destructive rate |
+|---|--:|--:|--:|--:|--:|
+| Wikipedia | 1.524 | 1.855 | +21.7% | 3.81% | 0.03% |
+| Literary / formal | 1.319 | 1.697 | +28.7% | 4.39% | 0.03% |
+| General web | 1.195 | 1.644 | +37.6% | 4.93% | 0.02% |
+| News | 1.142 | 1.623 | +42.1% | 5.19% | 0.01% |
+| FLORES+ | 1.241 | 1.691 | +36.3% | 4.74% | 0.01% |
+| Banglish | 2.906 | 2.780 | -4.3% | 0.00% | 0.00% |
+
+The cost tracks how much real Bengali morphology each register carries: news and general web (the densest everyday registers) pay the most, Wikipedia less. Banglish is the one register where `bmbt-64k-morph` reports *lower* fertility than v1, but 0.00% legacy fragmentation there shows the morphology layer found nothing to split, romanized text carries almost no native morpheme seams. That gap is ordinary vocabulary noise between two independently trained tables on largely non-Bengali content, not a morphology effect, stated plainly rather than smoothed into "worse everywhere." Destructive rate (real conjuncts severed) stays close to zero on every register, never the literal zero the rule layer alone guarantees, at most 0.03% of splittable clusters.
+
+Reproduce:
+```
+python -m bntok bmbt-train --corpus-config configs/bpe-64k.json --morphology --out artifacts/bmbt-64k-morph
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k-morph --skip 15000
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k-morph --register literary_formal
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k-morph --register general_web
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k-morph --register news
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k-morph --register banglish
+python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --bmbt-tokenizer artifacts/bmbt-64k-morph --register flores
+```
 
 ### CC-100 ablation
 
