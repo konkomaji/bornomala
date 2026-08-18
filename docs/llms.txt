@@ -55,6 +55,32 @@
   empirical vocabulary coverage. IndicBERTv2, the closest tokenizer not
   tied, averages 1.31 tokens/word here and still splits 3 of the 13; every
   other system averages 3.3 to 11.1 tokens/word.
+- BMBT's morphology layer, trained and benchmarked on Wikipedia held-out:
+  fertility 1.855 with the morphology layer on, against 1.524 without it, a
+  real ~22% cost, in the direction the project's own formal proof predicted.
+  8.36% of splittable clusters split deliberately at a morpheme seam;
+  real conjuncts broken stays close to zero at 0.033%, not the literal zero
+  the rule layer alone guarantees. Only the Wikipedia register is benchmarked
+  so far.
+- Banglish (romanized Bengali chat text): both tokenizers measured dead last,
+  17th of 17 loadable tokenizers, on real romanized Bengali. Built a
+  tiered fix: tiers 0-2 (a 155,615-entry lookup table plus an n-gram
+  classifier, no model, no GPU) resolve 85.6% of real Banglish words and
+  reach fertility 1.740 after transliterating to Bengali script first,
+  better than every tokenizer on the leaderboard including the previous
+  leader SUTRA (1.850). A tier-3 neural model, trained from scratch on a
+  real GPU, resolves the harder remainder at 53.9% exact-match accuracy and
+  13.5% character error rate on a reserved blind test split, real and
+  honestly short of production-ready, blocked on more training compute.
+- Track A2 (Gate G3): measured how much of a Bengali corpus survives dedup
+  and quality filtering, across four real sources. Word survival ranges from
+  79.6% (CC-100, the one genuine raw-web proxy) to 99.3% (AI4Bharat
+  IndicCorp v2), comfortably clearing the programme's 5-billion-token floor
+  at every ratio measured.
+- Data-collection tooling for Track B (OCR) and Track C (dialect) now exists:
+  a schema, a validator, and CSV templates, tested against real and
+  deliberately-broken data. Infrastructure only; no real dialect or OCR data
+  has been collected with it yet.
 
 ## Values
 

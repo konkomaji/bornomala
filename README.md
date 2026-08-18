@@ -123,6 +123,22 @@ system averages 3.3-11.1. Full per-word table, every tokenizer, reproduce
 command:
 [`bengali-tokenizer/benchmarks/hard-words.md`](bengali-tokenizer/benchmarks/hard-words.md).
 
+**Banglish, measured and partly fixed.** Romanized Bengali chat text
+("tumi kemon acho") is where most everyday Bengali is actually typed, and
+both our tokenizers measured dead last on it: 17th of 17 loadable
+tokenizers, behind BanglaBERT and BanglaT5. In response: tiers 0-2 (a
+155,615-entry lookup table plus an n-gram classifier, trained from scratch,
+no GPU) resolve 85.6% of real Banglish words and reach fertility **1.740**
+once transliterated to Bengali script first, ahead of every tokenizer on
+our leaderboard, including the previous leader SUTRA (1.850). A tier-3
+neural model, trained from scratch on a real GPU, handles the harder
+remainder at 53.9% exact-match accuracy and 13.5% character error rate on
+a reserved blind test split - real, wired in, and honestly not yet
+production-ready; more of it is blocked on training compute this project
+does not currently have. Full account:
+[`bengali-tokenizer/docs/known-issues.md`](bengali-tokenizer/docs/known-issues.md),
+"Banglish" section.
+
 ## Beyond BPE: BMBT, Bornomala's Bengali Tokenizer
 
 The tokenizer above led the field by retraining BPE, a statistical compressor,
@@ -164,6 +180,17 @@ library you must trust, a real structural decomposition of every syllable,
 boundaries that fall where Bengali's morphemes fall, and, since the segmenter
 was rewritten to work on arrays instead of characters, more than twice the
 throughput of the C regex v1 delegates to.
+
+**Morphology's cost is now measured, not just modeled.** On Wikipedia
+held-out, the morphology-enabled artifact (`bmbt-64k-morph`) measures
+fertility **1.855** against 1.524 without the morphology layer, a real
+~22% cost, in the direction the formal spec predicts (a grammar-constrained
+BPE is expected to do a little worse, never better, on raw token count).
+Most of that gap is deliberate: 8.36% of splittable clusters now split at a
+morpheme seam on purpose. Real conjuncts broken stays close to zero at
+0.033%, not the literal zero the rule layer alone guarantees, and we report
+the difference rather than round it away. Only the Wikipedia register is
+benchmarked so far.
 
 Full account:
 [`bengali-tokenizer/docs/known-issues.md`](bengali-tokenizer/docs/known-issues.md),
