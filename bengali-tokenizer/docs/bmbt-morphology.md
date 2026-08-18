@@ -213,6 +213,27 @@ rime splits (10,434) outnumber destructive ones (5) by roughly 2000:1 - the
 layer is doing what it was built to do, not incidentally damaging conjuncts
 it happens to also split.
 
+## Standard benchmark (2026-08-18, same day, run against the real held-out register)
+
+The table above is the training run's own 2,000-text sample, not the same
+held-out data every other row in `benchmarks/bengali-comparison.md` is
+measured on. Running `bmbt-64k-morph` through the actual `scripts/compare.py`
+pipeline on the Wikipedia held-out register gives a different, higher (more
+rigorous) fertility number - this is the one to cite going forward, not the
+table above, which is kept for the cross-validation story, not as the
+reported result:
+
+| | Value |
+|---|--:|
+| Fertility | 1.855 (vs 1.524 for v1/BMBT without morphology, ~22% cost) |
+| Legacy fragmentation | 8.36% |
+| Destructive rate | 0.033% (6 of 18,396 splittable clusters) |
+
+Full raw output: `benchmarks/comparison-wikipedia-morph.json`. Only the
+Wikipedia register has been run so far; the other five (literary_formal,
+general_web, news, banglish, flores) are the natural next measurement,
+matching the extension pattern already used for `bn-bpe-64k`/`bmbt-64k`.
+
 Not yet run through the standard 4-register `compare.py` benchmark (only
 this training-time sample so far) - a natural next measurement. Not yet
 published to Hugging Face.
