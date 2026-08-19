@@ -8,13 +8,10 @@
 |---|---|
 | **Programme** | Project Bornomala (বর্ণমালা) |
 | **Author** | Konko Maji |
-| **Document** | Technical and Scientific Notes, kept current as the work progresses |
-| **Originally drafted** | 10 July 2026 |
+| **Document** | Technical and Scientific Notes |
 | **Revised** | 18 August 2026 |
-| **Status** | Public. This is a living document: the plan I wrote in July, plus an honest record of what I have actually built and measured since. |
-| **Naming** | "Project Bornomala" is fixed, and has been from the start. The Track A tokenizer is built and named: `bn-bpe-64k` (v1) and BMBT, `bmbt-64k` (v2). Everything else below the programme name is still undecided and marked `[TBD]`. I would rather leave a name blank than invent one for something I have not built yet. |
 
-> **Verification note.** This is my own document, in my own voice, and I hold it to one standard: every citation, dataset link, and reported metric was checked against a source I can point to, at the time I wrote it. Figures I could not verify are labelled *estimate*. No benchmark score is reported as measured unless it appears in a cited source, or in this repository's own benchmark files, which anyone can rerun themselves. Everything added since the original 10 July draft is held to the same rule, checked against the actual measured numbers in `bengali-tokenizer/benchmarks/` and `bengali-tokenizer/docs/known-issues.md`, not against what I originally intended to build. Where a track has made no real progress, I say so plainly rather than dressing up a plan as a result. No keyword volumes, corpus sizes, or performance numbers are fabricated.
+> **Verification note.** Every citation, dataset link, and reported metric is checked against a source that can be pointed to. Figures that could not be verified are labelled *estimate*. No benchmark score is reported as measured unless it appears in a cited source, or in this repository's own benchmark files, which anyone can rerun. Where a track has made no real progress, this is stated plainly rather than a plan being dressed up as a result. No keyword volumes, corpus sizes, or performance numbers are fabricated.
 
 ---
 
