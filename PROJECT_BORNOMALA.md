@@ -399,7 +399,6 @@ Legend: ● exists ◐ partial ○ **none**
 
 - Existing Bengali NLP work is predominantly **Bangladesh-centric, Standard, Dhaka-register**: Sarvam gives Bengali 8 percent of its Indic mix, AI4Bharat gives it one slot in 22, and Hishab and BUET's work serves Bangladesh.
 - No existing effort covers **Bengali as a whole language**, including its western half, its literary corpus, and its five undocumented dialect groups.
-- This programme is based **inside the Rarhi dialect zone**. Direct access to speakers, to Bengali-native annotators, and to West Bengal archives and libraries is a genuine methodological advantage for the dialect-documentation and archive-recovery work specifically, not a general claim about the programme as a whole.
 
 ---
 
