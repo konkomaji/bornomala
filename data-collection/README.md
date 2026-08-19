@@ -43,9 +43,6 @@ real training/eval data for the custom models later - not two efforts.
   Mahabharat editions, and Grierson's *Linguistic Survey of India* Vol V
   Part I (1903) - real dialect specimens including Rangpuri/Bhawaiya. Full
   identifiers and direct-download notes: `dataset-scope.md` section 10.
-- **Bichitra (Tagore variorum) is on hold** - official access being
-  negotiated directly with Jadavpur, not scraped. Don't resume that path
-  without being told to.
 - **OCR only enters the picture for image/scan-origin sources - not all
   text collection needs it.** Bengali Wikisource text is hand-transcribed
   by volunteers, never touched OCR, goes straight into `general_text`
