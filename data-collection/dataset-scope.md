@@ -26,7 +26,7 @@ Exceptions to hold in mind, not exceptions to the headline rule:
   domain.** A modern critical edition, a variorum apparatus, a fresh
   translation, a typeset "complete works" volume, or a scan with added
   OCR/metadata can carry its own separate copyright on top of a PD
-  underlying text. Bichitra (below) is the concrete example of this in our
+  underlying text. Bichitra (below) is the concrete example of this in my
   own source list, not a hypothetical.
 
 ## 2. Era taxonomy
@@ -190,7 +190,7 @@ examples across categories, all clearing the death-year-<=-1965 rule as of
   might otherwise be old enough, because the archive itself is a
   separately-rights-held compilation
 - Bichitra's own transcription/critical-apparatus layer (see above) -
-  Track B should re-derive transcripts from the page images via our own
+  Track B should re-derive transcripts from the page images via my own
   OCR pipeline, not copy theirs
 - Any modern "complete works" (Rachanabali) typeset edition - the
   typesetting and editorial apparatus is a separate copyright from the
@@ -223,16 +223,82 @@ full, not just as a citation - **recommended as the actual first
 `ocr_ground_truth` / `general_text` source to process for dialect-adjacent
 written text**, ahead of any new field collection.
 
-## 9. Recommended next step: make the roster mechanical, not hand-typed
+## 9. The mechanical roster: done, not just proposed
 
-Section 4's roster is representative by construction - a genuinely
-exhaustive "every historical Bengali figure whose writing is PD" list is
-not something to hand-type honestly. Wikidata carries structured
-death-date + occupation + language-of-work data and is queryable by SPARQL:
-a script filtering language=Bengali (or born/worked in West Bengal),
-death_year <= current_year - 61, occupation in {writer, poet, freedom
-fighter, reformer, ...} would generate the real, complete, mechanically
-re-runnable version of this table - the same "mechanical over manual"
-principle this repo already applies via `bntok.normalize` and
-`schema.py`'s validator. Proposed as the actual Step 2 here, not done in
-this pass.
+Section 4's roster is representative by construction - I never intended to
+hand-type an exhaustive "every historical Bengali figure whose writing is
+PD" list, because that isn't something I can do honestly by hand. Wikidata
+carries structured death-date + occupation + language-of-work data and is
+queryable by SPARQL, so I wrote the query and ran it: `data-collection/
+scripts/fetch_pd_bengali_writers.sh` filters occupation in {writer, poet,
+novelist, playwright, journalist, essayist}, native or spoken/written
+language = Bangla, death year <= 1965 (2026's cutoff, section 1's rule),
+and writes the result to `data-collection/pd-bengali-writers.csv`. Same
+"mechanical over manual" principle I already apply via `bntok.normalize`
+and `schema.py`'s validator elsewhere in this repo.
+
+**Result: 867 named, dated, sourced people**, each with a Wikidata QID and
+permalink for traceability, ranging from Ramai Pandit (d. c. 1200) through
+a cluster of writers who died in 1965 itself. I did not spot-check every
+row - that's still on me to do before treating any single name as
+confirmed rather than "Wikidata says so."
+
+**Honest limits, stated plainly, not smoothed over:**
+- This is a **floor, not a ceiling**. Wikidata only returns people who (a)
+  have a Wikidata item at all, (b) have `date of death` filled in, (c) have
+  `native language` or `languages spoken/written` set to Bangla specifically
+  (not just "born in Bengal" - plenty of real historical Bengali writers
+  are missing one of these three and simply don't appear), and (d) have an
+  occupation tagged from my exact six-item list. Freedom fighters, reformers,
+  and religious figures whose primary Wikidata occupation isn't
+  literary are excluded here by design - that's what section 4's separate
+  hand-curated table is for.
+  A person absent from this CSV is not thereby "not public domain" -
+  it just means Wikidata's metadata didn't catch them. This script is a
+  real, reproducible starting point, not the final word on who's PD.
+- Re-run with a later `cutoff_year` argument each subsequent year to pick
+  up authors who died in 1966, 1967, ... as their own PD dates arrive -
+  the script takes the year as its one argument for exactly this reason.
+- Every row still needs the section-1 edition caveat applied before use:
+  the *person's* death date being old enough doesn't clear a specific
+  modern reprint or annotated edition of their work - find and use an old
+  edition, or the original periodical printing, not a 2020s "collected
+  works" volume.
+
+## 10. Confirmed sources: real archive.org identifiers, verified, ready to pull
+
+Sections 3 and 8 flagged the medieval epics and the *Linguistic Survey of
+India* as priority pulls. I went and found them - not just cited them as
+"should exist somewhere." Every identifier below I checked myself against
+archive.org's metadata API and, for the epics and the LSI volume, actually
+downloaded the OCR text and confirmed it's genuinely the right content
+(not just a title match) before listing it here.
+
+| Work | Edition | Archive.org identifier | Year | Language tag | OCR text already available |
+|---|---|---|---|---|---|
+| Krittibasi Ramayan | ed. Ashutosh Bhattacharjya | `in.ernet.dli.2015.302459` | 1940 | ben | Yes - `_djvu.txt`, 3.3MB, confirmed real Bengali text on download (OCR noise present, 1940s letterpress, expected) |
+| Krittibasi Ramayan | ed. Birendrakrishna Bhadra | `in.ernet.dli.2015.302458` | - | ben | Yes - `_djvu.txt`, not yet content-verified |
+| Krittibasi Ramayan | Mahakabi Krittibas | `in.ernet.dli.2015.464248` | 1953 | **hin (mislabeled)** | Yes - `_djvu.txt`, language tag is wrong (this is Krittibas's Bengali Ramayan, not Hindi) - DLI metadata language tags aren't reliable, verify content not just the tag |
+| Kashidasi Mahabharat | ed. Sudeb Chandra Chattopadhyaya | `dli.bengal.10689.753` | 1925 | ben | Yes - `_djvu.txt` |
+| Kashidasi Mahabharat, Vol. 1 | attributed directly to Kashiram Das | `in.ernet.dli.2015.302409` | 1960 | ben | Yes - `_djvu.txt` - Vol. 1 is apt anyway, since only the first four of eighteen parvas are actually Kashiram Das's own work (section 3) |
+| **Linguistic Survey of India, Vol. V, Part I** | Grierson | `in.ernet.dli.2015.61745` | 1903 | eng (survey text; specimens embedded in Bengali/Assamese script) | Yes - `_djvu.txt`, 750KB, **confirmed by download**: title page reads "INDO-ARYAN FAMILY, Eastern Group. Part I. SPECIMENS OF THE BENGALI AND ASSAMESE LANGUAGES" - exactly the volume section 8 needed, 421 Bengali/Assamese/dialect-name hits in the text |
+
+All six: firmly PD by the section-1 rule (authors centuries to 120+ years
+dead; DLI's own scanning/OCR work doesn't create fresh rights the way
+Bichitra's variorum apparatus does - this is a straight scan-and-OCR
+repository, not an annotated critical edition). Direct download pattern:
+`https://archive.org/download/<identifier>/<filename>` - filenames are in
+the table implicitly via each item's own metadata, fetch
+`https://archive.org/metadata/<identifier>` first to get the exact
+`_djvu.txt` filename before pulling it.
+
+**Not yet located, still open**: the 1913 *Addyer Gambhira* volume
+(section 8, Varendrī) - searched archive.org's advanced-search API the
+same way as the epics and didn't get a confident hit this pass, still
+"to locate," not confirmed absent.
+
+**Next real step, not done in this pass**: the raw OCR text pulled here is
+letterpress-quality, not clean - genuine 1920s-1960s scan noise throughout
+(spot-checked in the Bhattacharjya Ramayan download). Turning this into
+actual `general_text` / `ocr_ground_truth` schema rows needs real cleanup
+work, not a straight dump - that's downstream of this discovery pass.
