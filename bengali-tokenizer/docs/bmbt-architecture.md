@@ -5,7 +5,7 @@ is the technical reference for the v2 tokenizer. For the v1 tokenizer
 (`bn-bpe-64k`, package `bntok`'s `BengaliTokenizer`), unaffected by anything
 here, see [`docs/architecture.md`](architecture.md).
 
-> **Status.** v2 roadmap step 5 is now **complete**: grammar (the akshara
+> **Status.** v2 design step 5 is now **complete**: grammar (the akshara
 > finite-state parser) + featural decomposition + morphology + a statistical
 > (BPE) layer. Morphology was the missing half and is built, opt-in via
 > `--morphology`; see [`docs/bmbt-morphology.md`](bmbt-morphology.md) for the
@@ -40,7 +40,7 @@ OPTIMAL-section proof that a BPE constrained to never split an akshara
 cannot beat an unconstrained one on raw token count: constraining the merge
 search space can only hurt fertility, never help it, and since akshara
 boundaries are already nearly identical to grapheme-cluster boundaries on
-well-formed Bengali (the v2 roadmap's own step-4 measurement), the two atom
+well-formed Bengali (the v2 design's own step-4 measurement), the two atom
 schemes are close to isomorphic on real text, so the tie is expected, not
 surprising. Full numbers, the CC-100 ablation, and why this is reported as
 a genuine tie rather than a hedge either way, are in
@@ -270,6 +270,6 @@ BMBT is the recommended, primary tokenizer as of this writing. `bn-bpe-64k`
 (v1) remains fully documented, unchanged, and available - it is still the
 artifact behind the published Hugging Face model
 (`konko/bornomala-bengali-tokenizer`); BMBT has not been published there yet.
-Morphology (v2 roadmap step 5's other half) is future work, tracked in
-`docs/known-issues.md`'s roadmap section, not hidden or implied to already
-exist.
+Morphology (v2 design step 5's other half) is now built, opt-in via
+`--morphology` - see [`docs/bmbt-morphology.md`](bmbt-morphology.md) for the
+layer itself and its measured fertility cost.

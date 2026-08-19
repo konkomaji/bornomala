@@ -190,7 +190,7 @@ Their fifth limitation names the missing experiment exactly: establishing
 causality *"requires controlled interventions on the tokenizer, which we leave
 to future work."* The experiment that would settle it is a controlled
 small-model comparison at equal data and parameters, scored in bits per byte so
-the number is tokenizer-independent. It is on my roadmap. It is not done, and I
+the number is tokenizer-independent. It is planned. It is not done, and I
 am not counting it as done.
 
 ## How both work, seen end to end
@@ -471,7 +471,7 @@ Trained on the identical literary-weighted corpus as v1 (`configs/bpe-64k.json`,
 
 On five of six registers the two are identical down to the fourth decimal, despite genuinely different vocabularies (12,233 atoms for v1, 12,199 for BMBT). On FLORES+ - the one register measured on the exact corpus an external tokenizer-fertility paper's own published numbers come from - BMBT edges v1 by 0.001 fertility: real, small, reported rather than smoothed into "identical." **This is an honest near-tie**, reported exactly as measured, not the outcome assumed going in. Both lead every external baseline tested by a wide margin on every register except Banglish, where both are LAST on purpose - see `benchmarks/bengali-comparison.md`'s Banglish section for why, and what actually fixes it.
 
-Full account, the CC-100 ablation, and why the near-tie makes sense given `FORMAL_SPEC.md`'s own proof: [`docs/known-issues.md`](docs/known-issues.md) ("Roadmap: a proposed v2") and [`benchmarks/bengali-comparison.md`](benchmarks/bengali-comparison.md).
+Full account, the CC-100 ablation, and why the near-tie makes sense given `FORMAL_SPEC.md`'s own proof: [`docs/known-issues.md`](docs/known-issues.md) ("Design steps: a proposed v2") and [`benchmarks/bengali-comparison.md`](benchmarks/bengali-comparison.md).
 
 Reproduce:
 ```bash

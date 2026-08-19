@@ -1,4 +1,4 @@
-# BMBT morphology: the second half of v2 roadmap step 5
+# BMBT morphology: the second half of v2 design step 5
 
 `docs/bmbt-architecture.md` describes BMBT as grammar plus featural
 decomposition plus a statistical BPE layer, and records that morphology was
