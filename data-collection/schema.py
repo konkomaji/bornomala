@@ -6,7 +6,9 @@ curated text supplementing the automated web/Wikipedia/Sangraha corpus).
 Fields here are not invented: they come directly from
 `PROJECT_BORNOMALA.md` section 10.3 (Track B
 annotation protocol) and section 11.3 (Track C method, dialect metadata
-list, transcription convention). One schema, four record types, so a
+list, transcription convention), plus `dataset-scope.md`'s section 2 era
+taxonomy (the `ERAS` enum below - composition era, orthogonal to
+`OCR_CATEGORIES`'s image condition). One schema, four record types, so a
 single validator/ingestion path works for all of it and nothing drifts
 from what the spec actually asks each track to record.
 
@@ -44,6 +46,18 @@ DIALECT_GROUPS = {
 OCR_CATEGORIES = {
     "modern_print", "letterpress_1880_1950", "newspaper_multicolumn",
     "forms_tables", "phone_capture", "handwriting", "low_res_degraded", "code_mixed",
+}
+
+# --- Composition era, not print/scan date (data-collection/dataset-scope.md
+# section 2) - orthogonal to OCR_CATEGORIES above, which describes image
+# condition, not when the underlying text was written. A 1940 reprint of a
+# 15th-century Krittibas Ramayan is category=modern_print, era=old_middle_bengali.
+ERAS = {
+    "old_middle_bengali": "8th-12th c. CE (Charyapada) through ~1800 - manuscript-tradition literature before print",
+    "pre_vidyasagar": "~1800-1850 - print era begins, prose standardisation not yet done",
+    "colonial_renaissance": "1850-1947 - Vidyasagar's prose standardisation onward through independence",
+    "post_independence": "1947-1991 - partition through pre-liberalisation",
+    "modern": "1991-present - almost entirely still in copyright, verify rights before collecting",
 }
 
 
@@ -86,13 +100,13 @@ _SCHEMAS = {
     "ocr_ground_truth": {
         "required": ["id", "image_path", "transcript", "category", "source", "annotator"],
         "text_fields": ["transcript"],
-        "enum_fields": {"category": OCR_CATEGORIES},
-        "optional": ["double_annotated", "second_annotator", "hallucination_flag"],
+        "enum_fields": {"category": OCR_CATEGORIES, "era": set(ERAS)},
+        "optional": ["double_annotated", "second_annotator", "hallucination_flag", "era"],
     },
     "general_text": {
-        "required": ["id", "text", "category", "source", "collector"],
+        "required": ["id", "text", "category", "era", "source", "collector"],
         "text_fields": ["text"],
-        "enum_fields": {},
+        "enum_fields": {"era": set(ERAS)},
         "optional": ["split", "notes"],
     },
 }
