@@ -41,7 +41,7 @@ Usage:
   python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register literary_formal --limit 1000
 
 Pass --bmbt-tokenizer to also measure BMBT (Bornomala's Bengali Tokenizer,
-v2 roadmap step 5, bntok.bmbt.BMBT). Unlike the raw akshara-parser row below
+v2 design step 5, bntok.bmbt.BMBT). Unlike the raw akshara-parser row below
 (measure_akshara, pre-vocabulary chunk counts, a deliberately different kind
 of number), a trained BMBT artifact has a real vocabulary and real merges
 the same way bn-bpe-64k does, so its row is a genuine like-for-like fertility
@@ -64,7 +64,7 @@ from bntok.graphemes import grapheme_clusters
 
 # HF tokenizers to compare against (all load without auth).
 #
-# Two named baselines from the v2 design doc's own roadmap step 4 could not
+# Two named baselines from the v2 design doc's own step 4 could not
 # be added, honestly rather than faked:
 #   - IndicSuperTokenizer (Rana, Menezes et al., Krutrim AI, arXiv:2511.03237):
 #     no public code/tokenizer release found (checked the arXiv abstract page
@@ -75,7 +75,7 @@ from bntok.graphemes import grapheme_clusters
 #     and is not verifiably the paper's own artifact, so it is not used as a
 #     stand-in.
 #
-# 2026-08: added India competitor + global frontier rows, verified loadable
+# 2026-08: added major Indic and global frontier model rows, verified loadable
 # (or honestly reported unavailable, never faked) directly against
 # transformers.AutoTokenizer before being added here - see
 # docs/known-issues.md for the checked-but-excluded list (Hanooman/SML: no
@@ -423,18 +423,19 @@ def measure_bmbt(directory: str, texts: list[str]) -> dict:
 
 
 def measure_akshara(texts: list[str]) -> dict:
-    """Measure the v2 akshara finite-state parser (roadmap step 4).
+    """Measure the v2 akshara finite-state parser (design step 4).
 
     This is NOT a like-for-like comparison with the tokenizer rows above, and
     is reported separately, not folded into the fertility-sorted table: the
-    parser has no vocabulary and no merges yet (v2 roadmap step 5, featural
-    encoding + statistical fallback, is not built), so its chunk count is the
-    PRE-compression granularity, the same kind of number as grapheme-cluster
-    count, not the POST-BPE-merge token count every tokenizer row above
-    reports. Expect it to need more chunks per word than any trained
-    tokenizer; that is not a regression, it is what "no compression yet"
-    means, and is exactly the number the design doc's own roadmap (step 4)
-    asks to be measured and reported honestly before building further.
+    raw parser itself has no vocabulary and no merges (featural encoding +
+    statistical fallback is BMBT's job, design step 5, layered on top of this
+    parser, not part of it), so its chunk count is the PRE-compression
+    granularity, the same kind of number as grapheme-cluster count, not the
+    POST-BPE-merge token count every tokenizer row above reports. Expect it
+    to need more chunks per word than any trained tokenizer; that is not a
+    regression, it is what "no compression yet" means, and is exactly the
+    number the design doc's own step 4 asks to be measured and reported
+    honestly before building further.
 
     Conjunct fragmentation is the one metric that IS a fair, like-for-like
     comparison: `Akshara.start`/`.end` are exact codepoint offsets carried by
@@ -551,7 +552,7 @@ def main(argv=None) -> int:
         if not r.get("available"):
             print(f"| {r['model']} | unavailable: {r.get('error','')} |", file=sys.stderr)
 
-    print("\nv2 akshara parser (roadmap step 4, NOT a like-for-like row above -- "
+    print("\nv2 akshara parser (design step 4, NOT a like-for-like row above -- "
           "no vocabulary or merges yet, see measure_akshara()'s docstring):")
     print(f"| {akshara_row['model']} | {akshara_row['fertility']:.3f} | {akshara_row['strr']:.3f} | "
           f"{akshara_row['bytes_per_token']:.2f} | {akshara_row['conjunct_fragmentation']:.4f} | "

@@ -1,5 +1,5 @@
 """
-Tests for BMBT (Bornomala's Bengali Tokenizer, v2 roadmap step 5, partial).
+Tests for BMBT (Bornomala's Bengali Tokenizer, v2 design step 5, partial).
 
 Mirrors tests/test_tokenizer.py's coverage 1:1 (headline guarantees, atom
 map, error paths, persistence) so the two tokenizers are held to the same

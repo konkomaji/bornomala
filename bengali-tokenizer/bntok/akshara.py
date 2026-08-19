@@ -1,5 +1,5 @@
 r"""
-The akshara finite-state parser (v2 design roadmap step 3,
+The akshara finite-state parser (v2 design step 3,
 docs/design/reading-bengali-on-its-own-terms.md section 6-7,
 docs/design/FORMAL_SPEC.md sections 2-4).
 
@@ -20,7 +20,7 @@ UAX #29 `\X`, not assumption:
   1. A first pass (ZWJ right after a virama continues a conjunct, ZWNJ right
      after one terminates it explicitly; Nukta can repeat) was checked
      against the design doc's simplified grammar and synthetic edge cases.
-  2. Running the parser against real Wikipedia held-out text (v2 roadmap
+  2. Running the parser against real Wikipedia held-out text (v2 design
      step 4's own measurement) surfaced two real, previously-untested
      divergences: an independent vowel followed by a virama does NOT chain
      into a further consonant the way a consonant does (`\X` clusters

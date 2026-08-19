@@ -1,5 +1,5 @@
 r"""
-BMBT: Bornomala's Bengali Tokenizer (v2 roadmap step 5, partial).
+BMBT: Bornomala's Bengali Tokenizer (v2 design step 5, partial).
 
 Where the shipped v1 tokenizer (tokenizer.py, `BengaliTokenizer`) discovers
 Bengali's structure statistically (BPE merges over UAX #29 grapheme-cluster
@@ -18,7 +18,7 @@ the atomic unit is the akshara `aksharas()` finds (a whole conjunct chain,
 parsed by grammar), not a UAX #29 grapheme cluster (found by `regex`'s
 generic Unicode algorithm). Since akshara boundaries are already nearly
 identical to grapheme-cluster boundaries on well-formed Bengali text (the
-v2 roadmap's own step-4 measurement), this is NOT expected to dramatically
+v2 design's own step-4 measurement), this is NOT expected to dramatically
 change fertility, and FORMAL_SPEC.md's own OPTIMAL section proves a
 constrained BPE (never split an akshara) cannot beat an unconstrained one on
 raw token count. Whatever the measured comparison against `bn-bpe-64k`
@@ -31,7 +31,7 @@ carry a nukta, the vowel, trailing modifiers, whether a ZWJ/ZWNJ occurred) -
 a real, tested, usable output of the tokenizer itself, not an
 embedding-layer afterthought.
 
-Morphology (v2 roadmap step 5's other half) is now built, opt-in via
+Morphology (v2 design step 5's other half) is now built, opt-in via
 `morphology=True`. `morphology.py` finds the suffix chain, and training
 inserts a merge barrier at each morpheme seam so BPE cannot learn a token
 spanning one. Two things about it are stated up front rather than discovered

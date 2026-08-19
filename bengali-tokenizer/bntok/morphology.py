@@ -1,4 +1,4 @@
-r"""Bengali inflectional morphology: the second half of BMBT's v2 roadmap step 5.
+r"""Bengali inflectional morphology: the second half of BMBT's v2 design step 5.
 
 `akshara.py` parses Bengali's *orthographic* grammar (the syllable). This module
 parses part of its *morphological* grammar: the suffix chain a Bengali word
