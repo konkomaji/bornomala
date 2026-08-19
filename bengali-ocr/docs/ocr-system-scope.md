@@ -130,7 +130,6 @@ turning, not just asserted to exist.
 
 ## 7. What this is not: a build plan for right now
 
-GPU-gated (spec section 10.4, months 9-14 on rented GPU), and I don't have
-GPU access in this environment - same blocker as the Banglish tier-3
-neural retrain. This document exists so the design work is done before
-that blocker clears, not so building starts today.
+This document is design, not an implementation - the model-training stages
+(section 3) have not started. It exists so the design work is done ahead
+of that, not so building starts today.

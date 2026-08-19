@@ -55,7 +55,7 @@
     { "@type": "Question", "name": "Why do today's AI models handle Bengali poorly?",
       "acceptedAnswer": { "@type": "Answer", "text": "Every mainstream model is optimised for English. Bengali text is broken into far more tokens than English for the same meaning, which costs more and shrinks the usable context. The Bengali literary corpus is mostly trapped in scanned page images, and the dialects of West Bengal have no computational resource at all. So even Indic models like Sarvam and AI4Bharat treat Bengali as one of many languages and cover Standard Bengali, not the western dialects." } },
     { "@type": "Question", "name": "How is Project Bornomala different from work in Bangladesh?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Bangladesh has more Bengali language technology activity, concentrated on Standard and Dhaka-region Bangla and Bangladesh dialects. Project Bornomala is based in West Bengal and focuses on the western half of the language: its literary register and the five West Bengal dialect groups, which currently have zero computational resources anywhere. The relationship is complementary, not competitive." } },
+      "acceptedAnswer": { "@type": "Answer", "text": "Bangladesh has more Bengali language technology activity, concentrated on Standard and Dhaka-region Bangla and Bangladesh dialects. Project Bornomala is based in West Bengal and focuses on the western half of the language: its literary register and the five West Bengal dialect groups, which currently have zero computational resources anywhere. It is open-source research addressing a gap, not a rival effort." } },
     { "@type": "Question", "name": "Is Project Bornomala commercial?",
       "acceptedAnswer": { "@type": "Answer", "text": "The code is open under Apache 2.0 and the data under open Creative Commons licences. Anyone can use, study, and build on it." } },
     { "@type": "Question", "name": "What has Project Bornomala achieved so far?",
@@ -133,7 +133,7 @@
       </div>
       <div class="card">
         <h3>Bangladesh has built a lot</h3>
-        <p>Bangladesh leads Bengali language technology, and we honour that. But it centres on Standard and Dhaka-region Bangla. The western half of the language, its dialects and its literary corpus, is still missing. We take that up, as a complement, not a competitor.</p>
+        <p>Bangladesh leads Bengali language technology, and we honour that. But it centres on Standard and Dhaka-region Bangla. The western half of the language, its dialects and its literary corpus, is still missing. This is open-source research taking that up, not a rival effort.</p>
       </div>
       <div class="card">
         <h3>The corpus is trapped</h3>
@@ -310,7 +310,7 @@
       </div>
       <div class="card">
         <h3>Tier 3: a small model, trained from scratch, honestly imperfect</h3>
-        <p>For the 14.4% tiers 0-2 cannot resolve, a small Transformer trained from scratch on a real Colab GPU (checkpoint <code>step-20000.pt</code>) reaches 53.9% exact-match accuracy and 13.5% character error rate on Dakshina's reserved blind test split. It is wired in and it works, and it is not yet good. Improving it needs more training compute than this project currently has.</p>
+        <p>For the 14.4% tiers 0-2 cannot resolve, a small Transformer trained from scratch (checkpoint <code>step-20000.pt</code>) reaches 53.9% exact-match accuracy and 13.5% character error rate on Dakshina's reserved blind test split. It is wired in and it works, and it is not yet good. A larger configuration is scoped and not yet run.</p>
       </div>
     </div>
 
@@ -383,7 +383,7 @@
     <div class="matra"></div>
     <div class="faq-list">
       <details class="faq" open><summary>Why do today's AI models handle Bengali poorly?</summary><p>They are optimised for English. Bengali is broken into far more tokens than English for the same meaning, which costs more and shrinks the usable context, and general tokenizers routinely break Bengali conjuncts. The literary corpus is trapped in page images, and the West Bengal dialects have no computational resource at all.</p></details>
-      <details class="faq"><summary>How is this different from work in Bangladesh?</summary><p>Bangladesh leads Bengali language technology, focused on Standard and Dhaka-region Bangla. We are based in West Bengal and take up the western half of the language: its literary register and its five dialect groups, which have zero resources anywhere. The relationship is complementary, not competitive.</p></details>
+      <details class="faq"><summary>How is this different from work in Bangladesh?</summary><p>Bangladesh leads Bengali language technology, focused on Standard and Dhaka-region Bangla. We are based in West Bengal and take up the western half of the language: its literary register and its five dialect groups, which have zero resources anywhere. Open-source research addressing a gap, not a rival effort.</p></details>
       <details class="faq"><summary>What licence is this under?</summary><p>Code is open under Apache 2.0 and data under open Creative Commons licences. Anyone can use it, study it, and build on it, including commercially.</p></details>
       <details class="faq"><summary>Can I trust the numbers?</summary><p>Every figure states the exact data behind it and reruns with one command. We never present an estimate as a measurement.</p></details>
       <details class="faq"><summary>How can I help?</summary><p>Engineers, native speakers of West Bengal dialects, linguists, and archives are all needed. Start on GitHub or get in touch.</p></details>

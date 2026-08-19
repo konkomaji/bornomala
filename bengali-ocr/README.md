@@ -8,12 +8,9 @@ in this folder is a deeper scoping pass on top of it, written after real
 OCR noise turned up in the first archive.org pulls for the data-collection
 programme (see `data-collection/dataset-scope.md` section 10).
 
-Nothing here is built yet. This is design, not code - GPU-gated per the
-spec's own timeline (section 10.4, months 9-14 on rented GPU), and I don't
-have GPU access in this environment right now (same blocker as the
-Banglish tier-3 neural retrain, `bengali-tokenizer/docs/known-issues.md`).
-Scoping it now means it's ready to build the day that blocker clears,
-instead of starting the design work from zero then.
+Nothing here is built yet. This is design, not code. Scoping it now means
+it's ready to build ahead of when model training begins, instead of
+starting the design work from zero then.
 
 ## Naming
 

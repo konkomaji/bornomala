@@ -14,7 +14,7 @@ is the current deliverable.
   build under `docs/`.
 - **Bug reports and feature requests.** Use the issue templates.
 - **Native Bengali speakers and West Bengal dialect speakers, linguists, and
-  archives** are also needed for the programme's broader roadmap; see the
+  archives** are also needed for the programme's broader scope; see the
   [website](https://konkomaji.github.io/bornomala/) and root README.
 
 ## Ground rules

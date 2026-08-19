@@ -945,8 +945,7 @@ data before deciding scope, not assumed:**
   proving the write-back and no-second-call behaviour work correctly,
   independent of what the real model turns out to be.
 
-**Tier 3, fully scoped and ready to run, blocked only on training compute
-this environment does not have:**
+**Tier 3, fully scoped and ready to run, not yet run:**
 
 - `scripts/assemble_banglish_translit_dataset.py`: builds train/dev/test-
   ready data. train.tsv (Dakshina lexicon train split + the aligned
@@ -1197,9 +1196,9 @@ clears the bar of being a real finding worth propagating, per the precedent
 set by the BMBT-Hybrid and unigram-vs-BPE experiments above.
 
 **UPDATE 2026-08-18: two banglish tier-3 fixes attempted, one real gain measured, one honest zero.**
-No GPU available in this environment to retrain (30k-step bigger config timed
-at ~0.1 steps/s on CPU here, ~83 hours - not viable), so this pass targeted
-what CPU-only, no-retrain work could actually move:
+The 30k-step bigger config was not retrained this pass (measured at ~0.1
+steps/s on CPU, ~83 hours for a full run - not viable on CPU alone), so
+this pass targeted what CPU-only, no-retrain work could actually move:
 
 - **Real fix, measured**: `bntok/banglish_synth.py`'s reverse phonetic table
   had the same class of bug already fixed once for য (ya-phala) - ব as a
@@ -1236,8 +1235,7 @@ what CPU-only, no-retrain work could actually move:
   accurate) plus training fully from scratch with no pretraining, with no
   akshara/conjunct-aware structural prior in the generation step itself
   (character-level output, no bias toward valid virama-chains) - the built,
-  unrun bigger config (24.9M params, 30k steps) remains the next real lever,
-  blocked on GPU access this environment does not have.
+  unrun bigger config (24.9M params, 30k steps) remains the next real lever.
 
 ## How to report a new issue
 
