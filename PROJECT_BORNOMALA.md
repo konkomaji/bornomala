@@ -99,7 +99,7 @@ Rather, a system in which every design decision that could be made English-first
 - Open state-of-the-art Bengali document OCR, including pre-1950 letterpress
 - The first computational resource for the West Bengal dialect groups
 - Dialect-aware Bengali ASR and prosodically competent Bengali TTS
-- A 2 to 4 billion parameter Bengali model, deployable on-device
+- A 2 to 4 billion parameter Bengali model that outperforms frontier models on Bengali-specific tasks (dialect comprehension, idiom, script handling, literary register, regional cultural knowledge), runs offline on a mid-range Android device at Q4 quantisation, and costs nothing per query
 
 **Explicitly out of scope**
 
@@ -109,15 +109,7 @@ Rather, a system in which every design decision that could be made English-first
 - General-purpose multilingual OCR. Bengali script only, with code-mixed English as a secondary.
 - Competing with Sarvam AI or Hishab. Both are candidate collaborators.
 
-### 2.4 On the phrase "Claude-level efficiency"
-
-This phrase should be retired from all external communication. It is unfalsifiable, and it invites a comparison this programme's scale was never designed to withstand.
-
-The defensible, falsifiable claim is:
-
-> A 2 to 4 billion parameter model that outperforms frontier models on Bengali-specific tasks (dialect comprehension, idiom, script handling, literary register, regional cultural knowledge), runs offline on a mid-range Android device at Q4 quantisation, and costs nothing per query.
-
-Narrow-domain small models outperforming general large models *on their domain* is the expected result in the literature. It is not an aspiration. But the claim is worthless without the benchmark that adjudicates it, which is why every track in this programme ships a benchmark as a first-class deliverable.
+Narrow-domain small models outperforming general large models *on their domain* is the expected result in the literature, not an aspiration - but the claim above is worthless without the benchmark that adjudicates it, which is why every track in this programme ships a benchmark as a first-class deliverable.
 
 ---
 
