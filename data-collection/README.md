@@ -86,7 +86,7 @@ real training/eval data for the custom models later - not two efforts.
    already use) - so ground truth is stored the way the spec requires
    without needing to remember to do it by hand.
 
-## The four record types
+## The five record types
 
 | Type | What | Real fields, not invented |
 |---|---|---|
@@ -94,6 +94,25 @@ real training/eval data for the custom models later - not two efforts.
 | `dialect_speech` | Transcribed spontaneous dialect speech | Full speaker metadata list from spec 11.3 (age band, gender, education, first language, self-reported dialect, urban/rural) - **never a name, enforced by the validator, not just a convention** |
 | `ocr_ground_truth` | Page image -> transcript | `category` matches spec 10.5's benchmark categories exactly (`letterpress_1880_1950` is the actual moat category); `era` (optional) records composition era separately from scan/print condition - see below; double-annotation fields for the 10% inter-annotator-agreement sample spec 10.3 requires |
 | `general_text` | Any other hand-curated Bengali text | `category`, `era` (required), `source`, `collector`, `split` |
+| `annotator_profile` | Registry of who is doing the collecting/annotating | `native_bengali` (yes/no - spec 10.3 point 3: "All annotators Bengali-native", recorded structurally here, not just asserted); `annotator_id` is meant to be referenced by the `annotator`/`collector`/`second_annotator` fields on the other four types by convention, not a hard foreign-key check (cross-file validation isn't built - a real limit, not silently skipped). **Deliberately the opposite of `dialect_speech`'s no-name rule**: annotators are consenting, credited contributors, not anonymised research subjects - a name is correct here |
+
+## Quality-check helpers (`bengali-tokenizer`'s `bntok.corpus`)
+
+Three functions worth running over anything before it goes into
+`general_text`/`ocr_ground_truth`, on top of `is_clean_bengali_line`
+(already existed):
+
+- **`bengali_structural_validity_ratio(text)` / `is_structurally_valid_bengali(text)`**
+  - catches text that passes the plain script-ratio check but is
+  structurally broken (corrupted conjunct, orphaned matra/virama) - reuses
+  BMBT's own akshara grammar (`bntok/akshara.py`), doesn't invent a second
+  notion of "valid Bengali."
+- **`flag_possible_legacy_encoding(text, declared_bengali_source=True)`** -
+  triage flag (not a fixer) for pre-Unicode legacy-font text (Bijoy,
+  SutonnyMJ, similar ANSI-era font hacks) showing up where real Bengali
+  was expected. Full detail on both, including what's still open (actual
+  legacy-font conversion): `bengali-ocr/docs/ocr-system-scope.md` sections
+  3 and 4.
 
 ## Era (`era` column, `dataset-scope.md` section 2)
 

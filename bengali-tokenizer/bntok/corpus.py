@@ -19,7 +19,9 @@ import itertools
 import os
 import re
 
+from .akshara import aksharas
 from .errors import ConfigError, EmptyCorpusError
+from .substrate import BENGALI_BLOCK
 
 
 def load_file(path: str) -> list[str]:
@@ -283,6 +285,77 @@ def is_clean_bengali_line(line: str, min_ratio: float = 0.75, min_len: int = 4) 
         return False
     matches = len(_BENGALI_OR_ASCII.findall(line))
     return (matches / len(line)) >= min_ratio
+
+
+def bengali_structural_validity_ratio(text: str) -> float:
+    """Fraction of `text`'s Bengali-block codepoints that parse as part of a
+    legal akshara, per BMBT's own script grammar (`bntok.akshara`).
+
+    `is_clean_bengali_line` above catches text that *isn't Bengali script at
+    all* (wrong script ratio) - it cannot catch text that already passes as
+    "mostly Bengali codepoints" but is structurally broken: a corrupted
+    conjunct, an orphaned matra/virama with no base to attach to, garbled
+    reordering from a bad copy-paste or a failed legacy-font conversion
+    attempt. This is that second, different check, reusing the same
+    finite-state grammar BMBT already trusts for tokenization - not a new,
+    separately-tuned heuristic.
+
+    Returns 1.0 for text with no Bengali-block codepoints at all (nothing to
+    validate - that's `is_clean_bengali_line`'s job, not this function's).
+    """
+    bengali_total = sum(1 for ch in text if ch in BENGALI_BLOCK)
+    if bengali_total == 0:
+        return 1.0
+    bengali_in_invalid_chunks = sum(
+        sum(1 for ch in chunk.text if ch in BENGALI_BLOCK)
+        for chunk in aksharas(text)
+        if chunk.kind != "akshara"
+    )
+    return 1.0 - (bengali_in_invalid_chunks / bengali_total)
+
+
+def is_structurally_valid_bengali(text: str, min_ratio: float = 0.9, min_bengali_chars: int = 4) -> bool:
+    """`bengali_structural_validity_ratio` above a threshold, with a minimum
+    Bengali-character count so a single stray codepoint in an otherwise-short
+    string doesn't swing the ratio to a meaningless extreme.
+
+    Coarse, same honesty as `is_clean_bengali_line`: catches structurally
+    broken Bengali, does not catch every failure mode (a corruption that
+    happens to still produce grammatically legal aksharas - wrong word, right
+    shape - passes this check; it is not a meaning/spelling validator).
+    """
+    bengali_total = sum(1 for ch in text if ch in BENGALI_BLOCK)
+    if bengali_total < min_bengali_chars:
+        return False
+    return bengali_structural_validity_ratio(text) >= min_ratio
+
+
+def flag_possible_legacy_encoding(text: str, declared_bengali_source: bool = True,
+                                   min_len: int = 8, max_bengali_ratio: float = 0.05) -> bool:
+    """Triage flag, not a fixer: True when `text` comes from a source declared
+    or expected to be Bengali but contains almost no actual Bengali-block
+    codepoints - the signature of pre-Unicode legacy Bengali fonts (Bijoy,
+    SutonnyMJ, and similar ANSI-era font hacks common on Bengali web pages
+    and PDFs from roughly before 2010), which map Bengali glyphs onto the
+    Latin/ASCII byte range instead of real Bengali codepoints.
+
+    This is deliberately narrow. It does not attempt to identify *which*
+    legacy font, and it does not convert anything - recovering the real text
+    needs a verified per-font mapping table, out of scope here and not
+    something to fake. What this catches: `declared_bengali_source=True`
+    (caller already knows - e.g. a Bengali-tagged page or a CSV column meant
+    to hold Bengali text) combined with near-zero real Bengali codepoints is
+    the actual signal worth a human's attention; on its own, "text with few
+    Bengali codepoints" is just as often genuinely non-Bengali content
+    (`is_clean_bengali_line` already rejects that case for corpus-building
+    purposes) - this function exists for the narrower, source-aware question
+    a data-collection reviewer actually needs answered: "was this supposed
+    to be Bengali, and if so, is it worth trying to recover?"
+    """
+    if not declared_bengali_source or len(text) < min_len:
+        return False
+    bengali_ratio = sum(1 for ch in text if ch in BENGALI_BLOCK) / len(text)
+    return bengali_ratio <= max_bengali_ratio
 
 
 _BANGLISH_MARKERS = frozenset({

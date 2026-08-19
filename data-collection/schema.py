@@ -109,6 +109,23 @@ _SCHEMAS = {
         "enum_fields": {"era": set(ERAS)},
         "optional": ["split", "notes"],
     },
+    # Registry of who is doing the collecting/annotating (spec section 10.3
+    # point 3: "All annotators Bengali-native" - this is where that fact
+    # actually gets recorded, instead of just asserted in a doc). Deliberately
+    # the opposite of dialect_speech's no-name rule: annotators/collectors are
+    # consenting, credited project contributors, not anonymised research
+    # subjects - a name is correct here, not a privacy problem. `annotator`/
+    # `collector`/`second_annotator` fields on the other four types are meant
+    # to reference an `annotator_id` from here by convention, not a hard
+    # foreign-key check enforced by this validator (that would need
+    # cross-file validation, not built in this pass - documented as a real
+    # limit, not silently skipped).
+    "annotator_profile": {
+        "required": ["annotator_id", "display_name", "native_bengali", "joined_date"],
+        "text_fields": [],
+        "enum_fields": {"native_bengali": {"yes", "no"}},
+        "optional": ["region_background", "dialect_familiarity", "contact", "notes"],
+    },
 }
 
 
