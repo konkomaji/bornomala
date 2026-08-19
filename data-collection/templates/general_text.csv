@@ -1,2 +1,3 @@
-id,text,category,source,collector,split,notes
-example-001,রবীন্দ্রনাথ ঠাকুরের জীবনী নিয়ে একটি প্রবন্ধ,literary_essay,personal collection,YOUR_NAME,train,
+id,text,category,era,source,collector,split,notes
+example-001,রবীন্দ্রনাথ ঠাকুরের জীবনী নিয়ে একটি প্রবন্ধ,literary_essay,colonial_renaissance,personal collection,YOUR_NAME,train,
+example-002,বাংলা উইকিসংকলনে প্রতিলিপিকৃত একটি রচনা,literary_essay,colonial_renaissance,bn.wikisource.org - already hand-transcribed, no OCR involved,YOUR_NAME,train,

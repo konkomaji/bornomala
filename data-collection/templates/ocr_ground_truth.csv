@@ -1,3 +1,4 @@
-id,image_path,transcript,category,source,annotator,double_annotated,second_annotator,hallucination_flag
-example-001,scans/tagore_gitanjali_p012.jpg,আমার এই পথ চাওয়াতেই আনন্দ,letterpress_1880_1950,public-domain scan,YOUR_NAME,no,,
-example-002,scans/anandabazar_2026_08_01_p01.jpg,আজকের প্রধান খবর,newspaper_multicolumn,licensed archive,YOUR_NAME,yes,SECOND_ANNOTATOR,
+id,image_path,transcript,category,era,source,annotator,double_annotated,second_annotator,hallucination_flag
+example-001,scans/tagore_gitanjali_p012.jpg,আমার এই পথ চাওয়াতেই আনন্দ,letterpress_1880_1950,colonial_renaissance,public-domain scan,YOUR_NAME,no,,
+example-002,scans/anandabazar_2026_08_01_p01.jpg,আজকের প্রধান খবর,newspaper_multicolumn,modern,licensed archive,YOUR_NAME,yes,SECOND_ANNOTATOR,
+example-003,scans/krittibasi_ramayan_1940_p001.jpg,কৃত্তিবাসী রামায়ণের একটি পাতা,modern_print,old_middle_bengali,archive.org in.ernet.dli.2015.302459 - 1940 reprint,YOUR_NAME,no,,
