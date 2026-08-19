@@ -46,7 +46,7 @@
 
 ## 1. Abstract
 
-Project Bornomala is my multi-year research programme to build a Bengali-first language technology stack. I am doing this on my own, based in West Bengal, and it rests on a single empirical claim, stated here so that it can be attacked:
+Project Bornomala is a multi-year research programme to build a Bengali-first language technology stack. It rests on a single empirical claim, stated here so that it can be attacked:
 
 > **The binding constraint on Bengali language modelling is neither compute nor architecture. It is (i) the absence of a large, clean, high-register Bengali corpus, because that corpus exists only as page images, and (ii) the total absence of any computational resource for the Bengali dialects spoken in West Bengal.**
 
