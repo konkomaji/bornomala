@@ -1,6 +1,6 @@
 r"""
 Bengali Unicode substrate: the character inventory everything else sits on
-(v2 design roadmap steps 1-2, docs/design/reading-bengali-on-its-own-terms.md
+(v2 design steps 1-2, docs/design/reading-bengali-on-its-own-terms.md
 section 8, docs/design/FORMAL_SPEC.md).
 
 Pure data, no functions. `graphemes.py` (UAX #29 segmentation and structural
@@ -82,7 +82,7 @@ ABBREVIATION_SIGN = chr(0x09FD)
 # where a matra renders relative to its base consonant. This is NOT consumed
 # by the akshara grammar in akshara.py (segmentation only needs matra
 # *membership*, never reorder direction) - it exists for future featural
-# encoding (v2 roadmap step 5), where a model may want to know that ি visually
+# encoding (v2 design step 5), where a model may want to know that ি visually
 # precedes its consonant even though it is stored after it.
 #   "before": renders to the left of the base consonant
 #   "after":  renders to the right of the base consonant

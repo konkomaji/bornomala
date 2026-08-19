@@ -1,6 +1,6 @@
 r"""
 Property/round-trip tests for bntok/akshara.py, the v2 finite-state akshara
-parser (roadmap step 3). Mirrors FORMAL_SPEC.md section 7.1's fuzzer input
+parser (design step 3). Mirrors FORMAL_SPEC.md section 7.1's fuzzer input
 classes, with per-class assertion scoping: SEG/TOTAL/DET are asserted for
 every class (they must hold universally, by construction), but boundary
 alignment with `grapheme_clusters()` is asserted only where the two are
@@ -145,7 +145,7 @@ def test_banglish_english_words_fall_to_other_kind():
 # The cases below (vowel+virama non-chaining, matra not blocking a conjunct
 # chain, modifier blocking one, repeated/reordered matra and modifier) were
 # not hypothesized - they were found by running the parser against real
-# Wikipedia held-out text (v2 roadmap step 4's own measurement surfaced 5
+# Wikipedia held-out text (v2 design step 4's own measurement surfaced 5
 # lines with a genuine boundary-inside-cluster bug), then verified one at a
 # time against regex's own \\X before the grammar in akshara.py was fixed.
 

@@ -7,24 +7,16 @@ tables. This scopes what that actually takes, honestly, against
 `PROJECT_BORNOMALA.md` section 10 (the existing plan) plus two real gaps
 I found this pass that the spec doesn't cover yet.
 
-## 1. What "Google Vision / Baidu OCR level" actually means as a target
+## 1. Benchmark baseline list
 
-Neither publishes a Bengali-specific accuracy number. Google Cloud Vision
-and Baidu OCR are general multilingual APIs - there is no published figure
-for either on Bengali specifically, so "beat them" isn't a number I can
-verify against, and stating one anyway would break my own transparency
-rule (`PROJECT_BORNOMALA.md`'s rule E4: never present an estimate as
-measured). What I can hold myself to instead, and what the spec already
-sets up (section 10.5): **beat every baseline that's actually
-measurable on Bengali, on one published benchmark, including the frontier
-general models** - Tesseract Bengali, Surya 2, PaddleOCR-VL, dots.ocr,
-Qwen3-VL, Gemini 3 Flash, Claude Opus, GPT-5.2, Mistral OCR. I'm adding
-**Google Cloud Vision OCR and Baidu OCR (via their public APIs) to that
-baseline list** now, since both are namable, testable competitors even
-without a pre-existing published number - the benchmark itself produces
-the number, same as it does for the others. That's the honest version of
-"unlimited-OCR level": not a claim I can make today, a benchmark I commit
-to running.
+The spec (section 10.5) already commits to beating every measurable
+Bengali OCR baseline on one published benchmark: Tesseract Bengali,
+Surya 2, PaddleOCR-VL, dots.ocr, Qwen3-VL, Gemini 3 Flash, Claude Opus,
+GPT-5.2, Mistral OCR. Adding **Google Cloud Vision OCR and Baidu OCR** to
+that list - neither publishes a Bengali-specific accuracy number to cite
+directly, but both are real, testable systems via public API, and the
+benchmark itself produces the number the same way it does for every other
+row.
 
 ## 2. Coverage matrix
 
@@ -115,6 +107,30 @@ Bengali handwriting system in the spec's own literature survey
 handwriting target number here because I don't have a real baseline to
 set it against yet - that's itself the honest scope statement: handwriting
 needs its own baseline-gathering pass before a target means anything.
+
+**A real collection-methodology precedent, checked directly, not just
+cited by name**: BanglaLekha-Isolated (Biswas et al., *Data in Brief*,
+2017, DOI 10.1016/j.dib.2017.03.035 - already in spec Appendix B.3, this
+is the actual protocol behind that citation). 84 character classes (50
+basic letters, 10 numerals, 24 of the most frequently used compound
+characters/conjuncts), writers aged 6-28, 2,000 samples collected per
+character under **timed writing tasks specifically to capture varying
+handwriting quality** rather than only careful best-case samples, 166,105
+images kept after discarding mistakes/scribbles, age and gender recorded
+per writer. Preprocessing pipeline, in order: foreground/background
+inversion to a consistent black-background/white-glyph convention, median
+filter for noise removal, edge-thickening filter, then square resize with
+aspect-ratio-preserving padding. Two things worth carrying into any future
+BMBO handwriting collection: **timed writing as a deliberate quality-range
+control** (not just recruiting "good handwriting"), and **per-writer
+age/gender metadata** as a first-class field, not an afterthought - both
+directly reusable design choices, not just a citation to point at.
+
+**Access note**: the paper itself sits behind ScienceDirect's paywall;
+this summary comes from its PMC-indexed abstract and corroborating
+secondary sources (arXiv companion paper, dataset documentation), not the
+publisher's own page - stated plainly rather than implying direct access
+that wasn't there.
 
 ## 6. The self-learning loop (spec section 10.7, detailed)
 
