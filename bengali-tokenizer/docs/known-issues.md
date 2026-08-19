@@ -332,7 +332,7 @@ Kept as an honest record of what went wrong and how it was resolved.
 
 16. **Corpus was diluted by Bangladesh-sourced text; no public dataset
     exists that is labelled "West Bengal (India) Bengali" specifically.**
-    User asked for the training corpus to skew toward Indian, not
+    The design goal is a training corpus skewed toward Indian, not
     Bangladeshi, Bengali. Checked directly rather than assumed: written
     standard Bengali does not split cleanly by border in any public
     corpus's own metadata, so there is no dataset that filters to
@@ -377,10 +377,10 @@ Kept as an honest record of what went wrong and how it was resolved.
     (checked, not just assumed absent), so it could not be added to the
     benchmark table.
 
-17. **Competitor and frontier tokenizers added to `scripts/compare.py`'s
-    `HF_MODELS`/`TIKTOKEN_MODELS`, per user request to also benchmark
-    against India's own funded competitors and the global frontier, not
-    only past baselines.** Every addition was verified loadable via
+17. **A broader set of tokenizers added to `scripts/compare.py`'s
+    `HF_MODELS`/`TIKTOKEN_MODELS`, extending coverage to major Indic and
+    global frontier models, not only the original baseline set.** Every
+    addition was verified loadable via
     `transformers.AutoTokenizer.from_pretrained` directly against the
     real Hub repo before being added, not assumed from a model card:
     added `bharatgenai/Param2-17B-A2.4B-Thinking` (BharatGen, see point 16
