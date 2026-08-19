@@ -235,7 +235,7 @@ Kept as an honest record of what went wrong and how it was resolved.
 11. **An independent vowel followed by a virama does not chain into a
     further consonant the way a consonant does.** Found by running the v2
     akshara parser (`bntok/akshara.py`) against real Wikipedia held-out
-    text as its first roadmap-step-4 measurement, not a synthetic test.
+    text as its first design-step-4 measurement, not a synthetic test.
     Unicode's Indic_Conjunct_Break (InCB) rule requires InCB=Consonant on
     both sides of the virama for a conjunct chain to continue; vowels are
     not InCB=Consonant, so `\X` (`regex`'s UAX #29 grapheme clustering)
@@ -274,7 +274,7 @@ Kept as an honest record of what went wrong and how it was resolved.
     order-agnostic, tracking only whether a ZWNJ (like a Modifier)
     occurred anywhere in the run. This third pass is what brought conjunct
     fragmentation on the Wikipedia held-out set to exactly 0.0000 (see
-    `benchmarks/bengali-comparison.md`'s "v2 roadmap step 4" section); the
+    `benchmarks/bengali-comparison.md`'s "v2 design step 4" section); the
     first measurement, before any of points 11-13 were fixed, was 0.0012.
 
 14. **A rare, deliberate scope boundary, not a bug: Bengali consonant
@@ -328,7 +328,7 @@ Kept as an honest record of what went wrong and how it was resolved.
     is unaffected. Verified after the fix: real Bengali-script text (not
     the `bn_rom` romanized variant CC-100 also has for some languages),
     genuine training runs completed successfully using it (see the
-    "v2 roadmap step 4/5" sections below for the resulting numbers).
+    "v2 design step 4/5" sections below for the resulting numbers).
 
 16. **Corpus was diluted by Bangladesh-sourced text; no public dataset
     exists that is labelled "West Bengal (India) Bengali" specifically.**
@@ -568,7 +568,7 @@ Now wired into `build_configured_corpus` itself as an opt-in step
 per-source before weighting, default off - neither shipped artifact has
 been retrained with it yet.
 
-## Roadmap: a proposed v2
+## Design steps: a proposed v2
 
 Everything above describes the shipped v1: grapheme-atom BPE/Unigram, which
 still trains a statistical compressor, just over conjunct-safe atoms instead
@@ -580,7 +580,7 @@ and formal contract in
 [`docs/design/reading-bengali-on-its-own-terms.md`](design/reading-bengali-on-its-own-terms.md)
 and [`docs/design/FORMAL_SPEC.md`](design/FORMAL_SPEC.md).
 
-**Steps 1-3 of the design's own roadmap are now built and property-tested**
+**Steps 1-3 of the design's own build sequence are now built and property-tested**
 (`bntok/substrate.py`, `bntok/akshara.py`, `tests/test_substrate.py`,
 `tests/test_akshara.py`; `python -m bntok akshara --text "..."`). This is a
 finite-state parser that segments text into akshara chunks by the grammar
@@ -616,10 +616,10 @@ alone, no statistics yet: no vocabulary, no merges, no BPE anywhere in it.
 
 **Step 4 (Wikipedia held-out only) is now measured, via
 `scripts/compare.py`'s `measure_akshara()`.** Full writeup:
-`benchmarks/bengali-comparison.md`'s "v2 roadmap step 4" section. Headline,
+`benchmarks/bengali-comparison.md`'s "v2 design step 4" section. Headline,
 on the same 828-line held-out set as `bn-bpe-64k`'s own benchmark: fertility
 4.527 (vs `bn-bpe-64k`'s 1.524 - expected, since the parser has no
-vocabulary/merges yet, roadmap step 5), and conjunct fragmentation **0.0000
+vocabulary/merges yet, design step 5), and conjunct fragmentation **0.0000
 exactly**, better than `bn-bpe-64k`'s own 0.0001 (which still carries a
 small residual from its atom-frequency threshold, point 1 above; the
 parser's guarantee has no such threshold).

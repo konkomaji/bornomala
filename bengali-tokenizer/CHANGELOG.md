@@ -96,7 +96,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   cycling of thin sources. Default off - does not change either shipped
   artifact (`bn-bpe-64k`/`bmbt-64k`), which has not been retrained with
   it. 18 new tests (`tests/test_dedup.py`).
-- **BMBT (Bornomala's Bengali Tokenizer, v2 roadmap step 5, partial):
+- **BMBT (Bornomala's Bengali Tokenizer, v2 design step 5, partial):
   `bntok/bmbt.py`.** The recommended, primary tokenizer as of this
   release. Grammar (the akshara finite-state parser, reused unchanged)
   plus a real featural decomposition (`featurize()`: onset consonants,
@@ -147,7 +147,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   (`krutrim-ai-labs/Krutrim-2-instruct`)**, both verified loadable before
   adding. On the Wikipedia held-out set: SUTRA fertility 2.218 (3rd best,
   after ours and IndicBERTv2), Krutrim 3.207 (worst of the field). The two
-  other baselines the v2 design doc's roadmap names, IndicSuperTokenizer
+  other baselines the v2 design doc names, IndicSuperTokenizer
   and BengaliBPE, have no usable public release (checked directly, not
   assumed) and are reported as unavailable rather than faked with a
   similarly-named but unverified stand-in. Root `README.md`,
@@ -170,7 +170,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   fuzzer contract for the fourth. This supersedes nothing shipped; `bn-bpe-64k`
   remains the current artifact until v2 is built and measured against the same
   benchmarks.
-- **v2 roadmap steps 1-3 built: `bntok/substrate.py` and `bntok/akshara.py`.**
+- **v2 design steps 1-3 built: `bntok/substrate.py` and `bntok/akshara.py`.**
   `substrate.py` is the single source of truth for the Bengali Unicode
   inventory (consonants, vowels, matras, modifiers, plus matra visual-position
   metadata for future featural encoding); `graphemes.py` now imports from it
@@ -192,11 +192,11 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   `tests/test_akshara.py` (a property/round-trip suite covering all 7 fuzzer
   input classes from `FORMAL_SPEC.md` section 7.1, including the design doc's
   own named hard words স্ত্রী/ক্ষ্ম/আকাঙ্ক্ষা/ঋত্বিক). See
-  `docs/known-issues.md`'s "Roadmap: a proposed v2" section for the two
+  `docs/known-issues.md`'s "Design steps: a proposed v2" section for the two
   documented divergences from `\X` this uncovered, and what step 4/5 (measured
   benchmarking; featural encoding and morphology) still need before anything
   here changes what `bn-bpe-64k` ships or claims.
-- **v2 roadmap step 4 measured (Wikipedia held-out only): `scripts/compare.py`
+- **v2 design step 4 measured (Wikipedia held-out only): `scripts/compare.py`
   gains `measure_akshara()`.** Runs `bntok.akshara.aksharas()` over the same
   828-line held-out set `bn-bpe-64k` is benchmarked on, reported as its own
   section (not folded into the fertility-sorted table, since the parser has
@@ -204,7 +204,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   number, not a like-for-like token count). Headline:
   fertility 4.527 (vs `bn-bpe-64k`'s 1.524, expected pre-compression), and
   conjunct fragmentation **0.0000 exactly**, better than `bn-bpe-64k`'s own
-  0.0001. Full writeup: `benchmarks/bengali-comparison.md`'s "v2 roadmap step
+  0.0001. Full writeup: `benchmarks/bengali-comparison.md`'s "v2 design step
   4" section.
   Running this measurement against real text (not only synthetic tests)
   found 3 real bugs in `akshara.py`'s grammar, now fixed: an independent
@@ -218,7 +218,7 @@ All notable changes to the Track A tokenizer are documented here. Format follows
   intermediate 0.0012 fragmentation number this replaced. Test suite grew
   from 95 to 103 (6 new regression tests for these cases, plus 2 more for
   ZWJ/ZWNJ position).
-- **v2 roadmap step 4 extended to the other three held-out registers**
+- **v2 design step 4 extended to the other three held-out registers**
   (literary/formal, general web, news - same held-out sets as `bn-bpe-64k`'s
   own per-register results). Conjunct fragmentation measured **exactly
   0.0000 on general web and news**; literary/formal measured 0.000005

@@ -337,7 +337,7 @@ The defensible contribution, then, is precise: a tokenizer that unifies the feat
 
 ---
 
-## 11. Roadmap
+## 11. Build Sequence
 
 The dependency order is clear, and it lets us prove the thesis early with a small, honest artifact rather than a large act of faith.
 
@@ -365,7 +365,7 @@ I would rather state the difficulties plainly than have them discovered later. T
 
 **Downstream models must accept structured input.** A featural token stream is non-standard, and any model trained on it needs its input and output layers designed to match. That is the price of leaving the English stack, and in a real sense it is also the point, but it is a cost and I record it as one.
 
-None of these is a reason not to proceed. They are the shape of the work, and the first four are exactly what step 4 of the roadmap is designed to expose early.
+None of these is a reason not to proceed. They are the shape of the work, and the first four are exactly what step 4 of the build sequence is designed to expose early.
 
 ---
 

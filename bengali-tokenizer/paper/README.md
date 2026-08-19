@@ -48,7 +48,7 @@ python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register general_we
 python scripts/compare.py --tokenizer artifacts/bn-bpe-64k --register news --limit 1000
 ```
 
-## Roadmap (will update the preprint as these land)
+## Planned updates (will update the preprint as these land)
 
 - Literary-weighted induction corpus: done (Wikisource + Sangraha, see `docs/known-issues.md` point 6; not confirmed pre-1950 for the Sangraha portion).
 - Literary-register, general-web, and news held-out evaluation: done (`bntok.corpus.build_register_held_out`). West Bengal dialect evaluation set: not started.
