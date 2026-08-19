@@ -55,38 +55,41 @@ clusters, not codepoints**) and Tier 2 accurate (VLM fine-tune, LoRA
 first). Two-model agreement filtering and hallucination scoring (section
 10.4's admission gate) are also already specified.
 
-**Addition 1: legacy pre-Unicode font recovery.** A different bug class
-from OCR entirely - this is about *born-digital* Bengali text that was
-never real Unicode to begin with. Bengali web pages and PDFs from roughly
-before 2010 often used proprietary fonts (Bijoy, SutonnyMJ, and similar
-ANSI-era font hacks) that mapped Bengali glyphs onto Latin-range byte
-slots for display, not real Bengali codepoints. Pull that text out of its
-original font context and it's mojibake - not an OCR problem, not fixed
-by `bntok.normalize`'s NFC/ZWJ policy, because the underlying bytes were
-never Bengali Unicode. This isn't in the spec anywhere. Right now,
-`data-collection/schema.py`'s Bengali-codepoint check catches and rejects
-this junk on the way in (legacy bytes don't decode as Bengali-block
-codepoints), which is a real safety net, but rejection isn't recovery -
-correctly-legacy-encoded pages are just being dropped, not converted.
-Scoped as its own small module: detect (byte-pattern/font-declaration
-heuristics on old HTML/PDF sources) then convert (known legacy-font
-mapping tables - study existing open converters like Bijoy2Unicode/Avro's
-own reverse-conversion logic as prior art, don't copy blindly, verify
-output against the same Bengali-codepoint + akshara-validity checks below
-before trusting it).
+**Addition 1: legacy pre-Unicode font recovery. Triage flag built, real
+conversion still open.** A different bug class from OCR entirely - this is
+about *born-digital* Bengali text that was never real Unicode to begin
+with. Bengali web pages and PDFs from roughly before 2010 often used
+proprietary fonts (Bijoy, SutonnyMJ, and similar ANSI-era font hacks) that
+mapped Bengali glyphs onto Latin-range byte slots for display, not real
+Bengali codepoints. Pull that text out of its original font context and
+it's mojibake - not an OCR problem, not fixed by `bntok.normalize`'s
+NFC/ZWJ policy, because the underlying bytes were never Bengali Unicode.
+`bntok.corpus.flag_possible_legacy_encoding` now exists: given a source
+declared/expected to be Bengali, it flags near-zero-Bengali-codepoint text
+as worth human review - a triage signal, honestly scoped, not a fixer (its
+own docstring says so). **Real recovery is still open**: detect *which*
+legacy font, then convert via a verified per-font mapping table - study
+existing open converters like Bijoy2Unicode/Avro's own reverse-conversion
+logic as prior art, don't copy blindly, verify output against the same
+Bengali-codepoint + akshara-validity checks below before trusting it.
 
-**Addition 2: `bntok/akshara.py` as a post-OCR structural validator.**
-BMBT's akshara parser is already a real, tested, formal finite-state
-grammar of what a legal Bengali conjunct/akshara structure looks like -
-built for tokenization, but nothing about it is tokenization-specific.
-Running raw OCR or Tier-1/Tier-2 output through it as a post-processing
-pass would flag (and in some cases mechanically repair - e.g. an orphaned
-matra/virama with no valid base to attach to, the same kind of check
-`banglish_tier3.py`'s beam re-rank already does for a different pipeline,
-per `bengali-tokenizer/docs/known-issues.md`) structurally illegal
-conjunct sequences before they ever reach a training set. This is a real,
-not-yet-built idea, not a citation to outside work - flagging it here so
-it doesn't get lost before Track B implementation starts.
+**Addition 2: `bntok/akshara.py` as a post-OCR structural validator. Built
+for raw text, not yet wired into an actual OCR pipeline.** BMBT's akshara
+parser is already a real, tested, formal finite-state grammar of what a
+legal Bengali conjunct/akshara structure looks like - built for
+tokenization, but nothing about it is tokenization-specific.
+`bntok.corpus.bengali_structural_validity_ratio` and
+`is_structurally_valid_bengali` now exist, reusing that same grammar to
+catch text that passes the plain Bengali-script-ratio check
+(`is_clean_bengali_line`) but is structurally broken - a corrupted
+conjunct, an orphaned matra/virama with no valid base, garbled reordering.
+13 real tests in `tests/test_corpus.py`, including a genuine miss caught
+mid-build: a mid-word orphan-matra placement first read back as
+structurally valid (context-sensitive grammar behaviour, not a bug),
+fixed by testing against the exact isolated case `test_akshara.py` already
+proves. **Not yet wired into any actual OCR output pipeline** (there is no
+OCR pipeline yet) or into `data-collection/validate.py` as a review-time
+check - both real next steps, not done in this pass.
 
 ## 4. Metrics: extend, don't replace, section 10.6
 

@@ -23,7 +23,8 @@ from schema import normalize_row, schema_for, validate_csv
 def main(argv=None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--type", required=True,
-                    choices=["dialect_text", "dialect_speech", "ocr_ground_truth", "general_text"])
+                    choices=["dialect_text", "dialect_speech", "ocr_ground_truth", "general_text",
+                             "annotator_profile"])
     p.add_argument("--csv", required=True)
     p.add_argument("--emit-jsonl", help="write clean, NFC-normalised JSONL here if validation passes")
     args = p.parse_args(argv)
