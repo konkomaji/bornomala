@@ -41,7 +41,7 @@ open, and every claim is measured and stated with the data behind it.
   cover Standard Bengali, not the literary register or the western dialects.
 - **Bangladesh has built a great deal, and we honour it,** but it centres on
   Standard and Dhaka-region Bangla. The western half of the language is still
-  missing. We take that up as a complement, not a competitor.
+  missing. This is open-source research taking that up, not a rival effort.
 - **The corpus is trapped.** A century of Bengali literature exists mostly as
   scanned page images. That is a data problem, not a compute problem.
 
@@ -131,11 +131,10 @@ tokenizers, behind BanglaBERT and BanglaT5. In response: tiers 0-2 (a
 no GPU) resolve 85.6% of real Banglish words and reach fertility **1.740**
 once transliterated to Bengali script first, ahead of every tokenizer on
 our leaderboard, including the previous leader SUTRA (1.850). A tier-3
-neural model, trained from scratch on a real GPU, handles the harder
-remainder at 53.9% exact-match accuracy and 13.5% character error rate on
-a reserved blind test split - real, wired in, and honestly not yet
-production-ready; more of it is blocked on training compute this project
-does not currently have. Full account:
+neural model, trained from scratch, handles the harder remainder at 53.9%
+exact-match accuracy and 13.5% character error rate on a reserved blind
+test split - real, wired in, and honestly not yet production-ready; a
+larger configuration is scoped and not yet run. Full account:
 [`bengali-tokenizer/docs/known-issues.md`](bengali-tokenizer/docs/known-issues.md),
 "Banglish" section.
 

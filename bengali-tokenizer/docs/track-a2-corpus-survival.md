@@ -1,10 +1,10 @@
 # Track A2: corpus dedup + quality-filter survival ratio (Gate G3)
 
-Spec section 15.2, Gate G3, month 6: "After dedup and quality filtering, what
-fraction of raw Bengali web text survives? Is the surviving corpus ≥5B clean
-tokens?" Section 15.3's "First 30 days" plan says exactly how to answer it:
-"Download Bengali Wikipedia and a Sangraha Bengali shard. Run dedup + quality
-filtering. Measure the survival ratio on real data." This is that measurement.
+Gate G3 (`PROJECT_BORNOMALA.md` §16, risk R6): after dedup and quality
+filtering, what fraction of raw Bengali web text survives, and does the
+surviving corpus clear 5 billion clean tokens? This is that measurement,
+run on real data: Bengali Wikipedia, a Sangraha Bengali shard, IndicCorp
+v2, and CC-100 as a genuine raw-web proxy.
 
 ## Pipeline
 
