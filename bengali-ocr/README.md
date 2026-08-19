@@ -11,9 +11,3 @@ programme (see `data-collection/dataset-scope.md` section 10).
 Nothing here is built yet. This is design, not code. Scoping it now means
 it's ready to build ahead of when model training begins, instead of
 starting the design work from zero then.
-
-## Naming
-
-**BMBO**, matching **BMBT**'s own naming pattern in the tokenizer track -
-Bornomala's [Bengali Tokenizer / Bengali OCR], same lineage, same
-Borno- root as the project name itself.
